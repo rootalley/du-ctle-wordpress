@@ -140,6 +140,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 | **Self-enrollment** | Authenticated faculty can browse a course catalog and self-enroll in courses of interest. |
 | **Admin enrollment** | CTLE Admin can bulk-enroll faculty into mandatory training courses. |
 | **Enrollment status** | Tracked per user: Not Started, In Progress, Completed. |
+| **Interfolio export** | Records of completed faculty training are exported to Interfolio for retention. |
 | **Course catalog** | Public-facing catalog page listing available courses with descriptions. Enrollment requires sign-in. |
 | **My Courses** | A dashboard for authenticated faculty showing their enrolled courses and progress. |
 
@@ -357,9 +358,10 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 3 | **Content migration:** Inventory of existing Canvas course materials to be ported. Determine formats (HTML, PDF, video links) and migration effort. | Future work |
 | 5 | **Analytics:** Does CTLE need reporting dashboards (course completion rates, event attendance trends, popular content)? If so, built-in LMS reporting + Google Analytics or a WP analytics plugin. | To be determined |
 | 6 | **Multilingual support:** Any need for content in languages other than English? | To be determined |
-| 7 | **Data retention & FERPA:** Confirm whether faculty training participation data has FERPA or other compliance implications affecting hosting and data handling. | Needs IT, Legal, Registrar input |
+| 7 | **Data retention:** Faculty training data will be exported to InterfolioConfirm whether faculty training participation data has FERPA or other compliance implications affecting hosting and data handling. | Needs IT, Legal, Registrar input |
 | 8 | **Custom theme vs. commercial theme:** Developer to recommend based on DU brand requirements and budget. | Open |
 | 9 | **Disaster recovery:** Confirm RPO/RTO requirements with IT. | Needs IT input |
+| 10 | **Interfolio integration:** Determine export format, frequency, and whether Interfolio offers an API for automated delivery of completed training records. | Needs CTLE, Provost's Office input |
 
 ---
 
@@ -369,6 +371,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 |---------|------|--------|---------|
 | 0.1.0 | 2026-02-11 | sendres | Initial version for CTLE and IT review |
 | 0.1.1 | 2026-03-09 | sendres | Minor revisions after pdriver and kodell review |
+| 0.1.2 | 2026-03-09 | sendres | Add Interfolio export requirement for completed faculty training records |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com) repository and will be updated as requirements are refined through stakeholder interviews and vendor evaluation.*
 
