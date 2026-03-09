@@ -39,7 +39,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 | Requirements defined & hosting vendor selected | February 2026 |
 | WordPress platform up and running | March 2026 |
 | Content development & migration from Canvas | March–July 2026 |
-| User acceptance teating & soft launch | July 2026 |
+| User acceptance testing & soft launch | July 2026 |
 | Official launch | August 2026  |
 
 ---
@@ -55,14 +55,14 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 | **Backups** | Daily automated backups with point-in-time restore |
 | **Staging environment** | Recommended — a staging/dev copy for testing updates before production |
 | **PHP version** | 8.1+ (current WordPress recommendation) |
-| **Database** | MySQL 8.0+ or MariaDB 10.6+ |
+| **Database** | MySQL 8.0+ or MariaDB 10.6+ (current WordPress requirements)|
 
 ### Hosting Vendor Evaluation Criteria
 
 - Managed WordPress specialization (auto-updates, caching, content delivery network)
 - SOC 2 or equivalent security certification (required by DU IT)
 - Uptime SLA ≥ 99.9%
-- Built-in staging environment
+- Built-in staging environment (preferred)
 - SSH/SFTP access for the developer
 - Support for custom plugins and PHP configurations (some budget hosts restrict this)
 
@@ -85,7 +85,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 | Requirement | Detail |
 |---|---|
 | **Identity provider** | Microsoft Entra ID (Azure AD) via OIDC/SAML |
-| **Scope** | DU IT will restrict the Entra app registration to faculty users only. |
+| **Scope** | DU IT will restrict the Entra app registration to faculty users, Learning Technologies team members, and CTLE staff only. |
 | **Plugin** | A WordPress SSO plugin compatible with Entra ID (e.g., miniOrange SAML/OIDC, OAuth Single Sign On). |
 | **User provisioning** | A WordPress user account is auto-created with the Faculty role upon Entra SSO login. |
 | **Session management** | WP session should respect Entra token lifetime. Single logout (SLO) preferred. |
@@ -368,6 +368,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 0.1.0 | 2026-02-11 | sendres | Initial version for CTLE and IT review |
+| 0.1.1 | 2026-03-09 | sendres | Minor revisions after pdriver and kodell review |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com) repository and will be updated as requirements are refined through stakeholder interviews and vendor evaluation.*
 
