@@ -358,7 +358,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 3 | **Content migration:** Inventory of existing Canvas course materials to be ported. Determine formats (HTML, PDF, video links) and migration effort. | Future work |
 | 5 | **Analytics:** Does CTLE need reporting dashboards (course completion rates, event attendance trends, popular content)? If so, built-in LMS reporting + Google Analytics or a WP analytics plugin. | To be determined |
 | 6 | **Multilingual support:** Any need for content in languages other than English? | To be determined |
-| 7 | **Data retention:** Faculty training data will be exported to InterfolioConfirm whether faculty training participation data has FERPA or other compliance implications affecting hosting and data handling. | Needs IT, Legal, Registrar input |
+| 7 | **Data retention:** Faculty training data will be exported to Interfolio for retention. Confirm whether IT has any other retention requirements. | Needs IT input |
 | 8 | **Custom theme vs. commercial theme:** Developer to recommend based on DU brand requirements and budget. | Open |
 | 9 | **Disaster recovery:** Confirm RPO/RTO requirements with IT. | Needs IT input |
 | 10 | **Interfolio integration:** Determine export format, frequency, and whether Interfolio offers an API for automated delivery of completed training records. | Needs CTLE, Provost's Office input |
