@@ -319,9 +319,9 @@ Use this checklist when reviewing vendor proposals. Score each item: **Yes** (fu
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 0.1.2 | 2026-03-10 | sendres | Initial version derived from REQUIREMENTS.md v0.1.2 |
+| 0.1.3 | 2026-03-10 | sendres | Initial version derived from `REQUIREMENTS.md` v0.1.3 |
 
-*This document is maintained in the [du-ctle-wordpress](https://github.com) repository alongside the project's Technical Requirements.*
+*This document is maintained in the  [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
 ---
 

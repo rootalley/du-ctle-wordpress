@@ -372,8 +372,9 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 0.1.0 | 2026-02-11 | sendres | Initial version for CTLE and IT review |
 | 0.1.1 | 2026-03-09 | sendres | Minor revisions after pdriver and kodell review |
 | 0.1.2 | 2026-03-09 | sendres | Add Interfolio export requirement for completed faculty training records |
+| 0.1.3 | 2026-03-10 | sendres | Fix document repository link |
 
-*This document is maintained in the [du-ctle-wordpress](https://github.com) repository and will be updated as requirements are refined through stakeholder interviews and vendor evaluation.*
+*This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
 ---
 
