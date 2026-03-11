@@ -268,7 +268,7 @@ Use this checklist when reviewing vendor proposals. Score each item: **Yes** (fu
 | M-2 | Onboarding documentation | | |
 | M-3 | DNS configuration guidance for `ctle.dom.edu` | | |
 | M-4 | Environment provisioned within 24 hours | | |
-
+    
 ### Contractual & Commercial
 
 | # | Requirement | Y/P/N | Notes |
