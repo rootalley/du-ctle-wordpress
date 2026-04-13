@@ -87,16 +87,23 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 | **Identity provider** | Microsoft Entra ID (Azure AD) via OIDC/SAML |
 | **Scope** | DU IT will restrict the Entra app registration to faculty users, Learning Technologies team members, and CTLE staff only. |
 | **Plugin** | A WordPress SSO plugin compatible with Entra ID (e.g., miniOrange SAML/OIDC, OAuth Single Sign On). |
-| **User provisioning** | A WordPress user account is auto-created with the Faculty role upon Entra SSO login. |
+| **Primary access method** | All regular operation — including CTLE Admin and Developer Admin work — is performed via Entra SSO or LTI launch from Canvas. Local WordPress login is not used in normal operation. |
+| **User provisioning** | On first successful SSO or LTI login, a WordPress user account is auto-created with the **Faculty** role. |
 | **Default role** | All users provisioned via Entra SSO or LTI launch receive the **Faculty** role by default. Elevation to Contributor, CTLE Admin, or Developer Admin is performed manually within WordPress and is not driven by Entra claims or Canvas context. |
+| **Account linking** | The SSO and LTI plugins must be configured to **link by email** to existing WordPress accounts rather than create duplicates. SSO/LTI login must **never downgrade** a manually-assigned role — on subsequent logins, existing role assignments are preserved. |
 | **Session management** | WP session should respect Entra token lifetime. Single logout (SLO) preferred. |
-| **Fallback** | Local WP admin accounts for CTLE Admin and Developer Admin (break-glass access if SSO is unavailable). |
+| **Break-glass recovery account** | **One** local WordPress administrator account is provisioned at initial setup and held by DU IT for emergency recovery if SSO is unavailable. This account is used once during initial setup to elevate the first CTLE Admin and Developer Admin users (who SSO in first to create their Faculty-default accounts, then are promoted via the recovery account). After initial setup, the account is dormant and used only for SSO recovery. |
+| **Recovery account protection** | The recovery account is protected by: (1) strong password enforced via WordPress password policy; (2) **TOTP two-factor authentication** (e.g., Two Factor or WP 2FA plugin), with the TOTP seed stored alongside the password in IT's credential vault; (3) an **obfuscated login URL** (the default `wp-login.php` path is changed) as an additional layer against automated scanning; (4) **real-time audit-log alerting** (e.g., WP Activity Log) that emails all CTLE Admins immediately upon any successful or failed login to the recovery account. |
+| **Recovery account rationale** | This account is a shared credential with full site administration privileges, used outside the normal SSO flow. It is treated differently from ordinary campus services (which do not require 2FA under DU IT policy) because a compromise of this single credential would grant total control of the site. TOTP plus audit alerting is the minimum defensible protection for a dormant break-glass admin credential. |
 
 ### IT Responsibilities
 
 - Register the WordPress site as an application in Entra ID.
-- Configure claims to pass: display name, email, department (for role assignment).
-- Restrict the app to faculty users via Entra group assignment.
+- Configure claims to pass: display name, email.
+- Confirm that the Entra email claim matches the email addresses used when local CTLE Admin / Developer Admin accounts are created, to ensure clean email-based account linking on first SSO login.
+- Restrict the app to faculty users, Learning Technologies team members, and CTLE staff via Entra group assignment.
+- Hold the break-glass recovery credential (password + TOTP seed) in IT's credential vault. Rotate the password after any use of the account.
+- Confirm IT security sign-off on the recovery-account protection model (TOTP + obfuscated URL + audit-log alerting) as the agreed substitute for broader 2FA or IP-allowlist requirements on this specific credential.
 
 ---
 
@@ -118,6 +125,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 
 - Register the WordPress site as an LTI 1.3 tool in Canvas.
 - Provide the platform's OIDC and JWKS endpoints to the WordPress developer.
+- Confirm that the LTI tool configuration in Canvas includes the **email claim** in the launch payload, so that the WordPress LTI plugin can perform email-based account linking (see §5).
 - Update the existing Canvas global-nav JavaScript to point to the new URL.
 
 ---
@@ -339,7 +347,10 @@ The following is a starting-point recommendation for the developer to evaluate. 
 
 | Function | Recommended Plugin(s) | Notes |
 |---|---|---|
-| **SSO / Authentication** | miniOrange SAML SSO, or OpenID Connect Generic | Must support Entra ID |
+| **SSO / Authentication** | miniOrange SAML SSO, or OpenID Connect Generic | Must support Entra ID; must support email-based account linking and preserve existing roles on re-login (see §5) |
+| **Two-factor authentication** | Two Factor, or WP 2FA (Melapress) | Required on the break-glass recovery account (TOTP). See §5. |
+| **Audit logging & alerting** | WP Activity Log | Real-time email alerts to CTLE Admins on any login to the recovery account. See §5. |
+| **Login URL obfuscation** | WPS Hide Login (or equivalent security plugin feature) | Changes the default `wp-login.php` path. See §5. |
 | **LMS / Courses** | LearnDash, LifterLMS, or Tutor LMS | Evaluate for enrollment mgmt, quiz engine, completion tracking |
 | **Events** | The Events Calendar (Pro) + Event Tickets | Custom post type with series taxonomy, registration, capacity |
 | **Forums** | bbPress | Free, lightweight, WP-native |
@@ -378,6 +389,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 0.1.2 | 2026-03-09 | sendres | Add Interfolio export requirement for completed faculty training records |
 | 0.1.3 | 2026-03-10 | sendres | Fix document repository link |
 | 0.1.4 | 2026-04-13 | sendres | Clarify Contributor role |
+| 0.1.5 | 2026-04-13 | sendres | Rework authentication with SSO/LTI as primary access and single break-glass recovery account |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
