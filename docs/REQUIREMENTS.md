@@ -7,7 +7,6 @@
 3. [Hosting & Infrastructure](#3-hosting--infrastructure)
 4. [User Roles & Access Control](#4-user-roles--access-control)
 5. [Authentication & Single Sign-On](#5-authentication--single-sign-on)
-   - [5.1 Faculty Profiles](#51-faculty-profiles)
 6. [Canvas LMS Integration](#6-canvas-lms-integration)
 7. [Courses & Enrollment](#7-courses--enrollment)
 8. [Badges & Credentials](#8-badges--credentials)
@@ -28,7 +27,7 @@
 The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU) maintains a resource website for faculty professional development. The site hosts self-paced training courses, an events calendar with registration, faculty discussion forums, and various resource collections. The CTLE intends to transition this website from the Canvas learning management system (LMS) to a standalone, publicly accessible WordPress site. This transition is motivated by the need for the CTLE to manage the site in its entirety without being dependent on Information Technology (IT), Learning Technologies, the Office of Marketing and Communications, or other stakeholders.
 
 - **Audience:** The primary audience for the CTLE is DU faculty—full-time and adjunct. However, most content will be visible to the public to promote in faculty recruitment and support effective teaching across higher education.
-- **Public vs. Protected Content:** CTLE resources will be public with selected exceptions. Discussion forums, professional development courses, certain event features (Zoom links and Add-to-Calendar functionality), and the authenticated user's self-view dashboard (see §5.1) require DU authentication.
+- **Public vs. Protected Content:** CTLE resources will be public with selected exceptions. Discussion forums, professional development courses, certain event features (Zoom links and Add-to-Calendar functionality), and the authenticated user's self-view dashboard (see Faculty Profiles, below §5) require DU authentication.
 - **URL:** Subdomain of university website (e.g., `ctle.dom.edu`).
 
 ---
@@ -75,7 +74,8 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 |---|---|
 | **CTLE Admin** | Full site administration: create/edit/publish all content, manage courses and enrollments, manage events, moderate forums, configure badges, manage faculty users, approve contributed content. |
 | **Developer Admin** | WordPress admin access for SSO configuration, plugin management, security settings, hosting-level operations. Also includes content authoring responsibilities. |
-| **Contributor** | A faculty member (or other subject-matter expert) invited by a CTLE Admin to author a specific page or course. Contributor status is **granted manually per assignment**, not via SSO or LTI — a CTLE Admin initializes the target page or course in WordPress, then assigns one or more contributors to it. Contributors can edit only the content they've been explicitly assigned to and cannot see other contributors' unpublished work unless co-assigned. All contributed content enters a **pending review** state and must be approved by a CTLE Admin before publication. |
+| **Contributor** | A faculty member (or other subject-matter expert) invited by a CTLE Admin to author a specific page or course. Contributor status is **granted manually per assignment**, not via SSO or LTI. A CTLE Admin initializes the target page or course in WordPress, then assigns one or more contributors to it. Contributors can edit only the content they've been explicitly assigned to and cannot see other contributors' unpublished work unless co-assigned. All contributed content enters a **pending review** state and must be approved by a CTLE Admin before publication. |
+
 | **Faculty (authenticated)** | View protected content, self-enroll in courses, complete assessments, participate in forums, RSVP/register for events, earn badges. |
 | **Public (anonymous)** | View public pages, event listings (with restricted fields), blog posts, and resource descriptions. Cannot enroll, post, or register. |
 
@@ -92,7 +92,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 | **User provisioning** | On first successful SSO or LTI login, a WordPress user account is auto-created with the **Faculty** role. |
 | **Default role** | All users provisioned via Entra SSO or LTI launch receive the **Faculty** role by default. Elevation to Contributor, CTLE Admin, or Developer Admin is performed manually within WordPress and is not driven by Entra claims or Canvas context. |
 | **Account linking** | The SSO and LTI plugins must be configured to link authenticating users to existing WordPress accounts by **DU employee identifier** (the stable, claim-provided ID from Entra and Canvas — see §6), not by email. This protects continuity of badges, completion records, and forum history across name or email changes. For the small number of local admin accounts created at initial setup (see Break-glass recovery account below), email-matching is used once to bind the local account to the user's first SSO login; thereafter the employee identifier becomes the primary key. |
-| **Profile field sync on login** | On **every** successful SSO or LTI login, WordPress overwrites the user's profile fields — display name, email, and avatar URL (see §5.1) — from the incoming Entra claim or LTI launch payload. This ensures that name changes, email changes, and updated avatars propagate automatically without manual intervention. |
+| **Profile field sync on login** | On **every** successful SSO or LTI login, WordPress overwrites the user's profile fields — display name, email, and avatar URL (see Faculty Profiles, below) — from the incoming Entra claim or LTI launch payload. This ensures that name changes, email changes, and updated avatars propagate automatically without manual intervention. |
 | **Role preservation on login** | SSO/LTI login must **never** modify a user's WordPress role. Roles are assigned on first login (default: Faculty) and thereafter are managed exclusively within WordPress by CTLE Admin or Developer Admin. Re-sync of profile fields on login must not cascade into role changes. |
 | **Session management** | WordPress session lifetime is **24 hours**. After session expiry, re-authentication via SSO or LTI is required. This short lifetime is the primary mechanism for revoking access to departed users: once DU IT disables a user's Entra account and Canvas enrollment, the user's next WP re-authentication will fail, typically within 24 hours of the external revocation. The brief window between external revocation and WP session expiry is accepted as a tolerable risk given the sensitivity of CTLE content. Single logout (SLO) preferred but not required. |
 | **Break-glass recovery account** | **One** local WordPress administrator account is provisioned at initial setup and held by DU IT for emergency recovery if SSO is unavailable. This account is used once during initial setup to elevate the first CTLE Admin and Developer Admin users (who SSO in first to create their Faculty-default accounts, then are promoted via the recovery account). After initial setup, the account is dormant and used only for SSO recovery. |
@@ -110,7 +110,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 
 ---
 
-## 5.1. Faculty Profiles
+## Faculty Profiles
 
 Each authenticated user has a WordPress profile consisting of (a) an account record storing identity and activity data, and (b) a **self-view dashboard** where the user can see their own course progress and earned badges. Profiles are **not public** — there is no browsable member directory, and no faculty member can view another's profile page.
 
@@ -170,8 +170,8 @@ Each authenticated user has a WordPress profile consisting of (a) an account rec
 
 - Register the WordPress site as an LTI 1.3 tool in Canvas.
 - Provide the platform's OIDC and JWKS endpoints to the WordPress developer.
-- Confirm that the LTI tool configuration in Canvas includes the **email claim**, a **DU employee identifier claim** (e.g., `lis_person_sourcedid` or a custom user attribute), and the **user avatar URL** in the launch payload. The employee identifier is used as the primary account key (see §5), and the avatar URL is stored for display on the user's profile and forum posts (see §5.1).
-- Provide the developer with a copy of the Canvas "no picture provided" default avatar icon, to be hosted locally in WordPress as a placeholder for users who authenticate only via Entra SSO (see §5.1).
+- Confirm that the LTI tool configuration in Canvas includes the **email claim**, a **DU employee identifier claim** (e.g., `lis_person_sourcedid` or a custom user attribute), and the **user avatar URL** in the launch payload. The employee identifier is used as the primary account key (see §5), and the avatar URL is stored for display on the user's profile and forum posts (see Faculty Profiles under §5).
+- Provide the developer with a copy of the Canvas "no picture provided" default avatar icon, to be hosted locally in WordPress as a placeholder for users who authenticate only via Entra SSO (see Faculty Profiles under §5).
 - Update the existing Canvas global-nav JavaScript to point to the new URL.
 
 ---
@@ -307,7 +307,7 @@ These capabilities are standard in the major LMS plugins but should be verified 
 - Forum content is **not visible to the public**.
 - CTLE Admin has full moderation capabilities (edit, delete, pin, lock threads).
 - Faculty can post new topics and reply to existing threads.
-- Forum posts display the author's profile display name and avatar as synced from Entra/LTI (see §5.1). There is no forum-specific pseudonym or display name — forum identity is always the faculty member's institutional identity.
+- Forum posts display the author's profile display name and avatar as synced from Entra/LTI (see Faculty Profiles under §5). There is no forum-specific pseudonym or display name — forum identity is always the faculty member's institutional identity.
 - Forum participation is tracked for badge awards.
 
 ### Recommended Plugin Approach
@@ -447,6 +447,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 0.1.5 | 2026-04-13 | sendres | Revise authentication process |
 | 0.1.6 | 2026-04-13 | sendres | Update Interfolio requirements; add DU ID to Entra and LTI login requirements |
 | 0.1.7 | 2026-04-13 | sendres | Clarify requirements for faculty profiles |
+| 0.1.8 | 2026-04-13 | sendres | Remove numbering and ToC entry from Faculty Profiles subsection |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
