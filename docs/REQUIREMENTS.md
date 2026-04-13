@@ -13,12 +13,13 @@
 9. [Events Calendar & Registration](#9-events-calendar--registration)
 10. [Discussion Forums](#10-discussion-forums)
 11. [Content Management & Workflow](#11-content-management--workflow)
-12. [Notifications & Microsoft 365 Integration](#12-notifications--microsoft-365-integration)
-13. [Accessibility](#13-accessibility)
-14. [Home Page Requirements](#14-home-page-requirements)
-15. [Recommended Plugin Stack](#15-recommended-plugin-stack)
-16. [Open Questions & Future Considerations](#16-open-questions--future-considerations)
-17. [Changelog](#17-changelog)
+12. [Search](#12-search)
+13. [Notifications & Microsoft 365 Integration](#13-notifications--microsoft-365-integration)
+14. [Accessibility](#14-accessibility)
+15. [Home Page Requirements](#15-home-page-requirements)
+16. [Recommended Plugin Stack](#16-recommended-plugin-stack)
+17. [Open Questions & Future Considerations](#17-open-questions--future-considerations)
+18. [Changelog](#18-changelog)
 
 ---
 
@@ -75,7 +76,6 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 | **CTLE Admin** | Full site administration: create/edit/publish all content, manage courses and enrollments, manage events, moderate forums, configure badges, manage faculty users, approve contributed content. |
 | **Developer Admin** | WordPress admin access for SSO configuration, plugin management, security settings, hosting-level operations. Also includes content authoring responsibilities. |
 | **Contributor** | A faculty member (or other subject-matter expert) invited by a CTLE Admin to author a specific page or course. Contributor status is **granted manually per assignment**, not via SSO or LTI. A CTLE Admin initializes the target page or course in WordPress, then assigns one or more contributors to it. Contributors can edit only the content they've been explicitly assigned to and cannot see other contributors' unpublished work unless co-assigned. All contributed content enters a **pending review** state and must be approved by a CTLE Admin before publication. |
-
 | **Faculty (authenticated)** | View protected content, self-enroll in courses, complete assessments, participate in forums, RSVP/register for events, earn badges. |
 | **Public (anonymous)** | View public pages, event listings (with restricted fields), blog posts, and resource descriptions. Cannot enroll, post, or register. |
 
@@ -195,7 +195,7 @@ Each authenticated user has a WordPress profile consisting of (a) an account rec
 | **Self-enrollment** | Authenticated faculty can browse a course catalog and self-enroll in courses of interest. |
 | **Admin enrollment** | CTLE Admin can bulk-enroll faculty into mandatory training courses. |
 | **Enrollment status** | Tracked per user: Not Started, In Progress, Completed. |
-| **Completion records** | Records of completed faculty training are durably stored in WordPress with user identity (including DU employee/netID), course title, completion date, and a unique record ID. A **PDF certificate of completion** is generated for each completion. Records are retained indefinitely and can be exported by CTLE Admin via **CSV** for eventual inclusion in Interfolio, DU's faculty credentials system. The specific Interfolio ingestion mechanism is a future decision (see §16). |
+| **Completion records** | Records of completed faculty training are durably stored in WordPress with user identity (including DU employee/netID), course title, completion date, and a unique record ID. A **PDF certificate of completion** is generated for each completion. Records are retained indefinitely and can be exported by CTLE Admin via **CSV** for eventual inclusion in Interfolio, DU's faculty credentials system. The specific Interfolio ingestion mechanism is a future decision (see §17). |
 | **Course catalog** | Public-facing catalog page listing available courses with descriptions. Enrollment requires sign-in. |
 | **My Courses** | A dashboard for authenticated faculty showing their enrolled courses and progress. |
 
@@ -256,7 +256,7 @@ These capabilities are standard in the major LMS plugins but should be verified 
 | **Zoom Visibility** | Toggle | Public (anyone can see) vs. Protected (DU sign-in required) |
 | **Panopto Recording Link** | URL | Added post-event when recording is available |
 | **Capacity** | Number | Max registrations allowed (0 = unlimited) |
-| **Pinned** | Boolean | Pin event to the home page (see §14) |
+| **Pinned** | Boolean | Pin event to the home page (see §15) |
 
 ### Registration & RSVP
 
@@ -339,12 +339,64 @@ These capabilities are standard in the major LMS plugins but should be verified 
 | **Contributor** | Assigned by CTLE Admin to a specific page or course → Create/Edit within assignment → Submit for Review → CTLE Admin Approves/Rejects → Publish. Contributors cannot create new top-level content on their own initiative. |
 
 - WordPress's built-in `pending review` status can handle the review step.
-- Per-assignment authoring scope (ensuring contributors see only their own assigned content) is **not native to WordPress** and will require a permissions plugin (e.g., PublishPress Permissions) for pages, and/or the LMS plugin's built-in instructor-scoping for courses. Plugin selection in §7 and §15 should account for this requirement.
+- Per-assignment authoring scope (ensuring contributors see only their own assigned content) is **not native to WordPress** and will require a permissions plugin (e.g., PublishPress Permissions) for pages, and/or the LMS plugin's built-in instructor-scoping for courses. Plugin selection in §7 and §16 should account for this requirement.
 - The developer should configure a notification when content is submitted for review.
 
 ---
 
-## 12. Notifications & Microsoft 365 Integration
+## 12. Search
+
+Site-wide search is a first-class feature. Faculty need to reliably find courses, events, blog posts, resources, and (when authenticated) forum discussions from a single search interface.
+
+### Requirements
+
+| Requirement | Detail |
+|---|---|
+| **Plugin** | **Relevanssi** (free version) replaces WordPress's default search with a relevance-ranked index. CTLE may upgrade to Relevanssi Premium in the future if usage patterns warrant (see Upgrade triggers below). |
+| **Indexed content** | Blog posts, static pages, events (title, abstract, presenters, series, location), course catalog entries (titles and descriptions only — see below), downloadable resources (titles, descriptions, and filenames), and forum topics/replies (with access filtering — see below). |
+| **Course content scope** | Only course **titles and descriptions** from the catalog are indexed at launch. The interior content of courses (module text, lesson content) is **not** indexed, to avoid entangling search with enrollment and protected-content visibility. This may be revisited in a future version. |
+| **PDF content** | At launch, only PDF filenames and media-library titles/descriptions are indexed. Indexing the full text inside PDF files is a Relevanssi Premium feature and is not required for v1. |
+| **Stemming** | English stemming enabled (Relevanssi free handles this). Searches for `assess` should match `assessing`, `assessment`, `assessments`, etc. |
+| **Relevance ranking** | Results ordered by relevance, not date. Title matches should weight more heavily than body matches. |
+
+### Access-Aware Results
+
+Search results must respect content visibility rules so that no user sees a result they cannot access:
+
+| Viewer | Sees in results |
+|---|---|
+| **Anonymous visitor** | Public blog posts, public pages, public event listings (with restricted fields per §9), course catalog entries, public resource descriptions. **Not** forum threads, protected event fields, or protected course interiors. |
+| **Authenticated faculty** | All of the above, plus forum topics and replies from forums they have access to. |
+
+Relevanssi supports per-user access filtering via standard WordPress capability checks; the developer should verify this works correctly with the chosen forum plugin (§10) and LMS plugin (§7).
+
+### Search UI
+
+- A **search box is present in the site header on every page**, visible to both anonymous visitors and authenticated users.
+- Submitting a search takes the user to a **dedicated results page** showing matched items with title, short excerpt, content type label, and a link to the item.
+- The results page includes **content-type filters** allowing the user to narrow results by category: Courses, Events, Blog/News, Resources, Pages, and (for authenticated users) Forums.
+- Search is **submit-and-show-results**, not live-as-you-type. Live search is out of scope for v1.
+- When a search returns zero results, the page displays a helpful "no results" message with links to browse the course catalog, event calendar, and resource library, and a contact link for CTLE.
+
+### Search Analytics
+
+- Relevanssi free logs user queries, including zero-result queries, to the WordPress database. The developer should enable this logging at launch.
+- Actively reviewing search analytics is **not a priority for v1** and no dashboard or reporting surface needs to be built. The logged data will simply accumulate and be available if CTLE later wants to review it.
+
+### Upgrade Triggers to Relevanssi Premium
+
+CTLE should consider upgrading to the paid version if any of the following occur post-launch:
+
+1. Search analytics (or direct faculty feedback) reveal a pattern of zero-result queries that correspond to content that actually exists on the site — particularly content inside PDFs.
+2. The CTLE resource library grows to include substantial PDF content where filename-only indexing is insufficient.
+3. CTLE adds non-English content (see open question on multilingual support).
+4. CTLE wants formal search reporting, "did you mean" suggestions, or search redirects.
+
+The upgrade decision is deferrable and does not affect launch scope.
+
+---
+
+## 13. Notifications & Microsoft 365 Integration
 
 ### Email Notifications
 
@@ -371,7 +423,7 @@ These capabilities are standard in the major LMS plugins but should be verified 
 
 ---
 
-## 13. Accessibility
+## 14. Accessibility
 
 | Requirement | Standard |
 |---|---|
@@ -384,7 +436,7 @@ These capabilities are standard in the major LMS plugins but should be verified 
 
 ---
 
-## 14. Home Page Requirements
+## 15. Home Page Requirements
 
 | Element | Description |
 |---|---|
@@ -396,7 +448,7 @@ These capabilities are standard in the major LMS plugins but should be verified 
 
 ---
 
-## 15. Recommended Plugin Stack
+## 16. Recommended Plugin Stack
 
 The following is a starting-point recommendation for the developer to evaluate. Final selections should consider compatibility, licensing costs, and long-term maintenance.
 
@@ -414,11 +466,12 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | **Email** | WP Mail SMTP + transactional email provider | Reliable delivery |
 | **Page builder** | Elementor, Beaver Builder, or Gutenberg blocks | Developer preference; must be accessible |
 | **Access control / per-post permissions** | PublishPress Permissions (or equivalent) | Needed to scope Contributor authoring to specific assigned pages/courses (see §4, §11) |
+| **Search** | Relevanssi (free) | Replaces WP core search with relevance-ranked indexing of custom post types and custom fields; access-aware results. See §12. Upgrade to Relevanssi Premium deferrable post-launch. |
 | **Calendar integration** | ICS export or Microsoft Graph API | For Outlook calendar adds |
 
 ---
 
-## 16. Open Questions & Future Considerations
+## 17. Open Questions & Future Considerations
 
 | # | Question / Consideration | Status |
 |---|---|---|
@@ -426,7 +479,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 2 | **Microsoft Graph API scope:** IT to confirm willingness to grant `Calendars.ReadWrite` for direct Outlook calendar integration vs. simpler .ics download approach. | Needs IT input |
 | 3 | **Content migration:** Inventory of existing Canvas course materials to be ported. Determine formats (HTML, PDF, video links) and migration effort. | Future work |
 | 4 | **Analytics:** Does CTLE need reporting dashboards (course completion rates, event attendance trends, popular content)? If so, built-in LMS reporting + Google Analytics or a WP analytics plugin. | To be determined |
-| 5 | **Multilingual support:** Any need for content in languages other than English? | To be determined |
+| 5 | **Multilingual support:** Any need for content in languages other than English? If yes, this would also be a trigger for upgrading to Relevanssi Premium for multilingual stemming (see §12). | To be determined |
 | 6 | **Data retention:** Completion records will live in WordPress indefinitely (see §7). Confirm whether DU IT has any additional retention requirements beyond this. | Needs IT input |
 | 7 | **Custom theme vs. commercial theme:** Developer to recommend based on DU brand requirements and budget. | Open |
 | 8 | **Disaster recovery:** Confirm RPO/RTO requirements with IT. | Needs IT input |
@@ -435,7 +488,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 
 ---
 
-## 17. Changelog
+## 18. Changelog
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
@@ -448,6 +501,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 0.1.6 | 2026-04-13 | sendres | Update Interfolio requirements; add DU ID to Entra and LTI login requirements |
 | 0.1.7 | 2026-04-13 | sendres | Clarify requirements for faculty profiles |
 | 0.1.8 | 2026-04-13 | sendres | Remove numbering and ToC entry from Faculty Profiles subsection |
+| 0.1.9 | 2026-04-13 | sendres | Add search requirements |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
