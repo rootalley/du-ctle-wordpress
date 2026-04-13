@@ -74,7 +74,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 |---|---|
 | **CTLE Admin** | Full site administration: create/edit/publish all content, manage courses and enrollments, manage events, moderate forums, configure badges, manage faculty users, approve contributed content. |
 | **Developer Admin** | WordPress admin access for SSO configuration, plugin management, security settings, hosting-level operations. Also includes content authoring responsibilities. |
-| **Contributor** | A faculty member (or other subject-matter expert) invited by a CTLE Admin to author a specific page or course. Contributor status is **granted manually per assignment**, not via SSO or LTI. A CTLE Admin initializes the target page or course in WordPress, then assigns one or more contributors to it. Contributors can edit only the content they've been explicitly assigned to and cannot see other contributors' unpublished work unless co-assigned. All contributed content enters a **pending review** state and must be approved by a CTLE Admin before publication. |
+| **Contributor** | A faculty member (or other subject-matter expert) invited by a CTLE Admin to author a specific page or course. Contributor status is **granted manually per assignment**, not via SSO or LTI — a CTLE Admin initializes the target page or course in WordPress, then assigns one or more contributors to it. Contributors can edit only the content they've been explicitly assigned to and cannot see other contributors' unpublished work unless co-assigned. All contributed content enters a **pending review** state and must be approved by a CTLE Admin before publication. |
 | **Faculty (authenticated)** | View protected content, self-enroll in courses, complete assessments, participate in forums, RSVP/register for events, earn badges. |
 | **Public (anonymous)** | View public pages, event listings (with restricted fields), blog posts, and resource descriptions. Cannot enroll, post, or register. |
 
@@ -99,7 +99,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 ### IT Responsibilities
 
 - Register the WordPress site as an application in Entra ID.
-- Configure claims to pass: display name, email.
+- Configure claims to pass: display name, email, and a **DU employee identifier** (e.g., `employeeId` or netID) suitable for matching WordPress completion records to Interfolio entries (see §7).
 - Confirm that the Entra email claim matches the email addresses used when local CTLE Admin / Developer Admin accounts are created, to ensure clean email-based account linking on first SSO login.
 - Restrict the app to faculty users, Learning Technologies team members, and CTLE staff via Entra group assignment.
 - Hold the break-glass recovery credential (password + TOTP seed) in IT's credential vault. Rotate the password after any use of the account.
@@ -125,7 +125,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 
 - Register the WordPress site as an LTI 1.3 tool in Canvas.
 - Provide the platform's OIDC and JWKS endpoints to the WordPress developer.
-- Confirm that the LTI tool configuration in Canvas includes the **email claim** in the launch payload, so that the WordPress LTI plugin can perform email-based account linking (see §5).
+- Confirm that the LTI tool configuration in Canvas includes the **email claim** and a **DU employee identifier claim** (e.g., `lis_person_sourcedid` or a custom user attribute) in the launch payload, so that the WordPress LTI plugin can perform email-based account linking (see §5) and populate completion records with the identifier needed for Interfolio (see §7).
 - Update the existing Canvas global-nav JavaScript to point to the new URL.
 
 ---
@@ -149,7 +149,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 | **Self-enrollment** | Authenticated faculty can browse a course catalog and self-enroll in courses of interest. |
 | **Admin enrollment** | CTLE Admin can bulk-enroll faculty into mandatory training courses. |
 | **Enrollment status** | Tracked per user: Not Started, In Progress, Completed. |
-| **Interfolio export** | Records of completed faculty training are exported to Interfolio for retention. |
+| **Completion records** | Records of completed faculty training are durably stored in WordPress with user identity (including DU employee/netID), course title, completion date, and a unique record ID. A **PDF certificate of completion** is generated for each completion. Records are retained indefinitely and can be exported by CTLE Admin via **CSV** for eventual inclusion in Interfolio, DU's faculty credentials system. The specific Interfolio ingestion mechanism is a future decision (see §16). |
 | **Course catalog** | Public-facing catalog page listing available courses with descriptions. Enrollment requires sign-in. |
 | **My Courses** | A dashboard for authenticated faculty showing their enrolled courses and progress. |
 
@@ -161,6 +161,14 @@ A WordPress LMS plugin such as **LearnDash**, **LifterLMS**, or **Tutor LMS** ca
 - Enrollment management (self-enroll + admin-enroll)
 - Progress tracking and completion certificates
 - Integration with badge plugins
+
+The chosen LMS plugin must support:
+- Per-user completion records with timestamps and a unique record identifier
+- PDF certificate generation on completion (including faculty name, course title, completion date, DU/CTLE branding, and the record ID)
+- **Multiple completion records** for the same user/course pair, to support recurring or refresher training (each re-completion creates a new dated record rather than overwriting)
+- CTLE Admin access to completion reports exportable as CSV
+
+These capabilities are standard in the major LMS plugins but should be verified during plugin evaluation — some reporting features may be restricted to paid tiers.
 
 > The developer should evaluate these plugins for compatibility with Entra SSO user accounts and badge/forum requirements.
 
@@ -370,13 +378,13 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 1 | **Badge plugin selection:** BadgeOS vs. alternatives — developer to evaluate compatibility with chosen LMS plugin. | Open |
 | 2 | **Microsoft Graph API scope:** IT to confirm willingness to grant `Calendars.ReadWrite` for direct Outlook calendar integration vs. simpler .ics download approach. | Needs IT input |
 | 3 | **Content migration:** Inventory of existing Canvas course materials to be ported. Determine formats (HTML, PDF, video links) and migration effort. | Future work |
-| 5 | **Analytics:** Does CTLE need reporting dashboards (course completion rates, event attendance trends, popular content)? If so, built-in LMS reporting + Google Analytics or a WP analytics plugin. | To be determined |
-| 6 | **Multilingual support:** Any need for content in languages other than English? | To be determined |
-| 7 | **Data retention:** Faculty training data will be exported to Interfolio for retention. Confirm whether IT has any other retention requirements. | Needs IT input |
-| 8 | **Custom theme vs. commercial theme:** Developer to recommend based on DU brand requirements and budget. | Open |
-| 9 | **Disaster recovery:** Confirm RPO/RTO requirements with IT. | Needs IT input |
-| 10 | **Interfolio integration:** Determine export format, frequency, and whether Interfolio offers an API for automated delivery of completed training records. | Needs CTLE, Provost's Office input |
-| 11 | **Course-contributor mechanism:** Determine whether the chosen LMS plugin's native instructor/author model is sufficient for scoping course contributors, or whether a separate permissions plugin is needed for courses as well as pages. | Open |
+| 4 | **Analytics:** Does CTLE need reporting dashboards (course completion rates, event attendance trends, popular content)? If so, built-in LMS reporting + Google Analytics or a WP analytics plugin. | To be determined |
+| 5 | **Multilingual support:** Any need for content in languages other than English? | To be determined |
+| 6 | **Data retention:** Completion records will live in WordPress indefinitely (see §7). Confirm whether DU IT has any additional retention requirements beyond this. | Needs IT input |
+| 7 | **Custom theme vs. commercial theme:** Developer to recommend based on DU brand requirements and budget. | Open |
+| 8 | **Disaster recovery:** Confirm RPO/RTO requirements with IT. | Needs IT input |
+| 9 | **Interfolio ingestion mechanism:** Completion records will exist in WordPress from day one as exportable CSV (see §7). The mechanism for getting those records *into* Interfolio — manual CSV upload, scheduled export, or direct API integration if Interfolio provides one — is a separate decision and does not block launch. **Associate Provost** to confirm how Interfolio ingests records. | Needs Associate Provost input |
+| 10 | **Course-contributor mechanism:** Determine whether the chosen LMS plugin's native instructor/author model is sufficient for scoping course contributors, or whether a separate permissions plugin is needed for courses as well as pages. | Open |
 
 ---
 
@@ -389,7 +397,8 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 0.1.2 | 2026-03-09 | sendres | Add Interfolio export requirement for completed faculty training records |
 | 0.1.3 | 2026-03-10 | sendres | Fix document repository link |
 | 0.1.4 | 2026-04-13 | sendres | Clarify Contributor role |
-| 0.1.5 | 2026-04-13 | sendres | Rework authentication with SSO/LTI as primary access and single break-glass recovery account |
+| 0.1.5 | 2026-04-13 | sendres | Revise authentication process |
+| 0.1.6 | 2026-04-13 | sendres | Update Interfolio requirements; add DU ID to Entra and LTI login requirements |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
