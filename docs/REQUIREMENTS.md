@@ -74,7 +74,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 |---|---|
 | **CTLE Admin** | Full site administration: create/edit/publish all content, manage courses and enrollments, manage events, moderate forums, configure badges, manage faculty users, approve contributed content. |
 | **Developer Admin** | WordPress admin access for SSO configuration, plugin management, security settings, hosting-level operations. Also includes content authoring responsibilities. |
-| **Contributor** | Access to author a specific course or content sections. (Contributed content enters a **pending review** state and must be approved by a CTLE before publication.) |
+| **Contributor** | A faculty member (or other subject-matter expert) invited by a CTLE Admin to author a specific page or course. Contributor status is **granted manually per assignment**, not via SSO or LTI. A CTLE Admin initializes the target page or course in WordPress, then assigns one or more contributors to it. Contributors can edit only the content they've been explicitly assigned to and cannot see other contributors' unpublished work unless co-assigned. All contributed content enters a **pending review** state and must be approved by a CTLE Admin before publication. |
 | **Faculty (authenticated)** | View protected content, self-enroll in courses, complete assessments, participate in forums, RSVP/register for events, earn badges. |
 | **Public (anonymous)** | View public pages, event listings (with restricted fields), blog posts, and resource descriptions. Cannot enroll, post, or register. |
 
@@ -88,6 +88,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 | **Scope** | DU IT will restrict the Entra app registration to faculty users, Learning Technologies team members, and CTLE staff only. |
 | **Plugin** | A WordPress SSO plugin compatible with Entra ID (e.g., miniOrange SAML/OIDC, OAuth Single Sign On). |
 | **User provisioning** | A WordPress user account is auto-created with the Faculty role upon Entra SSO login. |
+| **Default role** | All users provisioned via Entra SSO or LTI launch receive the **Faculty** role by default. Elevation to Contributor, CTLE Admin, or Developer Admin is performed manually within WordPress and is not driven by Entra claims or Canvas context. |
 | **Session management** | WP session should respect Entra token lifetime. Single logout (SLO) preferred. |
 | **Fallback** | Local WP admin accounts for CTLE Admin and Developer Admin (break-glass access if SSO is unavailable). |
 
@@ -272,9 +273,10 @@ A WordPress LMS plugin such as **LearnDash**, **LifterLMS**, or **Tutor LMS** ca
 | Author | Workflow |
 |---|---|
 | **CTLE Admin** | Create → Publish (immediate) |
-| **Contributor** | Create → Submit for Review → CTLE Admin Approves/Rejects → Publish |
+| **Contributor** | Assigned by CTLE Admin to a specific page or course → Create/Edit within assignment → Submit for Review → CTLE Admin Approves/Rejects → Publish. Contributors cannot create new top-level content on their own initiative. |
 
-- WordPress's built-in `pending review` status can handle this.
+- WordPress's built-in `pending review` status can handle the review step.
+- Per-assignment authoring scope (ensuring contributors see only their own assigned content) is **not native to WordPress** and will require a permissions plugin (e.g., PublishPress Permissions) for pages, and/or the LMS plugin's built-in instructor-scoping for courses. Plugin selection in §7 and §15 should account for this requirement.
 - The developer should configure a notification when content is submitted for review.
 
 ---
@@ -345,6 +347,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | **LTI** | LTI Platform for WordPress | LTI 1.3 launch from Canvas |
 | **Email** | WP Mail SMTP + transactional email provider | Reliable delivery |
 | **Page builder** | Elementor, Beaver Builder, or Gutenberg blocks | Developer preference; must be accessible |
+| **Access control / per-post permissions** | PublishPress Permissions (or equivalent) | Needed to scope Contributor authoring to specific assigned pages/courses (see §4, §11) |
 | **Calendar integration** | ICS export or Microsoft Graph API | For Outlook calendar adds |
 
 ---
@@ -362,6 +365,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 8 | **Custom theme vs. commercial theme:** Developer to recommend based on DU brand requirements and budget. | Open |
 | 9 | **Disaster recovery:** Confirm RPO/RTO requirements with IT. | Needs IT input |
 | 10 | **Interfolio integration:** Determine export format, frequency, and whether Interfolio offers an API for automated delivery of completed training records. | Needs CTLE, Provost's Office input |
+| 11 | **Course-contributor mechanism:** Determine whether the chosen LMS plugin's native instructor/author model is sufficient for scoping course contributors, or whether a separate permissions plugin is needed for courses as well as pages. | Open |
 
 ---
 
@@ -373,6 +377,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 0.1.1 | 2026-03-09 | sendres | Minor revisions after pdriver and kodell review |
 | 0.1.2 | 2026-03-09 | sendres | Add Interfolio export requirement for completed faculty training records |
 | 0.1.3 | 2026-03-10 | sendres | Fix document repository link |
+| 0.1.4 | 2026-04-13 | sendres | Clarify Contributor role |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
