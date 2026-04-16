@@ -29,7 +29,7 @@
 The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU) maintains a resource website for faculty professional development. The site hosts self-paced training courses, an events calendar with registration, faculty discussion forums, and various resource collections. The CTLE intends to transition this website from the Canvas learning management system (LMS) to a standalone, publicly accessible WordPress site. This transition is motivated by the need for the CTLE to manage the site in its entirety without being dependent on Information Technology (IT), Learning Technologies, the Office of Marketing and Communications, or other stakeholders.
 
 - **Audience:** The primary audience for the CTLE is DU faculty—full-time and adjunct. However, most content will be visible to the public to promote in faculty recruitment and support effective teaching across higher education.
-- **Public vs. Protected Content:** CTLE resources will be public with selected exceptions. Discussion forums, professional development courses, certain event features (Zoom links and Add-to-Calendar functionality), and the authenticated user's self-view dashboard (see Faculty Profiles, below §5) require DU authentication.
+- **Public vs. Protected Content:** CTLE resources will be public with selected exceptions. Discussion forums, professional development courses, certain event features (event registration and Add-to-Calendar functionality), and the authenticated user's self-view dashboard (see Faculty Profiles, below §5) require DU authentication. Zoom links default to private (DU sign-in required) but can be set to public on a per-event basis by CTLE Admin (see §9).
 - **URL:** Subdomain of university website (e.g., `ctle.dom.edu`).
 
 ---
@@ -267,17 +267,17 @@ These capabilities are standard in the major LMS plugins but should be verified 
 | **Series** | Taxonomy (select) | Admin-defined list (e.g., Conversation Series, Faculty Seminar Series). CTLE creates/manages series names. |
 | **Parent Event** | Reference | For nested events (sessions under a workshop). See §9.4. |
 | **Zoom Link** | URL | For webinars/virtual events |
-| **Zoom Visibility** | Toggle | Public (anyone can see) vs. Protected (DU sign-in required) |
+| **Zoom Visibility** | Toggle | Default: Private (DU sign-in required). CTLE Admin can set to Public on a per-event basis. See §1. |
 | **Panopto Recording Link** | URL | Added post-event when recording is available |
-| **Capacity** | Number | Max registrations allowed (0 = unlimited) |
+| **Capacity** | Number (nullable) | Max registrations allowed. Blank/null = unlimited (the default). A positive number enforces a cap; when reached, new registrants are waitlisted. |
 | **Pinned** | Boolean | Pin event to the home page (see §16) |
 
 ### Registration & RSVP
 
 | Feature | Description |
 |---|---|
-| **Registration** | Authenticated (DU) users can register for events via an "Add to Calendar" button. |
-| **Outlook integration** | Registration generates an `.ics` calendar invite or uses Microsoft Graph API to add the event directly to the faculty member's Outlook calendar. |
+| **Registration** | Authenticated (DU) users can register for upcoming events via a "Register" button on the event page. Registration is the primary action — it creates a registration record, counts against capacity, and triggers a confirmation email (see §13). |
+| **Calendar add** | Upon successful registration, the system should automatically add the event to the faculty member's Outlook calendar via Microsoft Graph API if available (see §13, open question #2 in §18). If Graph API integration is not available, the confirmation email includes an `.ics` attachment that the faculty member can open to add the event to their calendar. In either case, the calendar add is a byproduct of registration, not a separate user-facing step. |
 | **Capacity limits** | When capacity is reached, new registrants are added to a waitlist. |
 | **Waitlist** | Waitlisted users are automatically promoted (and notified) when a spot opens. |
 | **Attendance tracking** | CTLE Admin can mark who actually attended (post-event). Feeds into badge triggers. |
@@ -599,6 +599,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 0.1.12  | 2026-04-16 | sendres | Audit plugin stack; clarify recovery account password strength is manually enforced |
 | 0.1.13  | 2026-04-16 | sendres | Clarify transactional email and IT support requirements |
 | 0.1.14  | 2026-04-16 | sendres | Add Performance & Caching subsection |
+| 0.1.15  | 2026-04-16 | sendres | Clarify event registration and private/public availability of Zoom links |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
