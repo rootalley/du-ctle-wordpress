@@ -77,7 +77,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 |---|---|
 | **CTLE Admin** | Full site administration: create/edit/publish all content, manage courses and enrollments, manage events, moderate forums, configure badges, manage faculty users, approve contributed content. |
 | **Developer Admin** | WordPress admin access for SSO configuration, plugin management, security settings, hosting-level operations. Also includes content authoring responsibilities. |
-| **Contributor** | A faculty member (or other subject-matter expert) invited by a CTLE Admin to author a specific page or course. Contributor status is **granted manually per assignment**, not via SSO or LTI — a CTLE Admin initializes the target page or course in WordPress, then assigns one or more contributors to it. Contributors can edit only the content they've been explicitly assigned to and cannot see other contributors' unpublished work unless co-assigned. All contributed content enters a **pending review** state and must be approved by a CTLE Admin before publication. |
+| **Contributor** | A faculty member (or other subject-matter expert) invited by a CTLE Admin to author a specific page or course. Contributor status is granted manually per assignment, not via SSO or LTI — a CTLE Admin initializes the target page or course in WordPress, then assigns one or more contributors to it. Contributors can edit only the content they've been explicitly assigned to and cannot see other contributors' unpublished work unless co-assigned. All contributed content enters a pending review state and must be approved by a CTLE Admin before publication. |
 | **Faculty (authenticated)** | View protected content, self-enroll in courses, complete assessments, participate in forums, RSVP/register for events, earn badges. |
 | **Public (anonymous)** | View public pages, event listings (with restricted fields), blog posts, and resource descriptions. Cannot enroll, post, or register. |
 
@@ -91,20 +91,20 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 | **Scope** | DU IT will restrict the Entra app registration to faculty users, Learning Technologies team members, and CTLE staff only. |
 | **Plugin** | A WordPress SSO plugin compatible with Entra ID (e.g., miniOrange SAML/OIDC, OAuth Single Sign On). |
 | **Primary access method** | All regular operation — including CTLE Admin and Developer Admin work — is performed via Entra SSO or LTI launch from Canvas. Local WordPress login is not used in normal operation. |
-| **User provisioning** | On first successful SSO or LTI login, a WordPress user account is auto-created with the **Faculty** role. |
-| **Default role** | All users provisioned via Entra SSO or LTI launch receive the **Faculty** role by default. Elevation to Contributor, CTLE Admin, or Developer Admin is performed manually within WordPress and is not driven by Entra claims or Canvas context. |
-| **Account linking** | The SSO and LTI plugins must be configured to link authenticating users to existing WordPress accounts by **DU employee identifier** (the stable, claim-provided ID from Entra and Canvas — see §6), not by email. This protects continuity of badges, completion records, and forum history across name or email changes. For the small number of local admin accounts created at initial setup (see Break-glass recovery account below), email-matching is used once to bind the local account to the user's first SSO login; thereafter the employee identifier becomes the primary key. |
-| **Profile field sync on login** | On **every** successful SSO or LTI login, WordPress overwrites the user's profile fields — display name, email, and avatar URL (see Faculty Profiles, below) — from the incoming Entra claim or LTI launch payload. This ensures that name changes, email changes, and updated avatars propagate automatically without manual intervention. |
-| **Role preservation on login** | SSO/LTI login must **never** modify a user's WordPress role. Roles are assigned on first login (default: Faculty) and thereafter are managed exclusively within WordPress by CTLE Admin or Developer Admin. Re-sync of profile fields on login must not cascade into role changes. |
-| **Session management** | WordPress session lifetime is **24 hours**. After session expiry, re-authentication via SSO or LTI is required. This short lifetime is the primary mechanism for revoking access to departed users: once DU IT disables a user's Entra account and Canvas enrollment, the user's next WP re-authentication will fail, typically within 24 hours of the external revocation. The brief window between external revocation and WP session expiry is accepted as a tolerable risk given the sensitivity of CTLE content. Single logout (SLO) preferred but not required. |
-| **Break-glass recovery account** | **One** local WordPress administrator account is provisioned at initial setup and held by DU IT for emergency recovery if SSO is unavailable. This account is used once during initial setup to elevate the first CTLE Admin and Developer Admin users (who SSO in first to create their Faculty-default accounts, then are promoted via the recovery account). After initial setup, the account is dormant and used only for SSO recovery. |
-| **Recovery account protection** | The recovery account is protected by: (1) strong password enforced via WordPress password policy; (2) **TOTP two-factor authentication** (e.g., Two Factor or WP 2FA plugin), with the TOTP seed stored alongside the password in IT's credential vault; (3) an **obfuscated login URL** (the default `wp-login.php` path is changed) as an additional layer against automated scanning; (4) **real-time audit-log alerting** (e.g., WP Activity Log) that emails all CTLE Admins immediately upon any successful or failed login to the recovery account. |
+| **User provisioning** | On first successful SSO or LTI login, a WordPress user account is auto-created with the Faculty role. |
+| **Default role** | All users provisioned via Entra SSO or LTI launch receive the Faculty role by default. Elevation to Contributor, CTLE Admin, or Developer Admin is performed manually within WordPress and is not driven by Entra claims or Canvas context. |
+| **Account linking** | The SSO and LTI plugins must be configured to link authenticating users to existing WordPress accounts by DU employee identifier (the stable, claim-provided ID from Entra and Canvas — see §6), not by email. This protects continuity of badges, completion records, and forum history across name or email changes. For the small number of local admin accounts created at initial setup (see Break-glass recovery account below), email-matching is used once to bind the local account to the user's first SSO login; thereafter the employee identifier becomes the primary key. |
+| **Profile field sync on login** | On every successful SSO or LTI login, WordPress overwrites the user's profile fields — display name, email, and avatar URL (see Faculty Profiles, below) — from the incoming Entra claim or LTI launch payload. This ensures that name changes, email changes, and updated avatars propagate automatically without manual intervention. |
+| **Role preservation on login** | SSO/LTI login must never modify a user's WordPress role. Roles are assigned on first login (default: Faculty) and thereafter are managed exclusively within WordPress by CTLE Admin or Developer Admin. Re-sync of profile fields on login must not cascade into role changes. |
+| **Session management** | WordPress session lifetime is 24 hours. After session expiry, re-authentication via SSO or LTI is required. This short lifetime is the primary mechanism for revoking access to departed users: once DU IT disables a user's Entra account and Canvas enrollment, the user's next WP re-authentication will fail, typically within 24 hours of the external revocation. The brief window between external revocation and WP session expiry is accepted as a tolerable risk given the sensitivity of CTLE content. Single logout (SLO) preferred but not required. |
+| **Break-glass recovery account** | One local WordPress administrator account is provisioned at initial setup and held by DU IT for emergency recovery if SSO is unavailable. This account is used once during initial setup to elevate the first CTLE Admin and Developer Admin users (who SSO in first to create their Faculty-default accounts, then are promoted via the recovery account). After initial setup, the account is dormant and used only for SSO recovery. |
+| **Recovery account protection** | The recovery account is protected by: (1) strong password enforced via WordPress password policy; (2) TOTP two-factor authentication (e.g., Two Factor or WP 2FA plugin), with the TOTP seed stored alongside the password in IT's credential vault; (3) an obfuscated login URL (the default `wp-login.php` path is changed) as an additional layer against automated scanning; (4) real-time audit-log alerting (e.g., WP Activity Log) that emails all CTLE Admins immediately upon any successful or failed login to the recovery account. |
 | **Recovery account rationale** | This account is a shared credential with full site administration privileges, used outside the normal SSO flow. It is treated differently from ordinary campus services (which do not require 2FA under DU IT policy) because a compromise of this single credential would grant total control of the site. TOTP plus audit alerting is the minimum defensible protection for a dormant break-glass admin credential. |
 
 ### IT Responsibilities
 
 - Register the WordPress site as an application in Entra ID.
-- Configure claims to pass: display name, email, and a **DU employee identifier** (e.g., `employeeId` or netID) suitable for matching WordPress completion records to Interfolio entries (see §7).
+- Configure claims to pass: display name, email, and a DU employee identifier (e.g., `employeeId` or `netID`) suitable for matching WordPress completion records to Interfolio entries (see §7).
 - Confirm that the Entra email claim matches the email addresses used when local CTLE Admin / Developer Admin accounts are created, to ensure clean email-based account linking on first SSO login.
 - Restrict the app to faculty users, Learning Technologies team members, and CTLE staff via Entra group assignment.
 - Hold the break-glass recovery credential (password + TOTP seed) in IT's credential vault. Rotate the password after any use of the account.
@@ -114,7 +114,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 
 ## Faculty Profiles
 
-Each authenticated user has a WordPress profile consisting of (a) an account record storing identity and activity data, and (b) a **self-view dashboard** where the user can see their own course progress and earned badges. Profiles are **not public** — there is no browsable member directory, and no faculty member can view another's profile page.
+Each authenticated user has a WordPress profile consisting of (a) an account record storing identity and activity data, and (b) a self-view dashboard where the user can see their own course progress and earned badges. Profiles are not public — there is no browsable member directory, and no faculty member can view another's profile page.
 
 ### Profile Data Model
 
@@ -131,16 +131,16 @@ Each authenticated user has a WordPress profile consisting of (a) an account rec
 
 ### Self-View Dashboard
 
-- Powered by the chosen LMS plugin's **built-in student dashboard** (LearnDash, LifterLMS, and Tutor LMS all ship with one). No separate profile plugin (BuddyPress, Ultimate Member, etc.) is required or planned.
+- Powered by the chosen LMS plugin's built-in student dashboard (LearnDash, LifterLMS, and Tutor LMS all ship with one). No separate profile plugin (BuddyPress, Ultimate Member, etc.) is required or planned.
 - The dashboard displays the user's enrolled courses with progress indicators, completed courses with links to their PDF certificates, and earned badges.
-- **Badges are displayed in reverse chronological order** (most recently earned first). Faculty cannot reorder, hide, or delete earned badges.
+- Badges are displayed in reverse chronological order (most recently earned first). Faculty cannot reorder, hide, or delete earned badges.
 - Faculty do not need a bulk-download mechanism for their badges; the Open Badges standard provides external sharing (see §8).
 
 ### Avatar Handling
 
 - When a user launches the site via LTI from Canvas, the LTI payload includes a URL to the user's Canvas avatar (128×128 pixels). Canvas provides a generic "no picture" icon by default for users who have not uploaded their own photo, so every LTI-launched user has an avatar URL available.
 - WordPress stores or references the avatar URL from the LTI launch claim. Implementation choice (direct reference vs. local copy on the WP media library) is left to the developer based on reliability and performance considerations.
-- Users who authenticate **only via Entra SSO** (without ever launching from Canvas) — principally CTLE Admin and Developer Admin users — will not have a Canvas-provided avatar, since Entra OIDC claims do not include a profile photo by default. For these users, WordPress displays a **locally-hosted copy of the Canvas "no picture provided" icon** as a default placeholder. Learning Technologies will provide this icon image to the developer at initial setup.
+- Users who authenticate only via Entra SSO (without ever launching from Canvas) — principally CTLE Admin and Developer Admin users — will not have a Canvas-provided avatar, since Entra OIDC claims do not include a profile photo by default. For these users, WordPress displays a locally-hosted copy of the Canvas "no picture provided" icon as a default placeholder. Learning Technologies will provide this icon image to the developer at initial setup.
 
 ### Forum Display
 
@@ -148,7 +148,7 @@ Each authenticated user has a WordPress profile consisting of (a) an account rec
 
 ### Profile Persistence on Departure
 
-- When a faculty member leaves DU, DU IT disables their Entra account and Canvas enrollment externally. Their WordPress account is **not deleted** — it remains in place to preserve the integrity of completion records, forum history, and any audit trail CTLE may need for Interfolio lookback or institutional records.
+- When a faculty member leaves DU, DU IT disables their Entra account and Canvas enrollment externally. Their WordPress account is not deleted — it remains in place to preserve the integrity of completion records, forum history, and any audit trail CTLE may need for Interfolio lookback or institutional records.
 - The departed user's next re-authentication attempt (after their 24-hour WP session expires) will fail because SSO/LTI external access is revoked, effectively preventing further login without any WordPress-side action.
 - CTLE Admins may optionally terminate a departed user's active WordPress session manually if immediate revocation is required before natural session expiry.
 
@@ -166,13 +166,13 @@ Each authenticated user has a WordPress profile consisting of (a) an account rec
 
 - DU IT has an existing custom JavaScript injection that adds a **CTLE button** to the Canvas global navigation menu (visible to faculty only).
 - This button currently points to the Canvas-based CTLE site and will be updated to point to the new WordPress URL (`ctle.dom.edu`).
-- **No plugin or LTI required** for this — it is a simple URL redirect.
+- No plugin or LTI required for this — it is a simple URL redirect.
 
 ### Learning Technologies Responsibilities
 
 - Register the WordPress site as an LTI 1.3 tool in Canvas.
 - Provide the platform's OIDC and JWKS endpoints to the WordPress developer.
-- Confirm that the LTI tool configuration in Canvas includes the **email claim**, a **DU employee identifier claim** (e.g., `lis_person_sourcedid` or a custom user attribute), and the **user avatar URL** in the launch payload. The employee identifier is used as the primary account key (see §5), and the avatar URL is stored for display on the user's profile and forum posts (see Faculty Profiles under §5).
+- Confirm that the LTI tool configuration in Canvas includes the email claim, a DU employee identifier claim (e.g., `lis_person_sourcedid` or a custom user attribute), and the user avatar URL in the launch payload. The employee identifier is used as the primary account key (see §5), and the avatar URL is stored for display on the user's profile and forum posts (see Faculty Profiles under §5).
 - Provide the developer with a copy of the Canvas "no picture provided" default avatar icon, to be hosted locally in WordPress as a placeholder for users who authenticate only via Entra SSO (see Faculty Profiles under §5).
 - Update the existing Canvas global-nav JavaScript to point to the new URL.
 
@@ -197,13 +197,13 @@ Each authenticated user has a WordPress profile consisting of (a) an account rec
 | **Self-enrollment** | Authenticated faculty can browse a course catalog and self-enroll in courses of interest. |
 | **Admin enrollment** | CTLE Admin can bulk-enroll faculty into mandatory training courses. |
 | **Enrollment status** | Tracked per user: Not Started, In Progress, Completed. |
-| **Completion records** | Records of completed faculty training are durably stored in WordPress with user identity (including DU employee/netID), course title, completion date, and a unique record ID. A **PDF certificate of completion** is generated for each completion. Records are retained indefinitely and can be exported by CTLE Admin via **CSV** for eventual inclusion in Interfolio, DU's faculty credentials system. The specific Interfolio ingestion mechanism is a future decision (see §18). |
+| **Completion records** | Records of completed faculty training are durably stored in WordPress with user identity (including DU employee/netID), course title, completion date, and a unique record ID. A PDF certificate of completion is generated for each completion. Records are retained indefinitely and can be exported by CTLE Admin via CSV for eventual inclusion in Interfolio, DU's faculty credentials system. The specific Interfolio ingestion mechanism is a future decision (see §18). |
 | **Course catalog** | Public-facing catalog page listing available courses with descriptions. Enrollment requires sign-in. |
 | **My Courses** | A dashboard for authenticated faculty showing their enrolled courses and progress. |
 
 ### Recommended Plugin Approach
 
-A WordPress LMS plugin such as **LearnDash**, **LifterLMS**, or **Tutor LMS** can provide:
+A WordPress LMS plugin such as LearnDash, LifterLMS, or Tutor LMS can provide:
 - Course/module/lesson hierarchy
 - Quiz engine with grading
 - Enrollment management (self-enroll + admin-enroll)
@@ -213,7 +213,7 @@ A WordPress LMS plugin such as **LearnDash**, **LifterLMS**, or **Tutor LMS** ca
 The chosen LMS plugin must support:
 - Per-user completion records with timestamps and a unique record identifier
 - PDF certificate generation on completion (including faculty name, course title, completion date, DU/CTLE branding, and the record ID)
-- **Multiple completion records** for the same user/course pair, to support recurring or refresher training (each re-completion creates a new dated record rather than overwriting)
+- Multiple completion records for the same user/course pair, to support recurring or refresher training (each re-completion creates a new dated record rather than overwriting)
 - CTLE Admin access to completion reports exportable as CSV
 
 These capabilities are standard in the major LMS plugins but should be verified during plugin evaluation — some reporting features may be restricted to paid tiers.
@@ -234,7 +234,7 @@ These capabilities are standard in the major LMS plugins but should be verified 
 
 ### Recommended Plugin Approach
 
-- **BadgeOS** (free, Open Badges compatible) or equivalent.
+- BadgeOS (free, Open Badges compatible) or equivalent.
 - Integration with the chosen LMS plugin for automatic course-completion triggers.
 - Integration with the forum plugin for participation-based triggers.
 
@@ -280,7 +280,7 @@ These capabilities are standard in the major LMS plugins but should be verified 
 
 ### Nested / Parent-Child Events
 
-- A **parent event** (e.g., "Fall Faculty Workshop Day") can contain multiple **child sessions** (e.g., "Session 1: Active Learning — 9:00 AM, Room 101").
+- A parent event (e.g., "Fall Faculty Workshop Day") can contain multiple child sessions (e.g., "Session 1: Active Learning — 9:00 AM, Room 101").
 - Each child session is a full event record (with its own time, location, presenters, Zoom link, recording, etc.).
 - The parent event page displays an agenda/schedule of all child sessions.
 - A workshop or multi-session event may be treated as its own "series" for organizational purposes.
@@ -305,8 +305,8 @@ These capabilities are standard in the major LMS plugins but should be verified 
 
 ### Access & Moderation
 
-- All forums are **restricted to authenticated (DU) faculty**.
-- Forum content is **not visible to the public**.
+- All forums are restricted to authenticated (DU) faculty.
+- Forum content is not visible to the public.
 - CTLE Admin has full moderation capabilities (edit, delete, pin, lock threads).
 - Faculty can post new topics and reply to existing threads.
 - Forum posts display the author's profile display name and avatar as synced from Entra/LTI (see Faculty Profiles under §5). There is no forum-specific pseudonym or display name — forum identity is always the faculty member's institutional identity.
@@ -314,7 +314,7 @@ These capabilities are standard in the major LMS plugins but should be verified 
 
 ### Recommended Plugin Approach
 
-- **bbPress** (free, tightly integrated with WordPress) or **BuddyPress** (if broader community features are desired).
+- bbPress (free, tightly integrated with WordPress) or BuddyPress (if broader community features are desired).
 - Must integrate with the badge plugin for participation tracking.
 - Must respect the SSO-provisioned user accounts.
 
@@ -341,7 +341,7 @@ These capabilities are standard in the major LMS plugins but should be verified 
 | **Contributor** | Assigned by CTLE Admin to a specific page or course → Create/Edit within assignment → Submit for Review → CTLE Admin Approves/Rejects → Publish. Contributors cannot create new top-level content on their own initiative. |
 
 - WordPress's built-in `pending review` status can handle the review step.
-- Per-assignment authoring scope (ensuring contributors see only their own assigned content) is **not native to WordPress** and will require a permissions plugin (e.g., PublishPress Permissions) for pages, and/or the LMS plugin's built-in instructor-scoping for courses. Plugin selection in §7 and §17 should account for this requirement.
+- Per-assignment authoring scope (ensuring contributors see only their own assigned content) is not native to WordPress and will require a permissions plugin (e.g., PublishPress Permissions) for pages, and/or the LMS plugin's built-in instructor-scoping for courses. Plugin selection in §7 and §17 should account for this requirement.
 - The developer should configure a notification when content is submitted for review.
 
 ---
@@ -354,9 +354,9 @@ Site-wide search is a first-class feature. Faculty need to reliably find courses
 
 | Requirement | Detail |
 |---|---|
-| **Plugin** | **Relevanssi** (free version) replaces WordPress's default search with a relevance-ranked index. CTLE may upgrade to Relevanssi Premium in the future if usage patterns warrant (see Upgrade triggers below). |
+| **Plugin** | Relevanssi (free version) replaces WordPress's default search with a relevance-ranked index. CTLE may upgrade to Relevanssi Premium in the future if usage patterns warrant (see Upgrade triggers below). |
 | **Indexed content** | Blog posts, static pages, events (title, abstract, presenters, series, location), course catalog entries (titles and descriptions only — see below), downloadable resources (titles, descriptions, and filenames), and forum topics/replies (with access filtering — see below). |
-| **Course content scope** | Only course **titles and descriptions** from the catalog are indexed at launch. The interior content of courses (module text, lesson content) is **not** indexed, to avoid entangling search with enrollment and protected-content visibility. This may be revisited in a future version. |
+| **Course content scope** | Only course titles and descriptions from the catalog are indexed at launch. The interior content of courses (module text, lesson content) is not indexed, to avoid entangling search with enrollment and protected-content visibility. This may be revisited in a future version. |
 | **PDF content** | At launch, only PDF filenames and media-library titles/descriptions are indexed. Indexing the full text inside PDF files is a Relevanssi Premium feature and is not required for v1. |
 | **Stemming** | English stemming enabled (Relevanssi free handles this). Searches for `assess` should match `assessing`, `assessment`, `assessments`, etc. |
 | **Relevance ranking** | Results ordered by relevance, not date. Title matches should weight more heavily than body matches. |
@@ -367,23 +367,23 @@ Search results must respect content visibility rules so that no user sees a resu
 
 | Viewer | Sees in results |
 |---|---|
-| **Anonymous visitor** | Public blog posts, public pages, public event listings (with restricted fields per §9), course catalog entries, public resource descriptions. **Not** forum threads, protected event fields, or protected course interiors. |
+| **Anonymous visitor** | Public blog posts, public pages, public event listings (with restricted fields per §9), course catalog entries, public resource descriptions. Not forum threads, protected event fields, or protected course interiors. |
 | **Authenticated faculty** | All of the above, plus forum topics and replies from forums they have access to. |
 
 Relevanssi supports per-user access filtering via standard WordPress capability checks; the developer should verify this works correctly with the chosen forum plugin (§10) and LMS plugin (§7).
 
 ### Search UI
 
-- A **search box is present in the site header on every page**, visible to both anonymous visitors and authenticated users.
-- Submitting a search takes the user to a **dedicated results page** showing matched items with title, short excerpt, content type label, and a link to the item.
-- The results page includes **content-type filters** allowing the user to narrow results by category: Courses, Events, Blog/News, Resources, Pages, and (for authenticated users) Forums.
-- Search is **submit-and-show-results**, not live-as-you-type. Live search is out of scope for v1.
+- A search box is present in the site header on every page, visible to both anonymous visitors and authenticated users.
+- Submitting a search takes the user to a dedicated results page showing matched items with title, short excerpt, content type label, and a link to the item.
+- The results page includes content-type filters allowing the user to narrow results by category: Courses, Events, Blog/News, Resources, Pages, and (for authenticated users) Forums.
+- Search is submit-and-show-results, not live-as-you-type. Live search is out of scope for v1.
 - When a search returns zero results, the page displays a helpful "no results" message with links to browse the course catalog, event calendar, and resource library, and a contact link for CTLE.
 
 ### Search Analytics
 
 - Relevanssi free logs user queries, including zero-result queries, to the WordPress database. The developer should enable this logging at launch.
-- Actively reviewing search analytics is **not a priority for v1** and no dashboard or reporting surface needs to be built. The logged data will simply accumulate and be available if CTLE later wants to review it.
+- Actively reviewing search analytics is not a priority for v1 and no dashboard or reporting surface needs to be built. The logged data will simply accumulate and be available if CTLE later wants to review it.
 
 ### Upgrade Triggers to Relevanssi Premium
 
@@ -469,7 +469,7 @@ The exact language of these disclosures is to be drafted by CTLE in consultation
 
 ### Moderation Audit Trail
 
-- All CTLE Admin actions affecting forum content (edits, deletions, pinning, locking) are logged using **WP Activity Log** (see §17).
+- All CTLE Admin actions affecting forum content (edits, deletions, pinning, locking) are logged using WP Activity Log (see §17).
 - The audit trail records the admin identity, timestamp, action, and affected post.
 - This protects faculty (transparency about what happens to their posts) and CTLE (defensibility of moderation decisions).
 
@@ -488,7 +488,7 @@ The following third parties will receive CTLE faculty data in the course of norm
 
 ### Breach Notification
 
-- The managed hosting vendor contract must require the vendor to **notify DU IT within 24 hours** of any confirmed or suspected security incident affecting CTLE data.
+- The managed hosting vendor contract must require the vendor to notify DU IT within 24 hours of any confirmed or suspected security incident affecting CTLE data.
 - This requirement is added to the Hosting Vendor Evaluation Criteria in §3.
 - In the event of a breach affecting personal information, DU follows its standard notification procedures under Illinois PIPA and any applicable OPC policies.
 
@@ -578,6 +578,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 0.1.8   | 2026-04-13 | sendres | Remove numbering and ToC entry from Faculty Profiles subsection |
 | 0.1.9   | 2026-04-13 | sendres | Add search requirements |
 | 0.1.10  | 2026-04-16 | sendres | Add Privacy & Data Handling section |
+| 0.1.11  | 2026-04-16 | sendres | Minor copy edits and formatting |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
