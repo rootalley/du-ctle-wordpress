@@ -69,6 +69,18 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 - SSH/SFTP access for the developer
 - Support for custom plugins and PHP configurations (some budget hosts restrict this)
 
+### Performance & Caching
+
+| Requirement | Detail |
+|---|---|
+| **Page load target (uncached)** | Under 3 seconds for a full page load on a standard broadband connection. Applies to the home page, course catalog, event calendar, and other content-heavy pages. |
+| **Page load target (cached)** | Under 2 seconds for subsequent page loads with browser caching and server-side page caching active. |
+| **Server-side page caching** | Provided by the managed hosting vendor. Static and public pages are served from cache. Logged-in (authenticated) users bypass page cache so that personalized content (enrolled courses, dashboard, forum access) renders correctly. The developer must verify that the chosen LMS plugin's student dashboard, forum access controls, and event registration state all function correctly when page caching is active for anonymous visitors and bypassed for authenticated users. |
+| **CDN** | Provided by the managed hosting vendor (static assets served from edge servers). |
+| **Image optimization** | All uploaded images are automatically compressed and converted to modern formats (e.g., WebP) on upload. This is handled by an image optimization plugin (see §17) so that CTLE staff do not need to manually resize or compress images before uploading. |
+| **Lazy loading of Panopto embeds** | Panopto video embeds on course content pages and past-event pages must be lazy-loaded — the embed iframe and player script should not load until the user scrolls the video into view. This prevents external Panopto resources from blocking initial page render. |
+| **Front-end asset management** | The developer should audit CSS and JavaScript loading across all plugins to ensure that plugin assets are loaded only on pages where they are actually used. This is particularly important given the number of plugins in the stack (SSO, LMS, events, forums, badges, search, permissions, page builder, activity log). |
+
 ---
 
 ## 4. User Roles & Access Control
@@ -541,6 +553,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | **Access control / per-post permissions** | PublishPress Permissions (or equivalent) | Needed to scope Contributor authoring to specific assigned pages/courses (see §4, §11) |
 | **Search** | Relevanssi (free) | Replaces WP core search with relevance-ranked indexing of custom post types and custom fields; access-aware results. See §12. Upgrade to Relevanssi Premium deferrable post-launch. |
 | **Forum privacy disclosure** | Custom development or a terms/consent plugin (e.g., Complianz, CookieYes) | Implements first-visit acknowledgment modal (with re-display on policy change), posting-time reminder, and persistent footer link per §14. Footer link and posting-time note are minor template customizations; the first-visit acknowledgment with tracked consent and re-display logic is more involved. Developer to evaluate build-vs-buy. |
+| **Image optimization** | ShortPixel, Smush, or Imagify | Automatically compresses and converts uploaded images (e.g., to WebP). Free tiers are adequate for CTLE's volume. See §3. |
 | **Calendar integration** | ICS export or Microsoft Graph API | For Outlook calendar adds |
 
 ---
@@ -585,6 +598,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 0.1.11  | 2026-04-16 | sendres | Minor copy edits and formatting |
 | 0.1.12  | 2026-04-16 | sendres | Audit plugin stack; clarify recovery account password strength is manually enforced |
 | 0.1.13  | 2026-04-16 | sendres | Clarify transactional email and IT support requirements |
+| 0.1.14  | 2026-04-16 | sendres | Add Performance & Caching subsection |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
