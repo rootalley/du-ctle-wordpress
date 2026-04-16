@@ -15,11 +15,12 @@
 11. [Content Management & Workflow](#11-content-management--workflow)
 12. [Search](#12-search)
 13. [Notifications & Microsoft 365 Integration](#13-notifications--microsoft-365-integration)
-14. [Accessibility](#14-accessibility)
-15. [Home Page Requirements](#15-home-page-requirements)
-16. [Recommended Plugin Stack](#16-recommended-plugin-stack)
-17. [Open Questions & Future Considerations](#17-open-questions--future-considerations)
-18. [Changelog](#18-changelog)
+14. [Privacy & Data Handling](#14-privacy--data-handling)
+15. [Accessibility](#15-accessibility)
+16. [Home Page Requirements](#16-home-page-requirements)
+17. [Recommended Plugin Stack](#17-recommended-plugin-stack)
+18. [Open Questions & Future Considerations](#18-open-questions--future-considerations)
+19. [Changelog](#19-changelog)
 
 ---
 
@@ -63,6 +64,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 - Managed WordPress specialization (auto-updates, caching, content delivery network)
 - SOC 2 or equivalent security certification (required by DU IT)
 - Uptime SLA ≥ 99.9%
+- Breach notification SLA: contractual commitment to notify DU IT within 24 hours of any confirmed or suspected security incident affecting CTLE data (see §14)
 - Built-in staging environment (preferred)
 - SSH/SFTP access for the developer
 - Support for custom plugins and PHP configurations (some budget hosts restrict this)
@@ -75,7 +77,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 |---|---|
 | **CTLE Admin** | Full site administration: create/edit/publish all content, manage courses and enrollments, manage events, moderate forums, configure badges, manage faculty users, approve contributed content. |
 | **Developer Admin** | WordPress admin access for SSO configuration, plugin management, security settings, hosting-level operations. Also includes content authoring responsibilities. |
-| **Contributor** | A faculty member (or other subject-matter expert) invited by a CTLE Admin to author a specific page or course. Contributor status is **granted manually per assignment**, not via SSO or LTI. A CTLE Admin initializes the target page or course in WordPress, then assigns one or more contributors to it. Contributors can edit only the content they've been explicitly assigned to and cannot see other contributors' unpublished work unless co-assigned. All contributed content enters a **pending review** state and must be approved by a CTLE Admin before publication. |
+| **Contributor** | A faculty member (or other subject-matter expert) invited by a CTLE Admin to author a specific page or course. Contributor status is **granted manually per assignment**, not via SSO or LTI — a CTLE Admin initializes the target page or course in WordPress, then assigns one or more contributors to it. Contributors can edit only the content they've been explicitly assigned to and cannot see other contributors' unpublished work unless co-assigned. All contributed content enters a **pending review** state and must be approved by a CTLE Admin before publication. |
 | **Faculty (authenticated)** | View protected content, self-enroll in courses, complete assessments, participate in forums, RSVP/register for events, earn badges. |
 | **Public (anonymous)** | View public pages, event listings (with restricted fields), blog posts, and resource descriptions. Cannot enroll, post, or register. |
 
@@ -195,7 +197,7 @@ Each authenticated user has a WordPress profile consisting of (a) an account rec
 | **Self-enrollment** | Authenticated faculty can browse a course catalog and self-enroll in courses of interest. |
 | **Admin enrollment** | CTLE Admin can bulk-enroll faculty into mandatory training courses. |
 | **Enrollment status** | Tracked per user: Not Started, In Progress, Completed. |
-| **Completion records** | Records of completed faculty training are durably stored in WordPress with user identity (including DU employee/netID), course title, completion date, and a unique record ID. A **PDF certificate of completion** is generated for each completion. Records are retained indefinitely and can be exported by CTLE Admin via **CSV** for eventual inclusion in Interfolio, DU's faculty credentials system. The specific Interfolio ingestion mechanism is a future decision (see §17). |
+| **Completion records** | Records of completed faculty training are durably stored in WordPress with user identity (including DU employee/netID), course title, completion date, and a unique record ID. A **PDF certificate of completion** is generated for each completion. Records are retained indefinitely and can be exported by CTLE Admin via **CSV** for eventual inclusion in Interfolio, DU's faculty credentials system. The specific Interfolio ingestion mechanism is a future decision (see §18). |
 | **Course catalog** | Public-facing catalog page listing available courses with descriptions. Enrollment requires sign-in. |
 | **My Courses** | A dashboard for authenticated faculty showing their enrolled courses and progress. |
 
@@ -256,7 +258,7 @@ These capabilities are standard in the major LMS plugins but should be verified 
 | **Zoom Visibility** | Toggle | Public (anyone can see) vs. Protected (DU sign-in required) |
 | **Panopto Recording Link** | URL | Added post-event when recording is available |
 | **Capacity** | Number | Max registrations allowed (0 = unlimited) |
-| **Pinned** | Boolean | Pin event to the home page (see §15) |
+| **Pinned** | Boolean | Pin event to the home page (see §16) |
 
 ### Registration & RSVP
 
@@ -339,7 +341,7 @@ These capabilities are standard in the major LMS plugins but should be verified 
 | **Contributor** | Assigned by CTLE Admin to a specific page or course → Create/Edit within assignment → Submit for Review → CTLE Admin Approves/Rejects → Publish. Contributors cannot create new top-level content on their own initiative. |
 
 - WordPress's built-in `pending review` status can handle the review step.
-- Per-assignment authoring scope (ensuring contributors see only their own assigned content) is **not native to WordPress** and will require a permissions plugin (e.g., PublishPress Permissions) for pages, and/or the LMS plugin's built-in instructor-scoping for courses. Plugin selection in §7 and §16 should account for this requirement.
+- Per-assignment authoring scope (ensuring contributors see only their own assigned content) is **not native to WordPress** and will require a permissions plugin (e.g., PublishPress Permissions) for pages, and/or the LMS plugin's built-in instructor-scoping for courses. Plugin selection in §7 and §17 should account for this requirement.
 - The developer should configure a notification when content is submitted for review.
 
 ---
@@ -423,7 +425,76 @@ The upgrade decision is deferrable and does not affect launch scope.
 
 ---
 
-## 14. Accessibility
+## 14. Privacy & Data Handling
+
+The CTLE site collects personal data about DU faculty: identity (name, email, employee ID, avatar), training completion records, course enrollment and progress, forum activity, event registrations, earned badges, and search query history. This section establishes the privacy obligations that apply to that data.
+
+### Applicable Regimes
+
+| Regime | Applicability |
+|---|---|
+| **FERPA** | Not applicable. CTLE training records are employee records, not student education records. Students cannot create accounts on or access protected content in the CTLE site. If this scope ever expands to include students (e.g., graduate TAs, peer mentors), FERPA applicability must be re-evaluated. |
+| **Illinois PIPA** | Applicable to breach notification and reasonable security obligations for personal information. |
+| **DU OPC (Office of People and Culture) policy** | Applicable to employee records. CTLE will consult OPC on retention, disclosure, correction, and departure-handling policies (see §18). |
+| **GDPR** | Not a primary design driver. The site primarily serves U.S. faculty. If an EU data subject (e.g., a visiting scholar) asserts GDPR rights, CTLE Admin must be able to fulfill access, correction, and erasure requests via WordPress's built-in privacy tools. |
+
+### Privacy Policy
+
+| Requirement | Detail |
+|---|---|
+| **Published privacy policy page** | The CTLE site must have a publicly accessible privacy policy page (linked from the site footer on every page) before launch. |
+| **Required content** | The policy must name: (1) what personal data is collected, (2) how it is used, (3) all third-party recipients of that data (hosting provider, transactional email provider, Panopto, Interfolio, Microsoft Graph if used, and any analytics service if used), (4) retention periods, (5) the process by which faculty can request access to, correction of, or deletion of their data, and (6) a contact point for privacy concerns. |
+| **Authoring** | CTLE drafts the policy, using the WordPress built-in privacy policy template as a starting point. OPC and/or DU legal review the draft before publication. |
+
+### Faculty Data Rights
+
+| Capability | Detail |
+|---|---|
+| **Self-view** | Faculty can view their own profile, completion records, enrolled courses, and earned badges via the self-view dashboard (see Faculty Profiles under §5). |
+| **Data export** | CTLE Admin can export a specific faculty member's personal data on request, using WordPress's built-in Export Personal Data tool. |
+| **Data correction** | CTLE Admin can correct inaccurate records on request. The exact process is to be defined in consultation with OPC (see §18). |
+| **Data erasure** | CTLE Admin can redact or erase a faculty member's personal data on request, using WordPress's built-in Erase Personal Data tool. Completion records retained for institutional purposes may be anonymized rather than deleted; the exact boundary is to be defined in consultation with OPC (see §18). |
+
+### Forum Privacy Disclosure
+
+Because forum posts are linked to institutional identity (see §10) and visible to all authenticated DU faculty, users must be clearly informed of the visibility and moderation rules before and during forum use.
+
+| Disclosure mechanism | When it appears |
+|---|---|
+| **First-visit acknowledgment** | On a user's first visit to any forum page, a modal or inline acknowledgment displays the forum privacy notice and requires the user to click to confirm before proceeding. The acknowledgment reappears whenever the forum privacy policy is materially updated. |
+| **Persistent footer link** | Every forum category, topic, and thread page displays a footer link to the full forum privacy policy. |
+| **Posting-time reminder** | When a user is composing a post or reply, a short note near the submit button reminds them that forum content is visible to all DU faculty and is moderated by CTLE, with a link to the full policy. |
+
+The exact language of these disclosures is to be drafted by CTLE in consultation with OPC (see §18).
+
+### Moderation Audit Trail
+
+- All CTLE Admin actions affecting forum content (edits, deletions, pinning, locking) are logged using **WP Activity Log** (see §17).
+- The audit trail records the admin identity, timestamp, action, and affected post.
+- This protects faculty (transparency about what happens to their posts) and CTLE (defensibility of moderation decisions).
+
+### Third-Party Data Flows
+
+The following third parties will receive CTLE faculty data in the course of normal operation. Each requires a data processing agreement or equivalent arrangement, handled by DU IT at vendor selection:
+
+| Vendor / Service | Data received |
+|---|---|
+| **Managed WordPress hosting provider** | Full database and file access (all site data) |
+| **Transactional email provider** (e.g., SendGrid, Mailgun) | Recipient addresses and message content for all system-generated email |
+| **Panopto** | Video viewing activity, potentially including identified-user analytics (see §18) |
+| **Interfolio** | Training completion records (mechanism TBD per §18) |
+| **Microsoft Graph API** (if used for Outlook calendar integration) | Event data and calendar writes |
+| **Analytics service** (if used — currently TBD per §18) | Page view and session data |
+
+### Breach Notification
+
+- The managed hosting vendor contract must require the vendor to **notify DU IT within 24 hours** of any confirmed or suspected security incident affecting CTLE data.
+- This requirement is added to the Hosting Vendor Evaluation Criteria in §3.
+- In the event of a breach affecting personal information, DU follows its standard notification procedures under Illinois PIPA and any applicable OPC policies.
+
+---
+
+## 15. Accessibility
 
 | Requirement | Standard |
 |---|---|
@@ -436,7 +507,7 @@ The upgrade decision is deferrable and does not affect launch scope.
 
 ---
 
-## 15. Home Page Requirements
+## 16. Home Page Requirements
 
 | Element | Description |
 |---|---|
@@ -448,7 +519,7 @@ The upgrade decision is deferrable and does not affect launch scope.
 
 ---
 
-## 16. Recommended Plugin Stack
+## 17. Recommended Plugin Stack
 
 The following is a starting-point recommendation for the developer to evaluate. Final selections should consider compatibility, licensing costs, and long-term maintenance.
 
@@ -471,7 +542,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 
 ---
 
-## 17. Open Questions & Future Considerations
+## 18. Open Questions & Future Considerations
 
 | # | Question / Consideration | Status |
 |---|---|---|
@@ -480,28 +551,33 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 3 | **Content migration:** Inventory of existing Canvas course materials to be ported. Determine formats (HTML, PDF, video links) and migration effort. | Future work |
 | 4 | **Analytics:** Does CTLE need reporting dashboards (course completion rates, event attendance trends, popular content)? If so, built-in LMS reporting + Google Analytics or a WP analytics plugin. | To be determined |
 | 5 | **Multilingual support:** Any need for content in languages other than English? If yes, this would also be a trigger for upgrading to Relevanssi Premium for multilingual stemming (see §12). | To be determined |
-| 6 | **Data retention:** Completion records will live in WordPress indefinitely (see §7). Confirm whether DU IT has any additional retention requirements beyond this. | Needs IT input |
+| 6 | **Data retention:** Completion records will live in WordPress indefinitely by default (see §7). Align with DU OPC policy on retention of employee training records, including what happens to records after a faculty member separates from DU. Rolled into the broader OPC consultation (#11). | Needs OPC input |
 | 7 | **Custom theme vs. commercial theme:** Developer to recommend based on DU brand requirements and budget. | Open |
 | 8 | **Disaster recovery:** Confirm RPO/RTO requirements with IT. | Needs IT input |
 | 9 | **Interfolio ingestion mechanism:** Completion records will exist in WordPress from day one as exportable CSV (see §7). The mechanism for getting those records *into* Interfolio — manual CSV upload, scheduled export, or direct API integration if Interfolio provides one — is a separate decision and does not block launch. **Associate Provost** to confirm how Interfolio ingests records. | Needs Associate Provost input |
 | 10 | **Course-contributor mechanism:** Determine whether the chosen LMS plugin's native instructor/author model is sufficient for scoping course contributors, or whether a separate permissions plugin is needed for courses as well as pages. | Open |
+| 11 | **OPC (Office of People and Culture) consultation:** CTLE to consult OPC on all HR-adjacent aspects of the project, including: (a) retention policy for completion records; (b) handling of forum posts and other authored content when a faculty member separates from DU; (c) process and authority for correcting inaccurate records; (d) process and authority for handling faculty data access, export, and erasure requests; (e) any other employee-records requirements OPC wishes to impose. Findings feed back into §7, §14, and any other affected sections. | Needs OPC input |
+| 12 | **Privacy policy authoring:** CTLE to draft the site's privacy policy page (using WordPress's built-in template as a starting point) before launch. The policy must identify (a) what data is collected, (b) how it is used, (c) all third-party recipients of data, (d) retention periods, (e) the process for faculty data access and correction, and (f) a privacy contact. OPC and/or DU legal review required before publication. See §14. | CTLE task, pre-launch |
+| 13 | **Forum privacy disclosure language:** Draft the exact language for the three forum privacy disclosures (first-visit acknowledgment, persistent footer link text, posting-time reminder — see §14). To be drafted by CTLE in consultation with OPC. | Needs CTLE / OPC input |
+| 14 | **Panopto tracking review:** Learning Technologies to review whether DU's Panopto instance is configured to collect identified-user viewing analytics, and confirm how that data flow should be disclosed in the site's privacy policy (see §14). | Needs Learning Technologies input |
 
 ---
 
-## 18. Changelog
+## 19. Changelog
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 0.1.0 | 2026-02-11 | sendres | Initial version for CTLE and IT review |
-| 0.1.1 | 2026-03-09 | sendres | Minor revisions after pdriver and kodell review |
-| 0.1.2 | 2026-03-09 | sendres | Add Interfolio export requirement for completed faculty training records |
-| 0.1.3 | 2026-03-10 | sendres | Fix document repository link |
-| 0.1.4 | 2026-04-13 | sendres | Clarify Contributor role |
-| 0.1.5 | 2026-04-13 | sendres | Revise authentication process |
-| 0.1.6 | 2026-04-13 | sendres | Update Interfolio requirements; add DU ID to Entra and LTI login requirements |
-| 0.1.7 | 2026-04-13 | sendres | Clarify requirements for faculty profiles |
-| 0.1.8 | 2026-04-13 | sendres | Remove numbering and ToC entry from Faculty Profiles subsection |
-| 0.1.9 | 2026-04-13 | sendres | Add search requirements |
+| Version | Date       | Author  | Changes |
+|---------|------------|---------|---------|
+| 0.1.0   | 2026-02-11 | sendres | Initial version for CTLE and IT review |
+| 0.1.1   | 2026-03-09 | sendres | Minor revisions after pdriver and kodell review |
+| 0.1.2   | 2026-03-09 | sendres | Add Interfolio export requirement for completed faculty training records |
+| 0.1.3   | 2026-03-10 | sendres | Fix document repository link |
+| 0.1.4   | 2026-04-13 | sendres | Clarify Contributor role |
+| 0.1.5   | 2026-04-13 | sendres | Revise authentication process |
+| 0.1.6   | 2026-04-13 | sendres | Update Interfolio requirements; add DU ID to Entra and LTI login requirements |
+| 0.1.7   | 2026-04-13 | sendres | Clarify requirements for faculty profiles |
+| 0.1.8   | 2026-04-13 | sendres | Remove numbering and ToC entry from Faculty Profiles subsection |
+| 0.1.9   | 2026-04-13 | sendres | Add search requirements |
+| 0.1.10  | 2026-04-16 | sendres | Add Privacy & Data Handling section |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
