@@ -574,7 +574,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | **Cross-platform achievements** | GamiPress (free core) | Points/achievements/ranks spanning LMS, events, and forums. Has explicit integrations with wpForo, LearnDash, LifterLMS, Tutor LMS, and The Events Calendar. Replaces BadgeOS. See §8. |
 | **LTI** | LTI Platform for WordPress | LTI 1.3 launch from Canvas |
 | **Email** | WP Mail SMTP | Configured to send via DU's Microsoft 365 shared application mailbox (see §13). Reliable delivery via institutional email infrastructure. |
-| **Page builder** | Elementor, Beaver Builder, or Gutenberg blocks | Developer preference; must be accessible |
+| **Page builder** | Beaver Builder or Gutenberg blocks | Developer preference; must produce WCAG 2.1 Level AA compliant markup (see §15). Elementor is not recommended due to documented accessibility issues with keyboard navigation, focus management, and ARIA markup in its generated output. |
 | **Access control / per-post permissions** | PublishPress Permissions (or equivalent) | Needed to scope Contributor authoring to specific assigned pages/courses (see §4, §11) |
 | **Search** | Relevanssi (free) | Replaces WP core search with relevance-ranked indexing of custom post types and custom fields; access-aware results. See §12. Upgrade to Relevanssi Premium deferrable post-launch. |
 | **Forum privacy disclosure** | Custom development or a terms/consent plugin (e.g., Complianz, CookieYes) | Implements first-visit acknowledgment modal (with re-display on policy change), posting-time reminder, and persistent footer link per §14. Footer link and posting-time note are minor template customizations; the first-visit acknowledgment with tracked consent and re-display logic is more involved. Developer to evaluate build-vs-buy. |
@@ -627,6 +627,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 0.1.14  | 2026-04-16 | sendres | Add Performance & Caching subsection |
 | 0.1.15  | 2026-04-16 | sendres | Clarify event registration and private/public availability of Zoom links |
 | 0.1.16  | 2026-04-16 | sendres | Rework achievements and engagement approach; downgrade Open Badges from requirement to future work |
+| 0.1.17  | 2026-04-16 | sendres | Remove Elementor from page builder consideration due to WCAG issues |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
