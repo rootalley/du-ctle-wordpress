@@ -525,7 +525,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 
 | Function | Recommended Plugin(s) | Notes |
 |---|---|---|
-| **SSO / Authentication** | miniOrange SAML SSO, or OpenID Connect Generic | Must support Entra ID; must support email-based account linking and preserve existing roles on re-login (see §5) |
+| **SSO / Authentication** | miniOrange SAML SSO, or OpenID Connect Generic | Must support Entra ID; must support account linking by employee identifier (not email) and preserve existing roles on re-login (see §5) |
 | **Two-factor authentication** | Two Factor, or WP 2FA (Melapress) | Required on the break-glass recovery account (TOTP). See §5. |
 | **Audit logging & alerting** | WP Activity Log | Real-time email alerts to CTLE Admins on any login to the recovery account. See §5. |
 | **Login URL obfuscation** | WPS Hide Login (or equivalent security plugin feature) | Changes the default `wp-login.php` path. See §5. |
@@ -538,6 +538,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | **Page builder** | Elementor, Beaver Builder, or Gutenberg blocks | Developer preference; must be accessible |
 | **Access control / per-post permissions** | PublishPress Permissions (or equivalent) | Needed to scope Contributor authoring to specific assigned pages/courses (see §4, §11) |
 | **Search** | Relevanssi (free) | Replaces WP core search with relevance-ranked indexing of custom post types and custom fields; access-aware results. See §12. Upgrade to Relevanssi Premium deferrable post-launch. |
+| **Forum privacy disclosure** | Custom development or a terms/consent plugin (e.g., Complianz, CookieYes) | Implements first-visit acknowledgment modal (with re-display on policy change), posting-time reminder, and persistent footer link per §14. Footer link and posting-time note are minor template customizations; the first-visit acknowledgment with tracked consent and re-display logic is more involved. Developer to evaluate build-vs-buy. |
 | **Calendar integration** | ICS export or Microsoft Graph API | For Outlook calendar adds |
 
 ---
@@ -579,6 +580,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 0.1.9   | 2026-04-13 | sendres | Add search requirements |
 | 0.1.10  | 2026-04-16 | sendres | Add Privacy & Data Handling section |
 | 0.1.11  | 2026-04-16 | sendres | Minor copy edits and formatting |
+| 0.1.12  | 2026-04-16 | sendres | Audit plugin stack; clarify recovery account password strength is manually enforced |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
