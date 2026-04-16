@@ -420,7 +420,9 @@ The upgrade decision is deferrable and does not affect launch scope.
 
 ### IT Responsibilities
 
-- Email delivery should use a transactional email service (e.g., SendGrid, Mailgun, or the hosting provider's SMTP) to avoid deliverability issues.
+- Provision a shared application mailbox in Microsoft 365 (e.g., `ctle@dom.edu`) for WordPress to use as the sender for all system-generated email (registration confirmations, event reminders, forum notifications, etc.). Configure the mailbox with appropriate SPF/DKIM/DMARC alignment for `dom.edu`.
+- Confirm that automated email volume from this mailbox (estimated 50–200 messages per day at peak, with occasional bursts for event reminders or bulk enrollment notifications) is acceptable under DU's Exchange Online sending limits and acceptable-use policies.
+- Configure WP Mail SMTP (or equivalent plugin) to authenticate to the mailbox via Microsoft 365 SMTP relay or Microsoft Graph API for mail sending.
 - Microsoft Graph API integration for Outlook calendar will require an Entra app registration with `Calendars.ReadWrite` delegated permissions.
 
 ---
@@ -443,7 +445,7 @@ The CTLE site collects personal data about DU faculty: identity (name, email, em
 | Requirement | Detail |
 |---|---|
 | **Published privacy policy page** | The CTLE site must have a publicly accessible privacy policy page (linked from the site footer on every page) before launch. |
-| **Required content** | The policy must name: (1) what personal data is collected, (2) how it is used, (3) all third-party recipients of that data (hosting provider, transactional email provider, Panopto, Interfolio, Microsoft Graph if used, and any analytics service if used), (4) retention periods, (5) the process by which faculty can request access to, correction of, or deletion of their data, and (6) a contact point for privacy concerns. |
+| **Required content** | The policy must name: (1) what personal data is collected, (2) how it is used, (3) all third-party recipients of that data (hosting provider, Panopto, Interfolio, Microsoft Graph if used, and any analytics service if used), (4) retention periods, (5) the process by which faculty can request access to, correction of, or deletion of their data, and (6) a contact point for privacy concerns. |
 | **Authoring** | CTLE drafts the policy, using the WordPress built-in privacy policy template as a starting point. OPC and/or DU legal review the draft before publication. |
 
 ### Faculty Data Rights
@@ -480,7 +482,7 @@ The following third parties will receive CTLE faculty data in the course of norm
 | Vendor / Service | Data received |
 |---|---|
 | **Managed WordPress hosting provider** | Full database and file access (all site data) |
-| **Transactional email provider** (e.g., SendGrid, Mailgun) | Recipient addresses and message content for all system-generated email |
+| **Microsoft 365 (email)** | Recipient addresses and message content for all system-generated email, sent via a DU shared application mailbox |
 | **Panopto** | Video viewing activity, potentially including identified-user analytics (see §18) |
 | **Interfolio** | Training completion records (mechanism TBD per §18) |
 | **Microsoft Graph API** (if used for Outlook calendar integration) | Event data and calendar writes |
@@ -534,7 +536,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | **Forums** | bbPress | Free, lightweight, WP-native |
 | **Badges** | BadgeOS + Open Badges integration | Free tier; auto-award from course/forum triggers |
 | **LTI** | LTI Platform for WordPress | LTI 1.3 launch from Canvas |
-| **Email** | WP Mail SMTP + transactional email provider | Reliable delivery |
+| **Email** | WP Mail SMTP | Configured to send via DU's Microsoft 365 shared application mailbox (see §13). Reliable delivery via institutional email infrastructure. |
 | **Page builder** | Elementor, Beaver Builder, or Gutenberg blocks | Developer preference; must be accessible |
 | **Access control / per-post permissions** | PublishPress Permissions (or equivalent) | Needed to scope Contributor authoring to specific assigned pages/courses (see §4, §11) |
 | **Search** | Relevanssi (free) | Replaces WP core search with relevance-ranked indexing of custom post types and custom fields; access-aware results. See §12. Upgrade to Relevanssi Premium deferrable post-launch. |
@@ -561,6 +563,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 12 | **Privacy policy authoring:** CTLE to draft the site's privacy policy page (using WordPress's built-in template as a starting point) before launch. The policy must identify (a) what data is collected, (b) how it is used, (c) all third-party recipients of data, (d) retention periods, (e) the process for faculty data access and correction, and (f) a privacy contact. OPC and/or DU legal review required before publication. See §14. | CTLE task, pre-launch |
 | 13 | **Forum privacy disclosure language:** Draft the exact language for the three forum privacy disclosures (first-visit acknowledgment, persistent footer link text, posting-time reminder — see §14). To be drafted by CTLE in consultation with OPC. | Needs CTLE / OPC input |
 | 14 | **Panopto tracking review:** Learning Technologies to review whether DU's Panopto instance is configured to collect identified-user viewing analytics, and confirm how that data flow should be disclosed in the site's privacy policy (see §14). | Needs Learning Technologies input |
+| 15 | **Microsoft 365 email for WordPress:** IT to confirm: (a) willingness to provision a shared application mailbox (e.g., `ctle@dom.edu`) for automated WordPress email; (b) that estimated volume (50–200 messages/day, occasional bursts) is acceptable under Exchange Online sending limits; (c) preferred SMTP relay or Graph API configuration for WP Mail SMTP. See §13. | Needs IT input |
 
 ---
 
@@ -581,6 +584,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 0.1.10  | 2026-04-16 | sendres | Add Privacy & Data Handling section |
 | 0.1.11  | 2026-04-16 | sendres | Minor copy edits and formatting |
 | 0.1.12  | 2026-04-16 | sendres | Audit plugin stack; clarify recovery account password strength is manually enforced |
+| 0.1.13  | 2026-04-16 | sendres | Clarify transactional email and IT support requirements |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
