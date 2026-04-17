@@ -51,7 +51,7 @@ The Center for Teaching & Learning Excellence (CTLE) at Dominican University (DU
 | Requirement | Detail |
 |---|---|
 | **Hosting Type** | Managed WordPress hosting (third-party vendor) |
-| **Budget** | ~$30/month tier (adequate for expected traffic) |
+| **Budget** | To be determined |
 | **IT involvement** | IT will vet the vendor for security compliance, configure the `ctle.dom.edu` subdomain, set up Entra SSO, and configure Canvas LTI. Day-to-day tech support handled by the hosting vendor. |
 | **SSL** | Required (HTTPS enforced) |
 | **Backups** | Daily automated backups with point-in-time restore |
