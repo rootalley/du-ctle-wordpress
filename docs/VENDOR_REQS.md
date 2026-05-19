@@ -18,7 +18,7 @@
 
 ## 1. Purpose & Scope
 
-This document defines the requirements that a managed WordPress hosting vendor must meet to successfully host the Center for Teaching & Learning Excellence (CTLE) website for Dominican University (DU). It is derived from the project's [Technical Requirements](REQUIREMENTS.md) (v0.1.18) and is intended to be shared with prospective vendors and used internally to evaluate proposals.
+This document defines the requirements that a managed WordPress hosting vendor must meet to successfully host the Center for Teaching & Learning Excellence (CTLE) website for Dominican University (DU). It is derived from the project's [Technical Requirements](REQUIREMENTS.md) (v0.2.0) and is intended to be shared with prospective vendors and used internally to evaluate proposals.
 
 **What is in scope:** Hosting infrastructure, platform management, security posture, support services, and commercial terms.
 
@@ -28,15 +28,15 @@ This document defines the requirements that a managed WordPress hosting vendor m
 
 ## 2. Project Context
 
-The CTLE is moving its faculty professional-development website from the Canvas LMS to a standalone WordPress site at `ctle.dom.edu`. The site will serve approximately 200–400 faculty users (full-time and adjunct) and an unknown volume of public visitors. Key functional areas include:
+The CTLE is moving its faculty professional-development website from the Canvas LMS to a standalone WordPress site at `ctle.dom.edu`. The site will serve approximately 200–400 faculty users (full-time and adjunct) and a substantial volume of anonymous public visitors. Professional development courses are hosted and managed in Canvas — the WordPress site hosts only a public-facing course catalog linking faculty to Canvas for enrollment. Key functional areas include:
 
-- **Self-paced courses** with enrollment, quizzes, completion tracking, and PDF certificate generation (via an LMS plugin such as LearnDash, LifterLMS, or Tutor LMS)
-- **Events calendar** with registration, capacity management, waitlists, and Microsoft Outlook calendar integration
+- **Public course catalog** — informational pages for each Canvas-hosted professional development course, with enrollment links pointing to Canvas. No WordPress LMS plugin is required at any phase.
+- **Events calendar** with registration, capacity management, waitlists, and Microsoft Outlook calendar integration (.ics at launch; Graph API in a future phase)
 - **Discussion forums** restricted to authenticated DU faculty (via wpForo, which uses its own database tables)
-- **Achievements and engagement system** with cross-platform triggers spanning courses, events, and forums (via GamiPress and wpForo's built-in reputation system)
+- **Achievements and engagement system** (Phase 2) with cross-platform triggers spanning Canvas completion records imported to WordPress, events, and forums (via GamiPress and wpForo's built-in reputation system)
 - **Site-wide search** with relevance ranking, custom post type indexing, and access-aware results (via Relevanssi)
 - **Single Sign-On** via Microsoft Entra ID (OIDC/SAML) with 24-hour WordPress session lifetime and automatic profile sync on every login
-- **LTI 1.3 integration** with Canvas LMS for seamless faculty launch from the university's LMS
+- **LTI 1.3 integration** with Canvas LMS for seamless faculty launch from Canvas to the WordPress site (SSO passthrough only — no grade or completion data passed back to Canvas at launch)
 - **Email notifications** sent via a DU Microsoft 365 shared application mailbox (e.g., `ctle@dom.edu`) using WP Mail SMTP
 
 The site will be managed day-to-day by a CTLE administrator (non-technical content author) and a contract developer. DU IT's involvement is limited to SSO configuration, DNS, M365 mailbox provisioning, and security vetting.
@@ -64,7 +64,7 @@ The site will be managed day-to-day by a CTLE administrator (non-technical conte
 
 | # | Requirement | Priority |
 |---|---|---|
-| S-1 | **Disk storage** — sufficient for the site's expected content (course materials, documents, images, PDF certificates, Relevanssi search index). Minimum 10 GB; 20+ GB preferred. Vendor should specify included storage and overage pricing. | Required |
+| S-1 | **Disk storage** — sufficient for the site's expected content (downloadable resources, documents, images, Relevanssi search index). Minimum 10 GB; 20+ GB preferred. Vendor should specify included storage and overage pricing. | Required |
 | S-2 | **Bandwidth / data transfer** — unmetered or generous monthly allocation appropriate for a site of this scale. Vendor should specify any bandwidth caps. | Required |
 | S-3 | **File upload limits** — PHP `upload_max_filesize` and `post_max_size` configurable to at least 64 MB (for course materials and media uploads). | Required |
 
@@ -86,7 +86,7 @@ The site will be managed day-to-day by a CTLE administrator (non-technical conte
 | C-10 | **Two-factor authentication (2FA)** support — hosting must not block WordPress 2FA plugins (e.g., Two Factor, WP 2FA). The site uses TOTP-based 2FA on a break-glass recovery account. | Required |
 | C-11 | **Access logging** — web server access logs and error logs available to the developer for troubleshooting and auditing. | Required |
 | C-12 | **Data handling on termination** — vendor must describe their data return/destruction policy upon contract termination, including timelines and data export formats. | Required |
-| C-13 | **Breach notification SLA** — vendor must contractually commit to notifying DU IT **within 24 hours** of any confirmed or suspected security incident affecting CTLE data. This is a firm requirement derived from the project's privacy obligations under Illinois PIPA (see REQUIREMENTS.md §14). | Required |
+| C-13 | **Breach notification SLA** — vendor must contractually commit to notifying DU IT **within 72 hours** of any confirmed or suspected security incident affecting CTLE data. Market-standard Data Processing Addenda from managed WordPress hosts (including WP Engine and Kinsta) use "without undue delay" language aligned with the GDPR Article 33 standard of 72 hours. Illinois PIPA specifies no fixed number of hours. A contractual 72-hour commitment satisfies both market realities and DU's regulatory obligations (see REQUIREMENTS.md §14). | Required |
 | C-14 | **Data processing agreement** — vendor must be willing to execute DU's data processing agreement or equivalent data protection addendum. The hosting provider is named as a third-party recipient of faculty data in the site's privacy policy. | Required |
 
 ---
@@ -99,8 +99,8 @@ The CTLE site relies on several third-party plugins with specific server-side re
 
 | # | Requirement | Priority |
 |---|---|---|
-| W-1 | **No plugin restrictions** — ability to install any WordPress plugin from the official repository or from third-party sources (zip upload). Some budget managed hosts restrict custom plugins; this is not acceptable. The site runs 15+ plugins including an LMS, event management, forums (wpForo), achievements (GamiPress), search (Relevanssi), SSO, 2FA, activity logging, and a page builder. | Required |
-| W-2 | **Custom PHP configuration** — ability to modify `php.ini` or equivalent settings (memory limits, execution time, upload sizes) as needed by LMS, event, and forum plugins. | Required |
+| W-1 | **No plugin restrictions** — ability to install any WordPress plugin from the official repository or from third-party sources (zip upload). Some budget managed hosts restrict custom plugins; this is not acceptable. The site runs approximately 12 Phase 1 plugins: SSO (miniOrange SAML or OpenID Connect Generic), Two Factor / WP 2FA, WP Activity Log, WPS Hide Login, The Events Calendar Pro + Event Tickets, wpForo, LTI Platform for WordPress, WP Mail SMTP, a page builder (Beaver Builder or Gutenberg blocks), Relevanssi, an image optimization plugin, and a forum privacy consent mechanism. Phase 2 adds GamiPress and PublishPress Permissions. **No WordPress LMS plugin is required at any phase** — professional development courses are hosted in Canvas. | Required |
+| W-2 | **Custom PHP configuration** — ability to modify `php.ini` or equivalent settings (memory limits, execution time, upload sizes) as needed by event, forum, search, and SSO plugins. | Required |
 | W-3 | **Cron job support** — reliable execution of WordPress cron (`wp-cron`) or support for server-level cron to replace WordPress's pseudo-cron. Server-level cron is preferred for reliable scheduled tasks (email notifications, event reminders, waitlist processing, search index updates). | Required |
 | W-4 | **Outbound SMTP** — the site sends email via a DU Microsoft 365 shared application mailbox using WP Mail SMTP. Outbound SMTP on ports 587 and 465 must not be blocked. | Required |
 | W-5 | **REST API and external API calls** — no restrictions on outgoing HTTP/HTTPS requests from PHP. Required for Microsoft Entra SSO token endpoints, Microsoft Graph API (Outlook calendar integration), LTI 1.3 OIDC/JWKS endpoints, and Panopto video embeds. | Required |
@@ -110,7 +110,7 @@ The CTLE site relies on several third-party plugins with specific server-side re
 
 | # | Requirement | Priority |
 |---|---|---|
-| W-7 | **PHP memory limit** — minimum 256 MB. LMS plugins with quiz engines, GamiPress achievement triggers, and Relevanssi search indexing can be memory-intensive. | Required |
+| W-7 | **PHP memory limit** — minimum 256 MB. wpForo's custom database tables, Relevanssi search indexing, and GamiPress achievement triggers (Phase 2) can be memory-intensive. | Required |
 | W-8 | **PHP `max_execution_time`** — minimum 120 seconds (for bulk enrollment operations, CSV exports of completion records, and Relevanssi index rebuilds). | Required |
 
 ### 5.3 Database Access
@@ -164,7 +164,7 @@ The CTLE site relies on several third-party plugins with specific server-side re
 
 | # | Requirement | Priority |
 |---|---|---|
-| K-1 | **Pricing transparency** — vendor must provide clear, all-inclusive pricing. Itemize any additional costs for overage (storage, bandwidth), premium support, CDN, backups, or staging environments. Target budget is approximately $30/month. | Required |
+| K-1 | **Pricing transparency** — vendor must provide clear, all-inclusive pricing. Itemize any additional costs for overage (storage, bandwidth), premium support, CDN, backups, or staging environments. Budget ceiling is **≤ $70/month** at Phase 1 launch. | Required |
 | K-2 | **No long-term lock-in** — the university must be able to terminate the agreement with reasonable notice (30–60 days) without penalty, regardless of billing cycle. | Required |
 | K-3 | **Data portability** — upon termination, vendor must provide a full export of all site data (files, database, media, backups) in standard formats (SQL dump, file archive) within 30 days. | Required |
 | K-4 | **Data processing agreement** — vendor must be willing to execute DU's data processing agreement or equivalent data protection addendum if required. | Required |
@@ -233,7 +233,7 @@ Use this checklist when reviewing vendor proposals. Score each item: **Yes** (fu
 | C-10 | 2FA plugin support (does not block TOTP plugins) | | |
 | C-11 | Access and error log availability | | |
 | C-12 | Data return/destruction policy on termination | | |
-| C-13 | 24-hour breach notification SLA (contractual) | | |
+| C-13 | 72-hour breach notification SLA (contractual) | | |
 | C-14 | Willing to execute data processing agreement | | |
 
 ### WordPress Platform
@@ -335,6 +335,7 @@ Use this checklist when reviewing vendor proposals. Score each item: **Yes** (fu
 |---------|------------|---------|---------|
 | 0.1.3   | 2026-03-10 | sendres | Initial version derived from REQUIREMENTS.md v0.1.3 |
 | 0.1.18  | 2026-04-16 | sendres | Full refresh to align with REQUIREMENTS.md v0.1.18 |
+| 0.2.0   | 2026-05-19 | sendres | Align with REQUIREMENTS.md v0.2.0: rewrite Project Context to remove LMS plugin references (courses stay in Canvas; no LMS plugin at any phase); update budget ceiling from ~$30/month to ≤$70/month; update breach notification SLA from 24 hours to 72 hours with revised rationale; update W-1 plugin list; update W-7 PHP memory rationale |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
