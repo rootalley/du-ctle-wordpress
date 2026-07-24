@@ -159,8 +159,9 @@ Install plugins in the order listed. Activate and do a basic sanity check after 
 
 ### LTI Plugin
 
-- [ ] **LTI Platform for WordPress**
-  - Install and activate; full configuration in §16
+- [ ] **LTI Tool** (ceLTIc project) — plus its required **ceLTIc LTI Library** dependency
+  - WordPress is the LTI *tool*, launched from Canvas (the platform). The earlier "LTI Platform for WordPress" is the reverse integration (WordPress as the platform, embedding external tools) and is incorrect — see `IT_REQUESTS.md` Request 3.
+  - Install and activate both; full configuration in §16
 
 ### SSO Plugin
 
@@ -436,13 +437,13 @@ This is the one-time process to elevate the CTLE Admin and Developer Admin from 
 **Prerequisites — [DU IT]:**
 - Provision a shared application mailbox (e.g., `ctle@dom.edu`) in Microsoft 365
 - Confirm that the estimated volume (50–200 messages/day, occasional bursts for event reminders) is acceptable under Exchange Online sending limits
-- Provide SMTP relay credentials or a Microsoft Graph API app registration for WP Mail SMTP
+- Provide a Microsoft Graph API app registration (client ID + secret, `Mail.Send` application permission) for WP Mail SMTP. We are specifically **not** requesting SMTP AUTH: Microsoft disables SMTP AUTH basic authentication by default for existing tenants at the end of December 2026 — about four months post-launch (see `IT_REQUESTS.md` Request 2).
 - Confirm SPF/DKIM/DMARC alignment for `dom.edu` covers the `ctle@dom.edu` mailbox
 
 - [ ] In WP Admin, navigate to WP Mail SMTP → Settings
-- [ ] Select mailer: **Microsoft 365 / Outlook** (uses Microsoft Graph API for sending) or **Other SMTP** (uses SMTP relay on port 587 or 465)
-  - **Graph API method (preferred):** enter the Entra app registration client ID and secret provided by DU IT; authorize the connection
-  - **SMTP method:** enter the SMTP server, port (587 with STARTTLS or 465 with SSL), and credentials
+- [ ] Select mailer: **Microsoft 365 / Outlook** (sends via the Microsoft Graph API)
+  - Enter the Entra app registration client ID and secret provided by DU IT; authorize the connection
+  - Do **not** use the "Other SMTP" mailer / SMTP AUTH — basic auth for SMTP client submission is disabled by default for existing tenants at the end of December 2026 (see `IT_REQUESTS.md` Request 2)
 - [ ] Set From Email: `ctle@dom.edu`
 - [ ] Set From Name: `CTLE — Dominican University` (or DU brand-compliant name)
 - [ ] Send a test email: WP Mail SMTP → Tools → Email Test → send to a DU test address and confirm delivery
@@ -458,7 +459,7 @@ This is the one-time process to elevate the CTLE Admin and Developer Admin from 
 - Confirm the LTI launch payload includes: email, DU employee identifier (e.g., `lis_person_sourcedid`), and avatar URL (for Phase 2 — configure now to avoid later reconfiguration)
 - Update the existing Canvas global-nav CTLE button URL to `https://ctle.dom.edu`
 
-- [ ] In WP Admin, navigate to LTI Platform for WordPress settings
+- [ ] In WP Admin, navigate to the **LTI Tool** plugin settings
 - [ ] Enter Canvas platform details: OIDC endpoint, JWKS endpoint, platform issuer — provided by Learning Technologies
 - [ ] Configure account linking: map the LTI `lis_person_sourcedid` (or the agreed DU employee identifier claim) to the same `du_employee_id` user meta field used by SSO (§13) — the linking key must be consistent between SSO and LTI
 - [ ] Set default role for LTI-provisioned users: **Faculty**
@@ -677,5 +678,6 @@ Complete all items in this section on the staging environment first, then push t
 | 0.4.1 | 2026-07-24 | sendres | Corrected the `topsecretuser` deletion gate in §3 and §6: auto-login plus SSH/WP-CLI recovery verified, rather than waiting on SSO. |
 | 0.5.1 | 2026-07-24 | sendres | Recorded the §9 redirect verification and the accepted `https://*.kinsta.cloud` gap. Added the build-time search-engine discouragement to §4, paired with a matching launch gate in §23. |
 | 0.5.0 | 2026-07-24 | sendres | §9 executed and rewritten against verified state: added the CAA pre-check, primary-domain cutover, Force HTTPS option guidance and its ordering trap, and a verification block. Corrected the premature site-URL checkbox in §4. Marked the §12 baseline backup and the §11 anonymous edge-cache check complete. |
+| 0.6.0 | 2026-07-24 | sendres | Corrected the LTI plugin naming in §5 and §16: WordPress is the LTI **tool** launched from Canvas, so the software is the **LTI Tool** plugin (ceLTIc project) plus its **ceLTIc LTI Library** dependency — not "LTI Platform for WordPress," which is the reverse integration. Amended §15 to send mail via the Microsoft Graph API only, dropping SMTP AUTH as a co-equal option ahead of Microsoft's end-of-December-2026 basic-auth retirement. Both align with `IT_REQUESTS.md` Requests 3 and 2. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*

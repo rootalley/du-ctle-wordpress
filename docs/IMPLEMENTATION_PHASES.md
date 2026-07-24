@@ -233,7 +233,7 @@ All home page requirements (upcoming events, pinned event, course highlights, ne
 | WPS Hide Login | 1 | |
 | The Events Calendar (Pro) + Event Tickets | 1 | |
 | wpForo (free core) | 1 | Forums; reputation features enabled in Phase 2 |
-| LTI Platform for WordPress | 1 | LTI 1.3 SSO passthrough from Canvas |
+| LTI Tool (ceLTIc) + ceLTIc LTI Library | 1 | LTI 1.3 SSO passthrough from Canvas; WordPress is the tool, Canvas the platform |
 | WP Mail SMTP | 1 | Via DU Microsoft 365 shared mailbox |
 | Page builder (Beaver Builder or Gutenberg blocks) | 1 | |
 | Relevanssi (free) | 1 | |
@@ -272,5 +272,6 @@ The following criteria must be confirmed with any prospective vendor before cont
 | Version | Date | Author | Notes |
 |---|---|---|---|
 | 0.2.0 | 2026-07-24 | sendres | §5: replaced the break-glass recovery account with MyKinsta WP Admin auto-login and an SSH/WP-CLI recovery path; audit-log alerting retargeted to all Administrator logins and role changes. §14, §17: removed the Two Factor / WP 2FA plugin, no longer required. See `REQUIREMENTS.md` §5 for the full rationale. |
+| 0.2.1 | 2026-07-24 | sendres | Corrected the LTI plugin name in the plugin summary: WordPress is the LTI **tool** launched from Canvas, so the software is the **LTI Tool** plugin (ceLTIc project) with its **ceLTIc LTI Library** dependency — not "LTI Platform for WordPress." Matches `IT_REQUESTS.md` Request 3. |
 
 *This document reflects finalized phase assignments. See `REQUIREMENTS.md` for full requirement details and open questions.*

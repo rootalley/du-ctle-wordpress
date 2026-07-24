@@ -1,6 +1,6 @@
 # CTLE WordPress — Session Handoff
 
-**Written:** 2026-07-24 · **For:** the next working session (expected Monday 2026-07-27, after the 11:00 DU IT meeting)
+**Written:** 2026-07-24 · **For:** the next working session (expected Friday 2026-07-24, to do as much as possible to prep for the 11 AM Monday DU IT meeting)
 
 This file exists so a new session can pick up without re-deriving context. It is a pointer document — the authoritative detail lives in the files it points to.
 
@@ -27,7 +27,7 @@ Dominican University's Center for Teaching and Learning Excellence is standing u
 
 Every doc carries a changelog table at the bottom. Keep that convention; bump the version when you edit.
 
-**Repo state at handoff:** working tree clean, two commits on `main` from 2026-07-24 (`cb5eef0`, `b83d87b`). **Neither has been pushed** — `origin` is behind. PDFs are gitignored, so the `.md` files are the source of truth.
+**Repo state at handoff:** working tree clean, up to date with 'origin/main'. The `.md` files are the source of truth.
 
 **Never commit credentials to this repo.** Two plaintext passwords were removed from `kinsta_onboarding.md` immediately before its first commit and confirmed absent from history. Use vault pointers.
 
@@ -59,9 +59,9 @@ Two consequences that must stay managed: the `ctle@dom.edu` shared mailbox now r
 
 **Amended 2026-07-24.** `REQUIREMENTS.md` (v0.2.1) and `IMPLEMENTATION_PHASES.md` (v0.2.0) now carry the change: the break-glass rows are replaced by the auto-login and SSH recovery model, DU IT's credential-vault responsibility is struck, and the Two Factor / WP 2FA plugin is removed from both plugin stacks. The withdrawal and its reasoning are preserved in `REQUIREMENTS.md` §5 rather than deleted, so the decision remains auditable. Monday's IT agenda item 4 presents this as a formal requirements change and asks for fresh security sign-off (IT-6).
 
-**2. The LTI plugin in the original plan was backwards.** The docs named "LTI Platform for WordPress," which makes WordPress act as the LMS. CTLE needs the reverse — WordPress as the **tool**, launched from Canvas. Correct software is [LTI Tool](https://wordpress.org/plugins/lti-tool/) plus the [ceLTIc LTI Library](https://wordpress.org/plugins/celtic-lti/) dependency. Corrected in `IT_REQUESTS.md` Request 3; **not yet corrected in `kinsta_onboarding.md` §5 and §16.**
+**2. The LTI plugin in the original plan was backwards.** The docs named "LTI Platform for WordPress," which makes WordPress act as the LMS. CTLE needs the reverse — WordPress as the **tool**, launched from Canvas. Correct software is [LTI Tool](https://wordpress.org/plugins/lti-tool/) plus the [ceLTIc LTI Library](https://wordpress.org/plugins/celtic-lti/) dependency. Corrected in `IT_REQUESTS.md` Request 3, and (2026-07-24) in `kinsta_onboarding.md` §5 and §16 and `REQUIREMENTS.md` §6 and §17.
 
-**3. Mail goes through Microsoft Graph, not SMTP AUTH.** Microsoft disables SMTP AUTH basic authentication by default for existing tenants at the end of December 2026 — four months post-launch. `kinsta_onboarding.md` §15 still offers SMTP as a co-equal option and needs amending.
+**3. Mail goes through Microsoft Graph, not SMTP AUTH.** Microsoft disables SMTP AUTH basic authentication by default for existing tenants at the end of December 2026 — four months post-launch. `kinsta_onboarding.md` §15 amended 2026-07-24 to Graph-only; SMTP AUTH dropped as a co-equal option.
 
 **4. PHP target moved from 8.2 to 8.3.** 8.2 loses security support in December 2026. Not yet applied to the server.
 
@@ -114,8 +114,8 @@ Steven planned to get IT's turnaround estimates at the Monday meeting before tak
 
 - **ME-8** — the credential redaction is done, but confirm the passwords are actually recorded in the CTLE vault before anyone needs them
 - ~~Amend `REQUIREMENTS.md` and `IMPLEMENTATION_PHASES.md` for the break-glass withdrawal~~ — **done 2026-07-24**
-- Correct the LTI plugin naming in `kinsta_onboarding.md` §5 and §16, **and `REQUIREMENTS.md` §17** (decision 2)
-- Amend `kinsta_onboarding.md` §15 to drop SMTP AUTH as an option (decision 3)
+- ~~Correct the LTI plugin naming in `kinsta_onboarding.md` §5 and §16, **and `REQUIREMENTS.md` §17** (decision 2)~~ — **done 2026-07-24** (also corrected the same reference in `REQUIREMENTS.md` §6, which had the wrong name too)
+- ~~Amend `kinsta_onboarding.md` §15 to drop SMTP AUTH as an option (decision 3)~~ — **done 2026-07-24**
 
 ---
 
