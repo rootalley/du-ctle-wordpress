@@ -68,7 +68,9 @@ All hosting and infrastructure requirements land in Phase 1 — they are the ven
 | DU employee identifier stored on first login | 1 | Required as the account primary key; needed for Phase 2 Canvas completion record matching |
 | Role preservation on login (SSO must not modify WP roles) | 1 | Required |
 | 24-hour session lifetime | 1 | Required |
-| Break-glass recovery account (TOTP 2FA, audit-log alerting, obfuscated login URL) | 1 | Must be in place before any content or users are live |
+| Administrator access via MyKinsta WP Admin auto-login (no password assigned) | 1 | Supersedes the break-glass recovery account, withdrawn 2026-07-24. Must be verified before any content or users are live. |
+| Administrator recovery path via SSH + WP-CLI, held by at least two people | 1 | The fallback if MyKinsta is unavailable. Must be tested before launch, not discovered during an outage. |
+| Audit-log alerting on all Administrator logins and role changes; obfuscated login URL | 1 | Carries over from the break-glass design; only the alert trigger changed. |
 | Single logout (SLO) | 3 | Preferred but explicitly not required |
 
 **Faculty Profiles — self-view dashboard and avatar:**
@@ -204,7 +206,7 @@ All achievement and engagement features are Phase 2. At launch, course completio
 | Forum footer link to privacy policy on every forum page | 1 | Minor template customization |
 | WordPress built-in Export Personal Data tool | 1 | No additional plugin; enable at launch |
 | WordPress built-in Erase Personal Data tool | 1 | No additional plugin; enable at launch |
-| Moderation audit trail (WP Activity Log) | 1 | Also provides break-glass account alerting |
+| Moderation audit trail (WP Activity Log) | 1 | Also provides Administrator login and role-change alerting |
 | Data retention and departure-handling policy (OPC consultation) | 2 | Needs OPC input (§18 open question #11) before completion records are imported in Phase 2 |
 | Panopto identified-user tracking review | 3 | Needs Learning Technologies input (§18 open question #14) |
 
@@ -227,8 +229,7 @@ All home page requirements (upcoming events, pinned event, course highlights, ne
 | Plugin | Phase | Notes |
 |---|---|---|
 | SSO (miniOrange SAML / OpenID Connect Generic) | 1 | |
-| Two Factor / WP 2FA — for break-glass account only | 1 | |
-| WP Activity Log | 1 | Break-glass alerting + moderation audit trail |
+| WP Activity Log | 1 | Administrator login alerting + moderation audit trail |
 | WPS Hide Login | 1 | |
 | The Events Calendar (Pro) + Event Tickets | 1 | |
 | wpForo (free core) | 1 | Forums; reputation features enabled in Phase 2 |
@@ -263,5 +264,13 @@ The following criteria must be confirmed with any prospective vendor before cont
 | Budget | ≤ $70/month at Phase 1 |
 
 ---
+
+---
+
+## Changelog
+
+| Version | Date | Author | Notes |
+|---|---|---|---|
+| 0.2.0 | 2026-07-24 | sendres | §5: replaced the break-glass recovery account with MyKinsta WP Admin auto-login and an SSH/WP-CLI recovery path; audit-log alerting retargeted to all Administrator logins and role changes. §14, §17: removed the Two Factor / WP 2FA plugin, no longer required. See `REQUIREMENTS.md` §5 for the full rationale. |
 
 *This document reflects finalized phase assignments. See `REQUIREMENTS.md` for full requirement details and open questions.*

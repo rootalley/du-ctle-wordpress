@@ -53,7 +53,7 @@ Confirmed by direct inspection, not assumed:
 
 Two consequences that must stay managed: the `ctle@dom.edu` shared mailbox now receives the MyKinsta 2FA codes that gate Administrator access, making that mailbox's access list a security control; and MyKinsta account standing is now a single point of failure, with SSH + WP-CLI as the documented fallback.
 
-**Note:** `REQUIREMENTS.md` §5 and `IMPLEMENTATION_PHASES.md` §17 still mandate the break-glass account and the Two Factor / WP 2FA plugin. Those were left unamended deliberately — it is a requirements change that stakeholders should see rather than discover. Amending them is an open task.
+**Amended 2026-07-24.** `REQUIREMENTS.md` (v0.2.1) and `IMPLEMENTATION_PHASES.md` (v0.2.0) now carry the change: the break-glass rows are replaced by the auto-login and SSH recovery model, DU IT's credential-vault responsibility is struck, and the Two Factor / WP 2FA plugin is removed from both plugin stacks. The withdrawal and its reasoning are preserved in `REQUIREMENTS.md` §5 rather than deleted, so the decision remains auditable. Monday's IT agenda item 4 presents this as a formal requirements change and asks for fresh security sign-off (IT-6).
 
 **2. The LTI plugin in the original plan was backwards.** The docs named "LTI Platform for WordPress," which makes WordPress act as the LMS. CTLE needs the reverse — WordPress as the **tool**, launched from Canvas. Correct software is [LTI Tool](https://wordpress.org/plugins/lti-tool/) plus the [ceLTIc LTI Library](https://wordpress.org/plugins/celtic-lti/) dependency. Corrected in `IT_REQUESTS.md` Request 3; **not yet corrected in `kinsta_onboarding.md` §5 and §16.**
 
@@ -109,8 +109,8 @@ Steven planned to get IT's turnaround estimates at the Monday meeting before tak
 ## Housekeeping still open
 
 - **ME-8** — the credential redaction is done, but confirm the passwords are actually recorded in the CTLE vault before anyone needs them
-- Amend `REQUIREMENTS.md` and `IMPLEMENTATION_PHASES.md` for the break-glass withdrawal (decision 1 above)
-- Correct the LTI plugin naming in `kinsta_onboarding.md` §5 and §16 (decision 2)
+- ~~Amend `REQUIREMENTS.md` and `IMPLEMENTATION_PHASES.md` for the break-glass withdrawal~~ — **done 2026-07-24**
+- Correct the LTI plugin naming in `kinsta_onboarding.md` §5 and §16, **and `REQUIREMENTS.md` §17** (decision 2)
 - Amend `kinsta_onboarding.md` §15 to drop SMTP AUTH as an option (decision 3)
 
 ---

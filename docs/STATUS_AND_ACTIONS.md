@@ -58,13 +58,26 @@ Hand over `IT_REQUESTS.md` Requests 1 and 2. These route to different teams; ask
 
 `IT_REQUESTS.md` Request 5. The DPA must be executed **before any faculty data is collected**, which means before SSO goes live — not before launch day. Confirm status, and confirm the SOC 2 Type II letter and ISO 27001 certificate are on file.
 
-**4. Disclosure — the break-glass account is withdrawn, which removes an IT duty (5 min)**
+**4. Requirements change — the break-glass account is withdrawn, which removes an IT duty (5–8 min)**
 
-`REQUIREMENTS.md` §5 assigned DU IT the job of holding a break-glass WordPress credential (password + TOTP seed) in IT's credential vault and rotating it after use. **That requirement is withdrawn.** MyKinsta's WP Admin auto-login provisions an administrator account with *no password at all*, so there is no credential to vault, and no password-authenticated admin account left on the site.
+**This is a formal amendment to reviewed requirements, not just a status note.** `REQUIREMENTS.md` (now v0.2.1) and `IMPLEMENTATION_PHASES.md` (now v0.2.0) were both amended on 2026-07-24. Lead with that framing so it is understood as a documented change rather than something discovered later.
 
-This is a net security improvement and it removes work from IT — but it changes a requirement IT may have reviewed, so IT should hear it directly rather than discover it. Full rationale in `kinsta_onboarding.md` §7.
+*What changed:*
 
-**One consequence IT needs to weigh in on:** MyKinsta two-factor codes for the account owner are delivered to the shared `ctle@dom.edu` mailbox. That mailbox is now effectively an administrator credential — anyone who can read CTLE mail can reach WordPress Administrator. Ask IT whether they want that access list constrained, and who currently has it.
+- **Withdrawn:** the break-glass local administrator account — a vaulted 20-character password plus TOTP seed, held by DU IT and rotated after each use.
+- **Replaces it:** MyKinsta's WP Admin auto-login, which provisions a WordPress Administrator account bound to the operator's MyKinsta identity with **no WordPress password assigned**, plus an SSH/WP-CLI recovery path held by at least two people.
+- **Also removed:** the Two Factor / WP 2FA plugin requirement. With faculty on Entra and administrators on MyKinsta, no local password login remains for it to protect.
+
+*Why it is a net improvement:* the old design created a permanent, high-value, password-authenticated credential and then invested in protecting it. The new design eliminates the credential. **No privileged account on the site has a password.**
+
+*What DU IT loses:* the credential-vault responsibility and its rotation procedure. That line is struck in `REQUIREMENTS.md` §5 → IT Responsibilities.
+
+*Two asks for IT:*
+
+1. **Security sign-off on the replacement protection model** — MyKinsta 2FA + obfuscated login URL + audit-log alerting on all Administrator logins and role changes — as the substitute for the previously agreed TOTP-on-break-glass model. The old sign-off no longer describes what is being built.
+2. **Guidance on constraining access to the shared `ctle@dom.edu` mailbox.** It receives the MyKinsta two-factor codes that gate WordPress Administrator access, so its access list is now a security control. Ask who currently has it and whether IT wants that narrowed.
+
+Full rationale: `REQUIREMENTS.md` §5, "Rationale — supersedes the break-glass design," and `kinsta_onboarding.md` §7.
 
 **5. Disclosure — proactive malware scanning gap (3 min)**
 
@@ -82,6 +95,7 @@ Raise it here first, before taking it to the Director. With Entra, the mailbox, 
 | IT-2 | M365 mailbox + Graph credentials (Request 2) | §15, §17 |
 | IT-3 | Kinsta DPA execution confirmation (Request 5) | §22, §23 launch gate |
 | IT-4 | Decision on who holds `ctle@dom.edu` mailbox access | §7 |
+| IT-6 | Security sign-off on the replacement administrator protection model | §5 requirements amendment |
 | IT-5 | CAA record fix for `dom.edu`, **only if** ME-2 shows one blocking Let's Encrypt | §9 SSL |
 
 ---
@@ -170,6 +184,7 @@ That is a real August launch rather than a missed one. The Director's call.
 | IT-2 | DU IT | M365 mailbox + Graph credentials | Est. TBD Monday | ⬜ Open |
 | IT-3 | DU IT | Kinsta DPA execution confirmation | Before SSO goes live | ⬜ Open |
 | IT-4 | DU IT | Decision on `ctle@dom.edu` mailbox access list | 2026-07-31 | ⬜ Open |
+| IT-6 | DU IT | **Security sign-off on the replacement administrator protection model** (MyKinsta 2FA + obfuscated login URL + Administrator login alerting), superseding the withdrawn TOTP-on-break-glass sign-off | 2026-07-31 | ⬜ Open — raise at Monday meeting, agenda item 4 |
 | IT-5 | DU IT | CAA record fix, if ME-2 shows one is needed | Conditional | ✅ Closed 07-24 — not needed; no CAA records exist. Do not raise Monday. |
 | LT-1 | DU LT | Canvas LTI 1.3 tool registration | Est. TBD | ⬜ Open |
 | LT-4 | DU LT | Retract break-glass request if sent | 2026-07-27 | ⬜ Open |
@@ -188,5 +203,6 @@ That is a real August launch rather than a missed one. The Director's call.
 | 0.1.0 | 2026-07-24 | sendres | Initial version. |
 | 0.1.1 | 2026-07-24 | sendres | §9 complete — closed ME-1, ME-2, IT-5; added ME-1b (redirect-to-primary still outstanding); ME-7 partial. Updated the Monday agenda: DNS ticket can be closed, CAA item withdrawn. |
 | 0.1.2 | 2026-07-24 | sendres | Closed ME-1b with a documented accepted gap on the HTTPS Kinsta hostname. Added ME-1c (post-launch hostname removal) and ME-1d (discourage indexing during build, with a matching launch gate in §23). |
+| 0.1.3 | 2026-07-24 | sendres | `REQUIREMENTS.md` and `IMPLEMENTATION_PHASES.md` formally amended for the break-glass withdrawal. Rewrote Monday agenda item 4 as a requirements-change disclosure with two IT asks; added IT-6 (security sign-off on the replacement protection model). |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
