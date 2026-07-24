@@ -27,6 +27,10 @@ Dominican University's Center for Teaching and Learning Excellence is standing u
 
 Every doc carries a changelog table at the bottom. Keep that convention; bump the version when you edit.
 
+**Repo state at handoff:** working tree clean, two commits on `main` from 2026-07-24 (`cb5eef0`, `b83d87b`). **Neither has been pushed** — `origin` is behind. PDFs are gitignored, so the `.md` files are the source of truth.
+
+**Never commit credentials to this repo.** Two plaintext passwords were removed from `kinsta_onboarding.md` immediately before its first commit and confirmed absent from history. Use vault pointers.
+
 ---
 
 ## Verified state of the live site as of 2026-07-24
