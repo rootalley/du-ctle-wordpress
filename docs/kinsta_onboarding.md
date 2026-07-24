@@ -160,8 +160,8 @@ Install plugins in the order listed. Activate and do a basic sanity check after 
 ### LTI Plugin
 
 - [ ] **LTI Tool** (ceLTIc project) — plus its required **ceLTIc LTI Library** dependency
-  - WordPress is the LTI *tool*, launched from Canvas (the platform). The earlier "LTI Platform for WordPress" is the reverse integration (WordPress as the platform, embedding external tools) and is incorrect — see `IT_REQUESTS.md` Request 3.
-  - Install and activate both; full configuration in §16
+  - WordPress is the LTI *tool*, launched from Canvas (the platform). Install and activate both; full configuration in §16.
+  - ⚠️ **Install "LTI Tool" — not "LTI Platform."** The ceLTIc project publishes two near-identically named plugins by the same author that sit side by side in the wordpress.org search results. **LTI Platform** (which the original checklist named as "LTI Platform for WordPress") is the *reverse* integration — it makes WordPress a platform that embeds external tools, so faculty could never launch *into* CTLE from Canvas. See `IT_REQUESTS.md` Request 3.
 
 ### SSO Plugin
 
@@ -679,5 +679,6 @@ Complete all items in this section on the staging environment first, then push t
 | 0.5.1 | 2026-07-24 | sendres | Recorded the §9 redirect verification and the accepted `https://*.kinsta.cloud` gap. Added the build-time search-engine discouragement to §4, paired with a matching launch gate in §23. |
 | 0.5.0 | 2026-07-24 | sendres | §9 executed and rewritten against verified state: added the CAA pre-check, primary-domain cutover, Force HTTPS option guidance and its ordering trap, and a verification block. Corrected the premature site-URL checkbox in §4. Marked the §12 baseline backup and the §11 anonymous edge-cache check complete. |
 | 0.6.0 | 2026-07-24 | sendres | Corrected the LTI plugin naming in §5 and §16: WordPress is the LTI **tool** launched from Canvas, so the software is the **LTI Tool** plugin (ceLTIc project) plus its **ceLTIc LTI Library** dependency — not "LTI Platform for WordPress," which is the reverse integration. Amended §15 to send mail via the Microsoft Graph API only, dropping SMTP AUTH as a co-equal option ahead of Microsoft's end-of-December-2026 basic-auth retirement. Both align with `IT_REQUESTS.md` Requests 3 and 2. |
+| 0.6.1 | 2026-07-24 | sendres | §5: added an explicit warning to install the **LTI Tool** plugin and *not* the near-identically named ceLTIc **LTI Platform** plugin (the reverse integration), which sits beside it in wordpress.org search results. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*

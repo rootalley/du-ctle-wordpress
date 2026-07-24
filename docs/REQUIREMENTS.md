@@ -175,7 +175,7 @@ In Phase 2, once completion records are imported from Canvas (see §7) and the a
 
 ### Learning Tools Interoperability (LTI) 1.3 Launch (Preferred)
 
-- A WordPress LTI plugin (the **LTI Tool** plugin from the ceLTIc project, with its **ceLTIc LTI Library** dependency) will allow Canvas users having a faculty role to launch the CTLE site as an external tool. WordPress acts as the LTI **tool**, launched from Canvas as the platform.
+- A WordPress LTI plugin (the **LTI Tool** plugin from the ceLTIc project, with its **ceLTIc LTI Library** dependency) will allow Canvas users having a faculty role to launch the CTLE site as an external tool. WordPress acts as the LTI **tool**, launched from Canvas as the platform. **Note:** the ceLTIc project also publishes a similarly named **LTI Platform** plugin for the reverse integration (WordPress embedding external tools); that is *not* what CTLE uses and must not be installed in its place.
 - **Integration level:** LTI 1.3 launch only (SSO passthrough). The CTLE site recognizes the Canvas user context but does **not** pass grades or completions back to Canvas.
 - This provides a seamless SSO bridge for faculty navigating from Canvas.
 
@@ -560,7 +560,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | **Login URL obfuscation** | 1 | WPS Hide Login (or equivalent) | Changes the default `wp-login.php` path. See §5. |
 | **Events** | 1 | The Events Calendar (Pro) + Event Tickets | Custom post type with series taxonomy, registration, capacity |
 | **Forums** | 1 | wpForo (free core) | Actively maintained; uses own database tables for better performance. Replaces bbPress, which has been in maintenance mode since 2020. Reputation features enabled in Phase 2. |
-| **LTI** | 1 | LTI Tool (ceLTIc) + ceLTIc LTI Library | LTI 1.3 launch from Canvas. WordPress is the tool, Canvas the platform. |
+| **LTI** | 1 | LTI Tool (ceLTIc) + ceLTIc LTI Library | LTI 1.3 launch from Canvas. WordPress is the tool, Canvas the platform. Do **not** install the similarly named ceLTIc "LTI Platform" plugin (reverse direction). |
 | **Email** | 1 | WP Mail SMTP | Configured to send via DU's Microsoft 365 shared application mailbox (see §13). |
 | **Page builder** | 1 | Beaver Builder or Gutenberg blocks | Developer preference; must produce WCAG 2.1 Level AA compliant markup (see §15). Elementor is not recommended due to documented accessibility issues with keyboard navigation, focus management, and ARIA markup in its generated output. |
 | **Search** | 1 | Relevanssi (free) | Replaces WP core search with relevance-ranked indexing of custom post types and custom fields; access-aware results. See §12. Upgrade to Relevanssi Premium deferrable post-launch. |
@@ -624,6 +624,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 0.2.1 | 2026-07-24 | sendres | §5: withdrew the break-glass recovery account and its TOTP/vault protection model, replacing them with administrator access via MyKinsta WP Admin auto-login (no password assigned) and an SSH/WP-CLI recovery path held by at least two people. Added the `ctle@dom.edu` mailbox access list as a named security control, since it receives the MyKinsta two-factor codes gating Administrator access. Removed the corresponding DU IT credential-vault responsibility. §17: removed the Two Factor / WP 2FA plugin, no longer required as no local password login remains; retargeted WP Activity Log alerting to all Administrator logins and role changes. |
 
 | 0.2.2 | 2026-07-24 | sendres | Corrected the LTI plugin naming in §6 and §17: WordPress is the LTI **tool** launched from Canvas, so the correct software is the **LTI Tool** plugin (ceLTIc project) with its **ceLTIc LTI Library** dependency — not "LTI Platform for WordPress," which is the reverse integration (WordPress as the platform, embedding external tools). Matches the correction recorded in `IT_REQUESTS.md` Request 3. |
+| 0.2.3 | 2026-07-24 | sendres | §6 and §17: flagged the similarly named ceLTIc **LTI Platform** plugin as the wrong-direction plugin that must not be installed in place of **LTI Tool**. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
