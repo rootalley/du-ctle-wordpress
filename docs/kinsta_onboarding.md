@@ -274,6 +274,7 @@ The audit requirement from the original break-glass design still applies; only t
 - [ ] In MyKinsta, navigate to Sites → [site] → Info → SFTP/SSH to find connection details — [Connect via SSH](https://kinsta.com/docs/wordpress-hosting/connect-to-ssh/) · [Connect via SFTP](https://kinsta.com/docs/wordpress-hosting/connecting-with-sftp/)
 - [ ] Generate a personal SSH key pair if you do not already have one: `ssh-keygen -t ed25519 -C "dev@example.com"`
 - [ ] Add your public key to MyKinsta: User Settings → SSH Keys → Add SSH Key — [SSH Key Authentication](https://kinsta.com/docs/wordpress-hosting/connect-to-ssh/)
+  - **One SSH user per environment.** Kinsta does not allow additional SSH users — but each MyKinsta company member adds their **own** key here, and all authorized keys connect as that single environment user. The two-person recovery requirement (§7) is therefore satisfied by two MyKinsta members each holding a key, not by two SSH accounts. Kinsta "additional users" are SFTP-only (no shell, no WP-CLI) and are **not** a recovery path. `ssh-keygen -t ed25519` works even though Kinsta's docs show `-t rsa`. (Confirmed on Staging + Live, 2026-07-27.)
 - [ ] Test SSH access: `ssh [user]@[host] -p [port]`
 - [ ] Test SFTP access using your preferred client (e.g., Transmit, FileZilla, Cyberduck) with key-based authentication
 - [ ] Test WP-CLI via SSH: `wp --info` — confirm WP-CLI v2 is available — [WP-CLI](https://kinsta.com/docs/wordpress-hosting/site-management/wordpress-wp-cli/)
@@ -377,10 +378,12 @@ The Single 20GB plan retains 14 days of backups; the requirement is 30 days. A C
 
 ## 13. SSO Configuration
 
+> **Configure SSO on Live/production, not staging (CD-2, decided 2026-07-27).** The redirect/reply URLs and the Entra app registration are hostname-bound, and a staging→live push would overwrite Live and carry staging URLs. Building on Live means DU IT registers one redirect URI, not two. Reserve staging for post-launch update testing. Nothing is live to break yet (site is `noindex`ed and unannounced).
+
 **Prerequisites — [DU IT]:**
 - Register the WordPress site as an application in Microsoft Entra ID
 - Configure Entra claims to pass: display name, email, and DU employee identifier (e.g., `employeeId` or `netID`)
-- Restrict the app via Entra group assignment to: faculty, Learning Technologies team members, and CTLE staff
+- Restrict the app via Entra group assignment (assignment required) to an Entra group DU IT refreshes from the SIS current-faculty list. WordPress auto-provisions a Faculty account on first sign-in. CTLE admins/director/developer reach WordPress via MyKinsta auto-login (§7, §14), not this group — so the faculty group is the entire SSO scope. *(Option 1, decided 2026-07-27; Entra P1 confirmed.)*
 - Confirm that the Entra email claim matches the email addresses used when local CTLE Admin / Developer Admin accounts were created (for email-based account linking on first SSO login)
 - Provide the developer with the Entra tenant ID, client ID, client secret (OIDC) or metadata URL (SAML), and claim field names
 
@@ -435,16 +438,16 @@ This is the one-time process to elevate the CTLE Admin and Developer Admin from 
 ## 15. Email Configuration
 
 **Prerequisites — [DU IT]:**
-- Provision a shared application mailbox (e.g., `ctle@dom.edu`) in Microsoft 365
+- Provision the dedicated `ctle-noreply@dom.edu` shared mailbox in Microsoft 365 (separate from the human `ctle@dom.edu`; sender decided 2026-07-27)
 - Confirm that the estimated volume (50–200 messages/day, occasional bursts for event reminders) is acceptable under Exchange Online sending limits
 - Provide a Microsoft Graph API app registration (client ID + secret, `Mail.Send` application permission) for WP Mail SMTP. We are specifically **not** requesting SMTP AUTH: Microsoft disables SMTP AUTH basic authentication by default for existing tenants at the end of December 2026 — about four months post-launch (see `IT_REQUESTS.md` Request 2).
-- Confirm SPF/DKIM/DMARC alignment for `dom.edu` covers the `ctle@dom.edu` mailbox
+- Confirm SPF/DKIM/DMARC alignment for `dom.edu` covers the `ctle-noreply@dom.edu` mailbox
 
 - [ ] In WP Admin, navigate to WP Mail SMTP → Settings
 - [ ] Select mailer: **Microsoft 365 / Outlook** (sends via the Microsoft Graph API)
   - Enter the Entra app registration client ID and secret provided by DU IT; authorize the connection
   - Do **not** use the "Other SMTP" mailer / SMTP AUTH — basic auth for SMTP client submission is disabled by default for existing tenants at the end of December 2026 (see `IT_REQUESTS.md` Request 2)
-- [ ] Set From Email: `ctle@dom.edu`
+- [ ] Set From Email: `ctle-noreply@dom.edu`
 - [ ] Set From Name: `CTLE — Dominican University` (or DU brand-compliant name)
 - [ ] Send a test email: WP Mail SMTP → Tools → Email Test → send to a DU test address and confirm delivery
 - [ ] Verify the email shows the correct from address and passes spam checks (no SPF/DKIM failures)
@@ -680,5 +683,6 @@ Complete all items in this section on the staging environment first, then push t
 | 0.5.0 | 2026-07-24 | sendres | §9 executed and rewritten against verified state: added the CAA pre-check, primary-domain cutover, Force HTTPS option guidance and its ordering trap, and a verification block. Corrected the premature site-URL checkbox in §4. Marked the §12 baseline backup and the §11 anonymous edge-cache check complete. |
 | 0.6.0 | 2026-07-24 | sendres | Corrected the LTI plugin naming in §5 and §16: WordPress is the LTI **tool** launched from Canvas, so the software is the **LTI Tool** plugin (ceLTIc project) plus its **ceLTIc LTI Library** dependency — not "LTI Platform for WordPress," which is the reverse integration. Amended §15 to send mail via the Microsoft Graph API only, dropping SMTP AUTH as a co-equal option ahead of Microsoft's end-of-December-2026 basic-auth retirement. Both align with `IT_REQUESTS.md` Requests 3 and 2. |
 | 0.6.1 | 2026-07-24 | sendres | §5: added an explicit warning to install the **LTI Tool** plugin and *not* the near-identically named ceLTIc **LTI Platform** plugin (the reverse integration), which sits beside it in wordpress.org search results. |
+| 0.6.2 | 2026-07-27 | sendres | Post-IT-meeting: §8 documented Kinsta's one-SSH-user-per-environment model (multiple keys via MyKinsta members; SFTP users are not a WP-CLI path; ed25519 works); §13 recorded SSO Option 1 (SIS-faculty group gates the app; admins via console) and a build-on-Live note (CD-2); §15 set the sender to the dedicated `ctle-noreply@dom.edu` mailbox. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*

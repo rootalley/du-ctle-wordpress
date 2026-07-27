@@ -41,8 +41,8 @@ CTLE is standing up a WordPress site at `https://ctle.dom.edu` (hosted by Kinsta
 - **Redirect URI (OIDC):** `https://ctle.dom.edu/wp-admin/admin-ajax.php?action=openid-connect-authorize`
   We will confirm this string exactly once the plugin is installed. **Please confirm whether adding or amending a redirect URI later requires a new ticket** — if so, we will hold this request until the plugin is in place and the URI is verified.
 - **Reply/ACS URL (SAML, if SAML is chosen):** provided by us on request once the plugin is selected. Entity ID would be `https://ctle.dom.edu`.
-- **User assignment required:** Yes — restrict to assigned groups only.
-- **Assigned groups:** faculty, Learning Technologies team, CTLE staff.
+- **User assignment required:** Yes — restrict to the assigned group only.
+- **Assigned group:** an Entra group that DU IT refreshes from the SIS current-faculty list. Access is gated on membership, and WordPress auto-provisions a Faculty account on a user's first successful sign-in (no roster feed needed on our side). CTLE admins, director, and developer reach WordPress via the hosting console (MyKinsta auto-login), so they need **not** be in this group — the faculty group is the entire SSO scope. (This is the "Option 1" model chosen at the 2026-07-27 meeting; we have confirmed Entra ID P1, so group-based app assignment is available.)
 
 ### Claims we need in the token
 
@@ -74,7 +74,7 @@ CTLE is standing up a WordPress site at `https://ctle.dom.edu` (hosted by Kinsta
 
 ### What we need
 
-A shared application mailbox `ctle@dom.edu` for transactional mail from the CTLE WordPress site: event registration confirmations (with `.ics` attachments), 24-hour event reminders, waitlist notifications, and forum reply notifications.
+A dedicated shared application mailbox **`ctle-noreply@dom.edu`** for transactional mail from the CTLE WordPress site: event registration confirmations (with `.ics` attachments), 24-hour event reminders, waitlist notifications, and forum reply notifications. This is kept separate from the human `ctle@dom.edu` mailbox (which also receives our MyKinsta 2FA codes); using an address on the already-authenticated `dom.edu` domain means no new DNS. (Sender address decided 2026-07-27.)
 
 **Estimated volume:** 50–200 messages/day, with bursts around event reminder sends. Well inside Exchange Online's standard limits (10,000 recipients/day, 30 messages/minute), but please confirm no tenant-specific throttle applies.
 
@@ -84,11 +84,13 @@ We are requesting **Microsoft Graph API** with an app registration granted the `
 
 We are specifically **not** requesting SMTP AUTH with basic authentication. Microsoft's revised timeline (announced January 2026) disables SMTP AUTH basic auth by default for existing tenants **at the end of December 2026** — roughly four months after our launch. Provisioning it now would mean an emergency migration during CTLE's first semester on the platform.
 
-**Security scoping:** we understand `Mail.Send` as an application permission is tenant-wide by default. We are explicitly requesting that it be constrained with an **ApplicationAccessPolicy scoped to `ctle@dom.edu` only**, so the credential cannot send as any other mailbox in the tenant. Please confirm this scoping is applied.
+**Security scoping:** we understand `Mail.Send` as an application permission is tenant-wide by default. We are explicitly requesting that it be constrained with an **ApplicationAccessPolicy scoped to `ctle-noreply@dom.edu` only**, so the credential cannot send as any other mailbox in the tenant. Please confirm this scoping is applied.
+
+This request covers **mail sending only**. The separate Outlook *calendar* Graph integration (`Calendars.ReadWrite`) is deferred to Phase 3 (see `REQUIREMENTS.md` §18 open question #2) and is **not** part of this request — at launch, event registrants get an `.ics` "add to calendar" download instead.
 
 ### What we need back
 
-1. Confirmation the shared mailbox exists
+1. Confirmation the shared mailbox `ctle-noreply@dom.edu` exists
 2. Tenant ID, client ID, and client secret for the mail app registration — **with the secret's expiry date and rotation owner**
 3. Confirmation that `Mail.Send` is scoped by ApplicationAccessPolicy to this mailbox alone
 4. Confirmation that SPF, DKIM, and DMARC alignment for `dom.edu` covers mail sent from this mailbox via Graph
@@ -162,5 +164,6 @@ This is a launch gate (`kinsta_onboarding.md` §22 and §23) and is easy to lose
 |---|---|---|---|
 | 0.1.0 | 2026-07-24 | sendres | Initial version. Corrected LTI plugin direction (tool, not platform); specified Graph over SMTP AUTH given the December 2026 basic-auth retirement. |
 | 0.1.1 | 2026-07-24 | sendres | Withdrew Request 4 (break-glass account) — superseded by MyKinsta WP Admin auto-login. |
+| 0.2.0 | 2026-07-27 | sendres | Post-IT-meeting updates. Request 1: recorded the Option 1 provisioning model (Entra group refreshed from the SIS faculty list gates the app; JIT provisioning; admins/director/developer via MyKinsta console, not the group; Entra P1 confirmed). Request 2: send-as identity is now the dedicated `ctle-noreply@dom.edu` mailbox (separate from human `ctle@dom.edu`), with the ApplicationAccessPolicy scoped to it; clarified this covers mail-send only, calendar Graph deferred to Phase 3. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*

@@ -18,7 +18,7 @@
 
 ## Current Status Snapshot
 
-The Kinsta account, billing, and site provisioning are complete. DNS for `ctle.dom.edu` has been delivered by DU IT. WordPress core configuration is partially done. **The critical path is now entirely external:** Entra SSO, the M365 mailbox, and Canvas LTI registration are all unstarted, and they gate roughly a third of the remaining build.
+The Kinsta account, billing, and site provisioning are complete. DNS for `ctle.dom.edu` has been delivered by DU IT. WordPress core configuration is partially done. **The critical path is now entirely external:** Entra SSO, the M365 mailbox, and Canvas LTI registration are specified and requested after the 2026-07-27 IT meeting (SSO Option 1; `ctle-noreply@dom.edu` sender; Graph `Mail.Send`) but not yet provisioned by IT, and they gate roughly a third of the remaining build.
 
 | Group | Sections | Status |
 |---|---|---|
@@ -87,6 +87,16 @@ If it wasn't surfaced during vendor review: Kinsta does not perform proactive au
 
 Raise it here first, before taking it to the Director. With Entra, the mailbox, and LTI all unstarted as of July 24, the question to put to the PM is plain: *is a working Entra app registration realistic before the end of August?* The answer determines the launch scope. See CD-6 for the proposal.
 
+### Outcomes — meeting held 2026-07-27 (with Ellen, IT)
+
+- **SSO — Option 1 chosen.** DU IT refreshes an Entra group from the SIS faculty list; the CTLE enterprise app is gated on that group (assignment required); WordPress JIT-provisions an account on first successful sign-in. CTLE admins, director, and developer reach WordPress via **MyKinsta auto-login**, so they need not be in the group — the faculty group is the entire SSO scope. **Entra ID P1 confirmed** (group-based app assignment available). Turnaround estimate on the Entra build requested — it drives the CD-6 launch-scope call.
+- **Email sender — `ctle-noreply@dom.edu`.** Dedicated shared mailbox for automated WordPress mail, kept separate from `ctle@dom.edu` (human correspondence + MyKinsta 2FA codes). On the `dom.edu` domain so it inherits existing SPF/DKIM/DMARC with no new DNS.
+- **Graph — split confirmed.** Calendar Graph (`Calendars.ReadWrite`) deferred to Phase 3 (.ics / "add to calendar" download covers launch). **Mail-send Graph (`Mail.Send`) remains in scope for launch** — it's how WordPress sends the notifications above. Open: whether Steven files the mailbox + Graph ticket or IT routes it.
+- **Vendor security review — approved.**
+- **Kinsta DPA — executed** (closes IT-3).
+- **`topsecretuser` — approved to remove.** Usage logs show it never logged in, so CD-N1 (notify-first) is waived. Removal now gated only on the SSH/WP-CLI recovery test; SSH access confirmed on Staging + Live 2026-07-27.
+- **Still open from the meeting:** IT-6 (sign-off on the replacement admin-protection model — get it in writing) and IT-4 / CD-7 (`ctle@dom.edu` access list).
+
 ### What I need back from IT
 
 | ID | Item | Blocks |
@@ -110,7 +120,7 @@ None of these are reversible-by-accident, and two of them will change how the Di
 
 | ID | Change | Why they care | Status |
 |---|---|---|---|
-| CD-N1 | Delete the `topsecretuser` account | It's the temporary admin Kinsta created at install. It is the only password-authenticated Administrator left on the site. If either of them has been using it, they need to switch to MyKinsta auto-login first. | ⬜ Not sent |
+| CD-N1 | Delete the `topsecretuser` account | It's the temporary admin Kinsta created at install. It is the only password-authenticated Administrator left on the site. If either of them has been using it, they need to switch to MyKinsta auto-login first. | ✅ Waived 2026-07-27 — IT approved removal, and usage logs show the account never logged in, so there is no one to notify. Removal now gated only on the SSH/WP-CLI recovery test. |
 | CD-N2 | Change the site URL to `https://ctle.dom.edu` | The `kinsta.cloud` address stops being canonical. Any bookmark or link they've shared changes. | ⬜ Not sent |
 | CD-N3 | Change the WP login URL (WPS Hide Login) | **They cannot log in without the new path.** Send the new URL directly to each person, not to a shared channel. | ⬜ Not sent |
 | CD-N4 | Password-protect the staging environment | They'll need the credentials to reach staging afterward. | ⬜ Not sent |
@@ -122,7 +132,7 @@ None of these are reversible-by-accident, and two of them will change how the Di
 | ID | Decision | Why it's urgent |
 |---|---|---|
 | CD-1 | **Theme selection** | The largest gap in the plan. WCAG 2.1 AA compliance and DU brand approval are both launch gates, and neither can even begin until a theme exists. Remediating an inaccessible theme late is the classic way this slips. Ask the Developer whether one is already chosen. |
-| CD-2 | **Build on production or staging?** | Changes §5's stated approach. Recommendation: build directly on production — nothing is live to break, and configuring SSO/LTI on a staging hostname means DU IT registers two hostnames instead of one. Staging then gets its real job: testing updates after launch. |
+| CD-2 | **Build on production or staging?** | ✅ **Decided 2026-07-27 — build SSO/LTI on Live.** Nothing is live to break, SSO/LTI are hostname-bound (so building on staging would make IT register two redirect URIs), and a staging→live push overwrites Live. Staging keeps its real job: testing updates after launch. |
 | CD-3 | **Page builder — Beaver Builder or Gutenberg** | Couples to CD-1; the theme choice may decide it. Blocks §21. |
 | CD-4 | **Events Calendar Pro license — who purchases, against what budget line?** | Costs money, and the project budget is currently recorded as TBD. Blocks §17 entirely, which is most of the launch content. |
 | CD-5 | **Course catalog: custom post type or static pages?** | `REQUIREMENTS.md` §18 open question A. Recommendation: CPT, for maintainability as the catalog grows. Blocks §20. |
@@ -176,20 +186,20 @@ That is a real August launch rather than a missed one. The Director's call.
 | ME-3 | Steven | Finish §4 — remove default plugins, sample content, default comment (themes deferred to CD-1) | 2026-07-24 | 🟡 Partial — WordPress core updated to 7.0.2 (confirmed 07-27). Still open: Hello Dolly + Akismet removal, sample content (`/hello-world/` and `/sample-page/` both still 200 on 07-27), default comment. Content deletion gated on the CD-N5 notice. |
 | ME-4 | Steven | §5 partial — install WPS Hide Login, WP Activity Log, Query Monitor | 2026-07-24 | ⬜ Open |
 | ME-5 | Steven | Verify MyKinsta auto-login works, then re-verify after the login URL changes | 2026-07-24 | 🟡 Confirmed working 07-24 after the domain cutover. Still to do: re-verify once WPS Hide Login changes the login path (ME-4), and audit the Users list per §7. |
-| ME-6 | Steven | §8 — SSH keys on file for two people; test WP-CLI recovery procedure | 2026-07-24 | ⬜ Open |
+| ME-6 | Steven | §8 — SSH keys on file for two people; test WP-CLI recovery procedure | 2026-07-24 | 🟡 SSH access confirmed on Staging + Live 2026-07-27 (ed25519 key works). Remaining: run the `wp user create`/delete recovery test on staging, and add the second person's key. Note: Kinsta has one SSH user per environment — "two people" means two MyKinsta members each with a key; SFTP extra users have no shell/WP-CLI. |
 | ME-7 | Steven | §10–§12 — PHP 8.3, verify PHP limits, enable CDN + Polish, baseline manual backup | 2026-07-24 | 🟡 Partial — baseline backup 07-24; **Kinsta CDN confirmed enabled** (default on all sites; 07-27); PHP **confirmed 8.2** (07-27), move to 8.3+ pending target decision (HANDOFF decision 4). Still open: Cloudflare Polish, PHP limits, bandwidth alerts. |
 | ME-8 | Steven | Move the plaintext credentials in `kinsta_onboarding.md` §1/§3 into a vault | 2026-07-24 | ⬜ Open |
 | ME-9 | Steven | Send CD-N1 through CD-N6 notifications before acting on any of them | Before acting | ⬜ Open |
-| IT-1 | DU IT | Entra app registration + test account | Est. TBD Monday | ⬜ Open |
+| IT-1 | DU IT | Entra app registration + test account | Est. TBD | 🟡 Option 1 chosen 07-27 (SIS-faculty group gates the app; JIT provisioning); Entra ID P1 confirmed. Awaiting app registration, test account, and turnaround estimate. |
 | IT-2 | DU IT | M365 mailbox + Graph credentials | Est. TBD Monday | ⬜ Open |
-| IT-3 | DU IT | Kinsta DPA execution confirmation | Before SSO goes live | ⬜ Open |
+| IT-3 | DU IT | Kinsta DPA execution confirmation | Before SSO goes live | ✅ Executed — confirmed 2026-07-27. |
 | IT-4 | DU IT | Decision on `ctle@dom.edu` mailbox access list | 2026-07-31 | ⬜ Open |
-| IT-6 | DU IT | **Security sign-off on the replacement administrator protection model** (MyKinsta 2FA + obfuscated login URL + Administrator login alerting), superseding the withdrawn TOTP-on-break-glass sign-off | 2026-07-31 | ⬜ Open — raise at Monday meeting, agenda item 4 |
+| IT-6 | DU IT | **Security sign-off on the replacement administrator protection model** (MyKinsta 2FA + obfuscated login URL + Administrator login alerting), superseding the withdrawn TOTP-on-break-glass sign-off | 2026-07-31 | ⬜ Open — raised at the 07-27 meeting; account removal was approved but a written sign-off on the protection model itself is not yet confirmed. Follow up in the post-meeting email. |
 | IT-5 | DU IT | CAA record fix, if ME-2 shows one is needed | Conditional | ✅ Closed 07-24 — not needed; no CAA records exist. Do not raise Monday. |
 | LT-1 | DU LT | Canvas LTI 1.3 tool registration | Est. TBD | ⬜ Open |
 | LT-4 | DU LT | Retract break-glass request if sent | 2026-07-27 | ⬜ Open |
 | CD-1 | Developer | Theme selection | 2026-07-31 | ⬜ Open |
-| CD-2 | Developer | Build environment decision | 2026-07-28 | ⬜ Open |
+| CD-2 | Developer | Build environment decision | 2026-07-28 | ✅ Decided 2026-07-27 — build SSO/LTI on Live/production; staging reserved for post-launch update testing. SSO is hostname-bound and a staging→live push overwrites Live, so building on Live means IT registers one Entra redirect URI, not two. |
 | CD-4 | Director | Events Calendar Pro license purchase | 2026-07-31 | ⬜ Open |
 | CD-6 | Director | August launch scope decision | 2026-07-31 | ⬜ Open |
 | CD-8 | Director | Start OPC conversation on forum privacy language | 2026-07-31 | ⬜ Open |
@@ -205,5 +215,8 @@ That is a real August launch rather than a missed one. The Director's call.
 | 0.1.2 | 2026-07-24 | sendres | Closed ME-1b with a documented accepted gap on the HTTPS Kinsta hostname. Added ME-1c (post-launch hostname removal) and ME-1d (discourage indexing during build, with a matching launch gate in §23). |
 | 0.1.3 | 2026-07-24 | sendres | `REQUIREMENTS.md` and `IMPLEMENTATION_PHASES.md` formally amended for the break-glass withdrawal. Rewrote Monday agenda item 4 as a requirements-change disclosure with two IT asks; added IT-6 (security sign-off on the replacement protection model). |
 | 0.1.4 | 2026-07-27 | sendres | Monday live-site re-verification: closed ME-1d (stale-`noindex` cache cleared); ME-3 → partial (core now 7.0.2; sample content still present); ME-7 → Kinsta CDN confirmed enabled (default) and PHP confirmed 8.2 (target decision pending). |
+| 0.1.5 | 2026-07-27 | sendres | Captured the 07-27 IT meeting: added a meeting-outcomes block; SSO Option 1 chosen (SIS-faculty group gates the app, JIT provisioning, admins via MyKinsta auto-login, Entra P1 confirmed); email sender `ctle-noreply@dom.edu`; Graph split (calendar → Phase 3, `Mail.Send` in scope); vendor security approved; IT-3 DPA executed; CD-2 decided (build on Live); CD-N1 waived and ME-6 advanced (SSH confirmed both environments); IT-6 noted still open. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
+
+

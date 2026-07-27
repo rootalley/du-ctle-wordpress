@@ -68,6 +68,16 @@ Two consequences that must stay managed: the `ctle@dom.edu` shared mailbox now r
 
 **5. Deferred deliberately:** HSTS (hard to walk back; add post-launch); disabling the `ductle.kinsta.cloud` hostname (fallback route during the build).
 
+**6. SSO uses Option 1 — Entra group-gated access with JIT provisioning (2026-07-27 IT meeting).** DU IT refreshes an Entra group from the SIS faculty list; the CTLE enterprise app is gated on that group (assignment required); WordPress auto-provisions a Faculty account on first successful sign-in. Access control lives entirely in Entra — no roster feed or cron on our side. CTLE admins, director, and developer reach WordPress via MyKinsta auto-login, so they need not be in the group, which makes the faculty group the whole SSO scope. Entra ID P1 is confirmed (group-based assignment available). The rejected Option 2 would have opened SSO to all university users and made WordPress enforce its own allow-list.
+
+**7. Automated mail sends from `ctle-noreply@dom.edu` (2026-07-27).** A dedicated shared mailbox on the established `dom.edu` domain, separate from the human `ctle@dom.edu` (which also receives MyKinsta 2FA codes), so WordPress mail inherits existing SPF/DKIM/DMARC with no new DNS. This is the send-as identity for the Graph `Mail.Send` app in Request 2.
+
+**8. Build SSO/LTI on Live, not staging (CD-2, decided 2026-07-27).** SSO/LTI config is hostname-bound and a staging→live push overwrites Live, so building on Live means IT registers one Entra redirect URI, not two. Staging is reserved for post-launch update testing. Nothing is live to break yet (noindex, unannounced).
+
+**9. Graph is split — calendar deferred, mail in scope (2026-07-27).** Calendar-write Graph (`Calendars.ReadWrite`) stays Phase 3; launch uses an .ics "add to calendar" download. Mail-send Graph (`Mail.Send`) is still needed for launch — it's how WordPress sends notifications. Two different app-registration permissions; don't conflate them.
+
+**Confirmed at the 2026-07-27 meeting:** vendor security review approved; Kinsta DPA executed; `topsecretuser` approved for removal (never logged in, so CD-N1 notify-first is waived). Still open: IT-6 (written sign-off on the replacement admin-protection model) and the `ctle@dom.edu` access-list decision (IT-4/CD-7).
+
 ---
 
 ## Hard-won knowledge
@@ -77,6 +87,8 @@ Two consequences that must stay managed: the `ctle@dom.edu` shared mailbox now r
 **Update 2026-07-27 — resolved:** the homepage stale-`noindex` cache instance has cleared. Re-verified 07-27: the `noindex, nofollow` robots meta is present in *both* the cached (`x-kinsta-cache: HIT`) and cache-busted (`x-kinsta-cache: BYPASS`) renders, so anonymous visitors now receive the discouraged-indexing copy. No Kinsta support ticket needed.
 
 **The redirect-loop trap.** Never enable Kinsta's redirect-all-to-primary while WordPress still believes it lives at the old hostname: WordPress canonical-redirects back to the old host, Kinsta redirects forward, and `wp-admin` becomes unreachable. Always cut `siteurl` over first. Documented in §9.
+
+**Kinsta allows only one SSH user per environment.** You cannot create additional SSH users — but each MyKinsta company member authorizes their own key (User Settings → SSH Keys), and all authorized keys connect as that single environment user. So "recovery held by two people" (decision 1) means two MyKinsta members each with a key on file, not two SSH accounts. Kinsta's "additional users" are SFTP-only — no shell, no WP-CLI — so they are **not** a recovery path. ed25519 keys work even though Kinsta's docs only show `ssh-keygen -t rsa`. Confirmed by direct connection on both Staging and Live, 2026-07-27.
 
 **"Kinsta serves the domain" and "WordPress knows its address" are independent settings.** Only the first had been done, while the checklist claimed both. Verify externally rather than trusting checkboxes — several were inaccurate.
 
