@@ -1,6 +1,6 @@
 # CTLE WordPress — Session Handoff
 
-**Written:** 2026-07-24 · **For:** the next working session (expected Friday 2026-07-24, to do as much as possible to prep for the 11 AM Monday DU IT meeting)
+**Written:** 2026-07-24 · **Last updated:** 2026-07-27 · **For:** the next working session (expected 2026-07-28). The 07-27 IT meeting is done and its decisions are captured below; today also closed out the security hardening — `topsecretuser` deleted, login path obfuscated. Tomorrow is the remaining self-serve cleanup while IT provisions Entra and the mailbox.
 
 This file exists so a new session can pick up without re-deriving context. It is a pointer document — the authoritative detail lives in the files it points to.
 
@@ -20,14 +20,14 @@ Dominican University's Center for Teaching and Learning Excellence is standing u
 |---|---|
 | `STATUS_AND_ACTIONS.md` | **Start here.** Status by audience, plus the action register with owners. Most current. |
 | `kinsta_onboarding.md` | The 23-section build checklist. The operational spine of the project. |
-| `IT_REQUESTS.md` | Ready-to-send specifications for DU IT and DU LT. Not yet submitted. |
+| `IT_REQUESTS.md` | Specifications for DU IT and DU LT. Requests 1 & 2 submitted 2026-07-27 (Ellen email); Request 3 (LTI — Steven's own team) pending. |
 | `REQUIREMENTS.md` | Full requirements. Reviewed by stakeholders — treat changes as consequential. |
 | `IMPLEMENTATION_PHASES.md` | Phase 1/2/3 assignments per requirement. |
 | `Kinsta_Checklist.md`, `VENDOR_REQS.md` | Record of the completed vendor evaluation. **Historical — do not retroactively edit.** |
 
 Every doc carries a changelog table at the bottom. Keep that convention; bump the version when you edit.
 
-**Repo state at handoff:** working tree clean, up to date with 'origin/main'. The `.md` files are the source of truth.
+**Repo state at handoff:** as of 2026-07-27, working tree clean and pushed to `origin/main`. The `.md` files are the source of truth.
 
 **Never commit credentials to this repo.** Two plaintext passwords were removed from `kinsta_onboarding.md` immediately before its first commit and confirmed absent from history. Use vault pointers.
 
@@ -48,7 +48,7 @@ Confirmed by direct inspection, not assumed:
 - WordPress core **updated to 7.0.2** (confirmed 2026-07-27 via generator meta); default theme cleanup deferred pending the theme decision
 - PHP **confirmed 8.2** (2026-07-27) — must move off it before its Dec 2026 security-support end; target now under review (decision 4)
 
-**Site content is a bare WordPress install.** No theme chosen, no plugins installed, sample content still present.
+**Site content is still largely a bare WordPress install** — no theme chosen, sample content (Hello World / Sample Page) still present. Security hardening done 2026-07-27: WPS Hide Login active (login path obfuscated; old `wp-login.php` → 404, new URL serves 200 anonymously), and `topsecretuser` deleted — only the two passwordless MyKinsta auto-login admins (Persis ID 2, Steven ID 3) remain, so **no password-authenticated login exists on the site**.
 
 ---
 
@@ -76,7 +76,7 @@ Two consequences that must stay managed: the `ctle@dom.edu` shared mailbox now r
 
 **9. Graph is split — calendar deferred, mail in scope (2026-07-27).** Calendar-write Graph (`Calendars.ReadWrite`) stays Phase 3; launch uses an .ics "add to calendar" download. Mail-send Graph (`Mail.Send`) is still needed for launch — it's how WordPress sends notifications. Two different app-registration permissions; don't conflate them.
 
-**Confirmed at the 2026-07-27 meeting:** vendor security review approved; Kinsta DPA executed; `topsecretuser` approved for removal (never logged in, so CD-N1 notify-first is waived). Still open: IT-6 (written sign-off on the replacement admin-protection model) and the `ctle@dom.edu` access-list decision (IT-4/CD-7).
+**Confirmed at the 2026-07-27 meeting (and after):** vendor security review approved; Kinsta DPA executed; **IT-6 admin-protection sign-off received**; `topsecretuser` deleted (never logged in; CD-N1 waived). Requests 1 & 2 submitted via the Ellen email; LT-2 (Canvas↔Entra ID match) confirmed. Still open: IT-4/CD-7 (`ctle@dom.edu` access-list decision).
 
 ---
 
@@ -100,26 +100,29 @@ Two consequences that must stay managed: the `ctle@dom.edu` shared mailbox now r
 
 From `STATUS_AND_ACTIONS.md` — that register is authoritative, this is the short version.
 
-**Unblocked, do anytime:**
-1. **ME-6** — SSH keys on file for two people; test `wp user create` on staging. This is the remaining gate on deleting `topsecretuser` (auto-login, the other gate, is confirmed).
-2. **ME-3** — §4 cleanup: WordPress core to 7.0.2, remove Hello Dolly and Akismet, delete sample content. **Leave themes alone** pending the theme decision. Do not delete the draft Privacy Policy page — §22 needs it.
-3. **ME-4** — WPS Hide Login, then re-verify auto-login (Kinsta needs ~60s to detect a changed login path), then WP Activity Log, then Query Monitor.
-4. **ME-7** — PHP 8.3, verify PHP limits, enable Kinsta CDN + Cloudflare Polish, set bandwidth alerts.
-5. **ME-9** — send the CD-N notifications *before* acting on the changes they describe.
+The security-hardening arc is done; what remains is lighter cleanup plus external waits.
 
-**Blocked on Monday's IT meeting:** Requests 1, 2, and 5 in `IT_REQUESTS.md`. Request 1 (Entra) is the longest pole in the project.
+**Unblocked, do anytime (Steven):**
+1. **ME-4** — install WP Activity Log and Query Monitor (WPS Hide Login is done and verified).
+2. **ME-3** — §4 cleanup: remove Hello Dolly + Akismet, delete sample content (Hello World, Sample Page) and the default comment. **Send CD-N5 first.** Leave themes alone (CD-1); do not delete the draft Privacy Policy page (§22 needs it). Core is already on 7.0.2.
+3. **ME-7** — decide the PHP target (8.3 vs 8.4/8.5 — decision 4), apply it, verify PHP limits, enable Cloudflare Polish, set bandwidth alerts. (CDN is already on.)
+4. **ME-10** — have Amanda launch into Live (provisions her auto-login admin), then stamp her `sis_user_id` before her first SSO.
+5. **ME-8** — confirm the redacted credentials are actually recorded in the CTLE vault.
+6. Add the developer's SSH key so recovery is held by two people (ME-6 redundancy).
 
-**Blocked on the Director and Developer:** theme selection (CD-1), build environment (CD-2), page builder (CD-3), Events Calendar Pro license (CD-4), course catalog structure (CD-5), launch scope (CD-6).
+**External clocks (submitted 2026-07-27, awaiting IT):** IT-1 (Entra app + test account) and IT-2 (`ctle-noreply@dom.edu` mailbox + Graph `Mail.Send`). Chase the **Entra turnaround estimate** — it's the missing input for CD-6. LT-1 (Canvas LTI registration) is Steven's own team to schedule.
+
+**Blocked on the Director & Developer:** theme selection (CD-1, the biggest gap), page builder (CD-3), Events Calendar Pro license (CD-4), course catalog structure (CD-5), launch scope (CD-6), forum privacy language (CD-8).
 
 ---
 
 ## The timeline problem
 
-**This is the thing to keep in view.** As of 2026-07-24 the launch target is August 2026, and Entra SSO, the M365 mailbox, and Canvas LTI registration are all unstarted. SSO gates admin elevation (§14), forums (§18), and roughly half of pre-launch verification (§23). Forums specifically cannot launch, since the requirement is that anonymous visitors see no forum content.
+**This is the thing to keep in view.** As of 2026-07-27 the launch target is August 2026. Entra SSO, the M365 mailbox, and Canvas LTI are now specified and requested (submitted 07-27) but not yet provisioned by IT. SSO gates admin elevation (§14), forums (§18), and roughly half of pre-launch verification (§23). Forums specifically cannot launch, since the requirement is that anonymous visitors see no forum content.
 
 The proposal on the table, needing the Director's decision (CD-6): **launch the public layer in August** — home page, course catalog, events calendar, blog, search, none of which need Entra — and hold forums and LTI until SSO lands, taking the navigation-link fallback that `IMPLEMENTATION_PHASES.md` §6 already approves.
 
-Steven planned to get IT's turnaround estimates at the Monday meeting before taking the scope question to the Director.
+The Monday meeting is done and the Entra turnaround estimate was requested in the follow-up email; it's the missing input for the CD-6 scope decision. Take the scope question to the Director once that estimate lands.
 
 ---
 

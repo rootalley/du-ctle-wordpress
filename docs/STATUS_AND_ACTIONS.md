@@ -23,7 +23,7 @@ The Kinsta account, billing, and site provisioning are complete. DNS for `ctle.d
 | Group | Sections | Status |
 |---|---|---|
 | Initial Setup | §1–§3 | ✅ Complete |
-| WordPress Configuration | §4–§8 | 🟡 §4 partial; §5–§8 in progress 2026-07-24 |
+| WordPress Configuration | §4–§8 | 🟡 §4 partial (core 7.0.2 done; sample content pending); §5 in progress (Hide Login done; Activity Log/Query Monitor pending); §6–§8 substantially done 2026-07-27 — password admin eliminated, SSH recovery verified |
 | Infrastructure | §9–§12 | 🟢 **§9 complete** — site live at `https://ctle.dom.edu`, HTTPS enforced, URLs cut over, verified 07-24. §10–§12 in progress. |
 | Backend & IT Integrations | §13–§16 | 🔴 Blocked on DU IT (Requests 1–2) and DU LT (Request 3) |
 | Content & Features | §17–§21 | 🔴 Blocked on theme and page-builder decisions; Events Calendar Pro license |
@@ -94,7 +94,7 @@ Raise it here first, before taking it to the Director. With Entra, the mailbox, 
 - **Graph — split confirmed.** Calendar Graph (`Calendars.ReadWrite`) deferred to Phase 3 (.ics / "add to calendar" download covers launch). **Mail-send Graph (`Mail.Send`) remains in scope for launch** — it's how WordPress sends the notifications above. Open: whether Steven files the mailbox + Graph ticket or IT routes it.
 - **Vendor security review — approved.**
 - **Kinsta DPA — executed** (closes IT-3).
-- **`topsecretuser` — clear to delete.** IT approved removal; usage logs show it never logged in (CD-N1 waived); the SSH/WP-CLI recovery round-trip is verified (2026-07-27). Both gates met — delete after re-verifying auto-login on the new login path (ME-5).
+- **`topsecretuser` — deleted 2026-07-27.** IT approved; never logged in (CD-N1 waived); both recovery gates verified. The site now has **no password-authenticated login** — only the two MyKinsta auto-login admins (IDs 2, 3) remain.
 - **Still open from the meeting:** IT-4 / CD-7 (`ctle@dom.edu` access list). *(IT-6 signed off 2026-07-27; IT-1/IT-2 requests submitted via the Ellen email.)*
 
 ### What I need back from IT
@@ -120,7 +120,7 @@ None of these are reversible-by-accident, and two of them will change how the Di
 
 | ID | Change | Why they care | Status |
 |---|---|---|---|
-| CD-N1 | Delete the `topsecretuser` account | It's the temporary admin Kinsta created at install. It is the only password-authenticated Administrator left on the site. If either of them has been using it, they need to switch to MyKinsta auto-login first. | ✅ Waived 2026-07-27 — IT approved removal, and usage logs show the account never logged in, so there is no one to notify. Removal now gated only on the SSH/WP-CLI recovery test. |
+| CD-N1 | Delete the `topsecretuser` account | It's the temporary admin Kinsta created at install. It is the only password-authenticated Administrator left on the site. If either of them has been using it, they need to switch to MyKinsta auto-login first. | ✅ **Done 2026-07-27 — `topsecretuser` deleted** (ID 1, reassigned to ID 3). Notification waived (account never logged in). Only two passwordless auto-login admins (IDs 2, 3) remain; §6 no-password-login goal met. |
 | CD-N2 | Change the site URL to `https://ctle.dom.edu` | The `kinsta.cloud` address stops being canonical. Any bookmark or link they've shared changes. | ⬜ Not sent |
 | CD-N3 | Change the WP login URL (WPS Hide Login) | **They cannot log in without the new path.** Send the new URL directly to each person, not to a shared channel. | ⬜ Not sent |
 | CD-N4 | Password-protect the staging environment | They'll need the credentials to reach staging afterward. | ⬜ Not sent |
@@ -186,9 +186,9 @@ That is a real August launch rather than a missed one. The Director's call.
 | ME-1c | Steven | **Post-launch:** disable the `ductle.kinsta.cloud` hostname entirely. Deliberately deferred — during the build it is the fallback route into the site if `ctle.dom.edu` DNS (controlled by DU IT) breaks, and a 301 keeps the Director's and Developer's existing bookmarks working. Redirecting already closes the duplicate-content and second-login-door concerns. Revisit once DNS has been stable for several weeks and Kinsta analytics show no traffic on the old hostname. | Post-launch | ⏸ Deferred |
 | ME-2 | Steven | Check `dig dom.edu CAA` before the URL cutover; escalate to IT Monday if it blocks Let's Encrypt | 2026-07-24 | ✅ Closed 07-24 — no CAA records at `ctle.dom.edu` or `dom.edu`; certificates issued and valid. Nothing for IT. |
 | ME-3 | Steven | Finish §4 — remove default plugins, sample content, default comment (themes deferred to CD-1) | 2026-07-24 | 🟡 Partial — WordPress core updated to 7.0.2 (confirmed 07-27). Still open: Hello Dolly + Akismet removal, sample content (`/hello-world/` and `/sample-page/` both still 200 on 07-27), default comment. Content deletion gated on the CD-N5 notice. |
-| ME-4 | Steven | §5 partial — install WPS Hide Login, WP Activity Log, Query Monitor | 2026-07-24 | 🟡 WPS Hide Login done — old `wp-login.php` returns 404 and `/wp-admin/` unauth → `/404/`, both edge-verified 2026-07-27. Still to do: confirm the new login URL serves 200 anonymously; install WP Activity Log and Query Monitor. |
-| ME-5 | Steven | Verify MyKinsta auto-login works, then re-verify after the login URL changes | 2026-07-24 | 🟡 Confirmed working 07-24 after the domain cutover. Login path changed 07-27 (ME-4) — **re-verify auto-login on the new path** (Kinsta needs ~60s to detect it), then audit the Users list per §7. This is the last check before deleting `topsecretuser`. |
-| ME-6 | Steven | §8 — SSH keys on file for two people; test WP-CLI recovery procedure | 2026-07-24 | ✅ Recovery verified 2026-07-27 — SSH on Staging + Live (ed25519) and a `wp user create`/delete round-trip on staging both confirmed. **Clears the technical gate to delete `topsecretuser`** (auto-login + recovery both proven; CD-N1 waived). Still open for full redundancy: add the developer's key so recovery is held by two people (one SSH user per env; SFTP extra users are not a WP-CLI path). |
+| ME-4 | Steven | §5 partial — install WPS Hide Login, WP Activity Log, Query Monitor | 2026-07-24 | 🟡 WPS Hide Login done and verified 2026-07-27 — old `wp-login.php` → 404, `/wp-admin/` unauth → `/404/`, and the new login URL serves 200 anonymously (private window). Still to do: install WP Activity Log and Query Monitor. |
+| ME-5 | Steven | Verify MyKinsta auto-login works, then re-verify after the login URL changes | 2026-07-24 | ✅ Done 2026-07-27 — MyKinsta auto-login re-verified on the new login path for **both Staging and Live**. Users list audited: after the `topsecretuser` deletion, only the two auto-login admins (IDs 2, 3) remain. |
+| ME-6 | Steven | §8 — SSH keys on file for two people; test WP-CLI recovery procedure | 2026-07-24 | ✅ Recovery verified 2026-07-27 — SSH on Staging + Live (ed25519) and a `wp user create`/delete round-trip on staging both confirmed. Gate cleared; **`topsecretuser` deleted 2026-07-27**. Still open for full redundancy: add the developer's key so recovery is held by two people (one SSH user per env; SFTP extra users are not a WP-CLI path). |
 | ME-7 | Steven | §10–§12 — PHP 8.3, verify PHP limits, enable CDN + Polish, baseline manual backup | 2026-07-24 | 🟡 Partial — baseline backup 07-24; **Kinsta CDN confirmed enabled** (default on all sites; 07-27); PHP **confirmed 8.2** (07-27), move to 8.3+ pending target decision (HANDOFF decision 4). Still open: Cloudflare Polish, PHP limits, bandwidth alerts. |
 | ME-8 | Steven | Move the plaintext credentials in `kinsta_onboarding.md` §1/§3 into a vault | 2026-07-24 | ⬜ Open |
 | ME-9 | Steven | Send CD-N1 through CD-N6 notifications before acting on any of them | Before acting | ⬜ Open |
@@ -222,6 +222,7 @@ That is a real August launch rather than a missed one. The Director's call.
 | 0.1.6 | 2026-07-27 | sendres | Added ME-10 (multi-path admin identity reconciliation). Linking meta key named `sis_user_id`; Steven (ID 3) and Persis (ID 2) stamped; developer to launch into Live and be stamped before first SSO. |
 | 0.1.7 | 2026-07-27 | sendres | LT-2 confirmed — Canvas and Entra key on the same identifier, so SSO and LTI will not create duplicate accounts. |
 | 0.1.8 | 2026-07-27 | sendres | IT-1/IT-2 requests submitted (Ellen email sent); IT-6 signed off; ME-6 recovery verified (clears the `topsecretuser` deletion gate); ME-4 WPS Hide Login done (old login path edge-verified 404, `/wp-admin/`→`/404/`); ME-5 re-verify auto-login on the new path still pending. Noted Steven also heads DU Learning Technologies. |
+| 0.1.9 | 2026-07-27 | sendres | `topsecretuser` deleted (reassigned to ID 3) — no password-authenticated login remains (§6 goal met). ME-5 closed (auto-login re-verified on the new path, both environments; Users list audited: only IDs 2, 3 remain). ME-4 new login URL confirmed 200 anonymously. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
