@@ -394,8 +394,14 @@ The Single 20GB plan retains 14 days of backups; the requirement is 30 days. A C
 - [ ] Map Entra claims to WordPress user fields:
   - Display name → `display_name`
   - Email → `user_email`
-  - DU employee identifier → a custom user meta field (e.g., `du_employee_id`) — this becomes the account primary key
+  - DU employee identifier → the `sis_user_id` custom user meta field — this becomes the account primary key
 - [ ] Set **account linking method**: link by DU employee identifier (not email) — for users without an existing employee ID on file (i.e., initial local admin accounts), fall back to email-matching once, then the employee ID becomes primary
+- [ ] **Reconcile the multi-path admin accounts *before* their first SSO login.** Each CTLE admin (the director, Steven, and the developer) has a MyKinsta auto-login Administrator account that already carries their DU email — and, being faculty, they will also arrive via SSO and LTI. Stamp the institutional ID onto each so all three paths resolve to the *same* WordPress user rather than creating duplicates:
+  ```bash
+  wp user meta update <id> sis_user_id <institutional_id>   # must equal Entra's employeeId claim, byte-for-byte
+  wp user meta get <id> sis_user_id                          # verify
+  ```
+  Stamp while the account still has only the Administrator role, and confirm the exact `employeeId` format via IT-1. After the person's first SSO login, **verify the role was preserved** — the default-Faculty rule must apply to new accounts only and must never downgrade a matched admin (see §5). *(Steven and the director stamped 2026-07-27; the developer pending her first Live auto-login.)*
 - [ ] Set **default role** for new SSO-provisioned users: **Faculty**
 - [ ] Confirm **role preservation on login**: the SSO plugin must not modify the WordPress role of existing users on re-login — verify in plugin settings or by testing: log in as an elevated user (CTLE Admin), log out, log back in via SSO, and confirm the CTLE Admin role is unchanged
 - [ ] Set **WordPress session lifetime**: add to `wp-config.php` or configure via plugin:
@@ -411,7 +417,7 @@ The Single 20GB plan retains 14 days of backups; the requirement is 30 days. A C
   - Click SSO sign-in
   - Authenticate with Entra
   - Confirm redirect to WordPress dashboard with Faculty role
-  - Confirm `du_employee_id` user meta is populated
+  - Confirm `sis_user_id` user meta is populated
   - Confirm display name and email match the Entra claims
 
 ---
@@ -464,13 +470,13 @@ This is the one-time process to elevate the CTLE Admin and Developer Admin from 
 
 - [ ] In WP Admin, navigate to the **LTI Tool** plugin settings
 - [ ] Enter Canvas platform details: OIDC endpoint, JWKS endpoint, platform issuer — provided by Learning Technologies
-- [ ] Configure account linking: map the LTI `lis_person_sourcedid` (or the agreed DU employee identifier claim) to the same `du_employee_id` user meta field used by SSO (§13) — the linking key must be consistent between SSO and LTI
+- [ ] Configure account linking: map the LTI `lis_person_sourcedid` (or the agreed DU employee identifier claim) to the same `sis_user_id` user meta field used by SSO (§13) — the linking key must be consistent between SSO and LTI
 - [ ] Set default role for LTI-provisioned users: **Faculty**
 - [ ] Test LTI launch:
   - In Canvas (using a test account with faculty role), navigate to the CTLE tool
   - Confirm successful LTI launch and WordPress login
   - Confirm the WordPress account created (or linked) has Faculty role
-  - Confirm `du_employee_id` user meta is populated
+  - Confirm `sis_user_id` user meta is populated
   - Confirm display name and email are synced from the LTI payload
 - [ ] Confirm that LTI login does not modify an already-elevated user's role (same role-preservation requirement as SSO — test with a previously elevated CTLE Admin account)
 
@@ -684,5 +690,6 @@ Complete all items in this section on the staging environment first, then push t
 | 0.6.0 | 2026-07-24 | sendres | Corrected the LTI plugin naming in §5 and §16: WordPress is the LTI **tool** launched from Canvas, so the software is the **LTI Tool** plugin (ceLTIc project) plus its **ceLTIc LTI Library** dependency — not "LTI Platform for WordPress," which is the reverse integration. Amended §15 to send mail via the Microsoft Graph API only, dropping SMTP AUTH as a co-equal option ahead of Microsoft's end-of-December-2026 basic-auth retirement. Both align with `IT_REQUESTS.md` Requests 3 and 2. |
 | 0.6.1 | 2026-07-24 | sendres | §5: added an explicit warning to install the **LTI Tool** plugin and *not* the near-identically named ceLTIc **LTI Platform** plugin (the reverse integration), which sits beside it in wordpress.org search results. |
 | 0.6.2 | 2026-07-27 | sendres | Post-IT-meeting: §8 documented Kinsta's one-SSH-user-per-environment model (multiple keys via MyKinsta members; SFTP users are not a WP-CLI path; ed25519 works); §13 recorded SSO Option 1 (SIS-faculty group gates the app; admins via console) and a build-on-Live note (CD-2); §15 set the sender to the dedicated `ctle-noreply@dom.edu` mailbox. |
+| 0.6.3 | 2026-07-27 | sendres | Renamed the SSO/LTI account-linking user-meta key `du_employee_id` → `sis_user_id` (§13, §16). Added a §13 step to reconcile the multi-path admin accounts before first SSO by stamping `sis_user_id` (matching Entra's `employeeId`) and verifying role preservation. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*

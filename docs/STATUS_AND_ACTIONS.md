@@ -190,6 +190,7 @@ That is a real August launch rather than a missed one. The Director's call.
 | ME-7 | Steven | §10–§12 — PHP 8.3, verify PHP limits, enable CDN + Polish, baseline manual backup | 2026-07-24 | 🟡 Partial — baseline backup 07-24; **Kinsta CDN confirmed enabled** (default on all sites; 07-27); PHP **confirmed 8.2** (07-27), move to 8.3+ pending target decision (HANDOFF decision 4). Still open: Cloudflare Polish, PHP limits, bandwidth alerts. |
 | ME-8 | Steven | Move the plaintext credentials in `kinsta_onboarding.md` §1/§3 into a vault | 2026-07-24 | ⬜ Open |
 | ME-9 | Steven | Send CD-N1 through CD-N6 notifications before acting on any of them | Before acting | ⬜ Open |
+| ME-10 | Steven | Admin account identity reconciliation — stamp `sis_user_id` (= Entra `employeeId`) on each auto-login admin account **before its first SSO login**, so MyKinsta/SSO/LTI resolve to one account; verify DU email and role preservation | Before SSO go-live | 🟡 Steven (ID 3) and Persis (ID 2) stamped 2026-07-27; their auto-login accounts already carry DU emails. **Developer (Amanda) pending — she must first launch into Live via MyKinsta auto-login to provision her account, then be stamped + verified.** |
 | IT-1 | DU IT | Entra app registration + test account | Est. TBD | 🟡 Option 1 chosen 07-27 (SIS-faculty group gates the app; JIT provisioning); Entra ID P1 confirmed. Awaiting app registration, test account, and turnaround estimate. |
 | IT-2 | DU IT | M365 mailbox + Graph credentials | Est. TBD Monday | ⬜ Open |
 | IT-3 | DU IT | Kinsta DPA execution confirmation | Before SSO goes live | ✅ Executed — confirmed 2026-07-27. |
@@ -216,6 +217,7 @@ That is a real August launch rather than a missed one. The Director's call.
 | 0.1.3 | 2026-07-24 | sendres | `REQUIREMENTS.md` and `IMPLEMENTATION_PHASES.md` formally amended for the break-glass withdrawal. Rewrote Monday agenda item 4 as a requirements-change disclosure with two IT asks; added IT-6 (security sign-off on the replacement protection model). |
 | 0.1.4 | 2026-07-27 | sendres | Monday live-site re-verification: closed ME-1d (stale-`noindex` cache cleared); ME-3 → partial (core now 7.0.2; sample content still present); ME-7 → Kinsta CDN confirmed enabled (default) and PHP confirmed 8.2 (target decision pending). |
 | 0.1.5 | 2026-07-27 | sendres | Captured the 07-27 IT meeting: added a meeting-outcomes block; SSO Option 1 chosen (SIS-faculty group gates the app, JIT provisioning, admins via MyKinsta auto-login, Entra P1 confirmed); email sender `ctle-noreply@dom.edu`; Graph split (calendar → Phase 3, `Mail.Send` in scope); vendor security approved; IT-3 DPA executed; CD-2 decided (build on Live); CD-N1 waived and ME-6 advanced (SSH confirmed both environments); IT-6 noted still open. |
+| 0.1.6 | 2026-07-27 | sendres | Added ME-10 (multi-path admin identity reconciliation). Linking meta key named `sis_user_id`; Steven (ID 3) and Persis (ID 2) stamped; developer to launch into Live and be stamped before first SSO. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
