@@ -167,7 +167,7 @@ That is a real August launch rather than a missed one. The Director's call.
 | ID | Item | Note |
 |---|---|---|
 | LT-1 | Submit Request 3 — Canvas LTI 1.3 tool registration | Includes a correction: our earlier plan named the wrong plugin direction. WordPress is the **tool**, Canvas is the platform. The Canvas-side artifact is an LTI Developer Key. |
-| LT-2 | Confirm the LTI identifier matches Entra's `employeeId` | If Canvas and Entra key on different values, faculty end up with duplicate WordPress accounts. Must be confirmed before either integration is configured. |
+| LT-2 | Confirm the LTI identifier matches Entra's `employeeId` | ✅ **Confirmed 2026-07-27** — Canvas and Entra key on the same identifier, so SSO and LTI resolve to one WordPress account (no duplicates). The only remaining match dependency is IT-1: that the value we stamp into `sis_user_id` equals what Entra actually emits, verified at first SSO login. |
 | LT-3 | Update the Canvas global-nav CTLE button to `https://ctle.dom.edu` | Can happen any time before launch. |
 | LT-4 | **Retract the break-glass request, if it was already sent** | `IT_REQUESTS.md` Request 4 is withdrawn. Otherwise LT may provision and vault a credential nobody will use. |
 | LT-5 | Ask for an LTI turnaround estimate | If it exceeds three weeks, take the navigation-link fallback deliberately rather than waiting. |
@@ -218,6 +218,7 @@ That is a real August launch rather than a missed one. The Director's call.
 | 0.1.4 | 2026-07-27 | sendres | Monday live-site re-verification: closed ME-1d (stale-`noindex` cache cleared); ME-3 → partial (core now 7.0.2; sample content still present); ME-7 → Kinsta CDN confirmed enabled (default) and PHP confirmed 8.2 (target decision pending). |
 | 0.1.5 | 2026-07-27 | sendres | Captured the 07-27 IT meeting: added a meeting-outcomes block; SSO Option 1 chosen (SIS-faculty group gates the app, JIT provisioning, admins via MyKinsta auto-login, Entra P1 confirmed); email sender `ctle-noreply@dom.edu`; Graph split (calendar → Phase 3, `Mail.Send` in scope); vendor security approved; IT-3 DPA executed; CD-2 decided (build on Live); CD-N1 waived and ME-6 advanced (SSH confirmed both environments); IT-6 noted still open. |
 | 0.1.6 | 2026-07-27 | sendres | Added ME-10 (multi-path admin identity reconciliation). Linking meta key named `sis_user_id`; Steven (ID 3) and Persis (ID 2) stamped; developer to launch into Live and be stamped before first SSO. |
+| 0.1.7 | 2026-07-27 | sendres | LT-2 confirmed — Canvas and Entra key on the same identifier, so SSO and LTI will not create duplicate accounts. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
