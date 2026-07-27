@@ -94,8 +94,8 @@ Raise it here first, before taking it to the Director. With Entra, the mailbox, 
 - **Graph — split confirmed.** Calendar Graph (`Calendars.ReadWrite`) deferred to Phase 3 (.ics / "add to calendar" download covers launch). **Mail-send Graph (`Mail.Send`) remains in scope for launch** — it's how WordPress sends the notifications above. Open: whether Steven files the mailbox + Graph ticket or IT routes it.
 - **Vendor security review — approved.**
 - **Kinsta DPA — executed** (closes IT-3).
-- **`topsecretuser` — approved to remove.** Usage logs show it never logged in, so CD-N1 (notify-first) is waived. Removal now gated only on the SSH/WP-CLI recovery test; SSH access confirmed on Staging + Live 2026-07-27.
-- **Still open from the meeting:** IT-6 (sign-off on the replacement admin-protection model — get it in writing) and IT-4 / CD-7 (`ctle@dom.edu` access list).
+- **`topsecretuser` — clear to delete.** IT approved removal; usage logs show it never logged in (CD-N1 waived); the SSH/WP-CLI recovery round-trip is verified (2026-07-27). Both gates met — delete after re-verifying auto-login on the new login path (ME-5).
+- **Still open from the meeting:** IT-4 / CD-7 (`ctle@dom.edu` access list). *(IT-6 signed off 2026-07-27; IT-1/IT-2 requests submitted via the Ellen email.)*
 
 ### What I need back from IT
 
@@ -164,6 +164,8 @@ That is a real August launch rather than a missed one. The Director's call.
 
 ## Audience: DU Learning Technologies
 
+*Steven — this project's infrastructure lead — also heads DU Learning Technologies, so the items below are internally owned rather than an external dependency.*
+
 | ID | Item | Note |
 |---|---|---|
 | LT-1 | Submit Request 3 — Canvas LTI 1.3 tool registration | Includes a correction: our earlier plan named the wrong plugin direction. WordPress is the **tool**, Canvas is the platform. The Canvas-side artifact is an LTI Developer Key. |
@@ -184,18 +186,18 @@ That is a real August launch rather than a missed one. The Director's call.
 | ME-1c | Steven | **Post-launch:** disable the `ductle.kinsta.cloud` hostname entirely. Deliberately deferred — during the build it is the fallback route into the site if `ctle.dom.edu` DNS (controlled by DU IT) breaks, and a 301 keeps the Director's and Developer's existing bookmarks working. Redirecting already closes the duplicate-content and second-login-door concerns. Revisit once DNS has been stable for several weeks and Kinsta analytics show no traffic on the old hostname. | Post-launch | ⏸ Deferred |
 | ME-2 | Steven | Check `dig dom.edu CAA` before the URL cutover; escalate to IT Monday if it blocks Let's Encrypt | 2026-07-24 | ✅ Closed 07-24 — no CAA records at `ctle.dom.edu` or `dom.edu`; certificates issued and valid. Nothing for IT. |
 | ME-3 | Steven | Finish §4 — remove default plugins, sample content, default comment (themes deferred to CD-1) | 2026-07-24 | 🟡 Partial — WordPress core updated to 7.0.2 (confirmed 07-27). Still open: Hello Dolly + Akismet removal, sample content (`/hello-world/` and `/sample-page/` both still 200 on 07-27), default comment. Content deletion gated on the CD-N5 notice. |
-| ME-4 | Steven | §5 partial — install WPS Hide Login, WP Activity Log, Query Monitor | 2026-07-24 | ⬜ Open |
-| ME-5 | Steven | Verify MyKinsta auto-login works, then re-verify after the login URL changes | 2026-07-24 | 🟡 Confirmed working 07-24 after the domain cutover. Still to do: re-verify once WPS Hide Login changes the login path (ME-4), and audit the Users list per §7. |
-| ME-6 | Steven | §8 — SSH keys on file for two people; test WP-CLI recovery procedure | 2026-07-24 | 🟡 SSH access confirmed on Staging + Live 2026-07-27 (ed25519 key works). Remaining: run the `wp user create`/delete recovery test on staging, and add the second person's key. Note: Kinsta has one SSH user per environment — "two people" means two MyKinsta members each with a key; SFTP extra users have no shell/WP-CLI. |
+| ME-4 | Steven | §5 partial — install WPS Hide Login, WP Activity Log, Query Monitor | 2026-07-24 | 🟡 WPS Hide Login done — old `wp-login.php` returns 404 and `/wp-admin/` unauth → `/404/`, both edge-verified 2026-07-27. Still to do: confirm the new login URL serves 200 anonymously; install WP Activity Log and Query Monitor. |
+| ME-5 | Steven | Verify MyKinsta auto-login works, then re-verify after the login URL changes | 2026-07-24 | 🟡 Confirmed working 07-24 after the domain cutover. Login path changed 07-27 (ME-4) — **re-verify auto-login on the new path** (Kinsta needs ~60s to detect it), then audit the Users list per §7. This is the last check before deleting `topsecretuser`. |
+| ME-6 | Steven | §8 — SSH keys on file for two people; test WP-CLI recovery procedure | 2026-07-24 | ✅ Recovery verified 2026-07-27 — SSH on Staging + Live (ed25519) and a `wp user create`/delete round-trip on staging both confirmed. **Clears the technical gate to delete `topsecretuser`** (auto-login + recovery both proven; CD-N1 waived). Still open for full redundancy: add the developer's key so recovery is held by two people (one SSH user per env; SFTP extra users are not a WP-CLI path). |
 | ME-7 | Steven | §10–§12 — PHP 8.3, verify PHP limits, enable CDN + Polish, baseline manual backup | 2026-07-24 | 🟡 Partial — baseline backup 07-24; **Kinsta CDN confirmed enabled** (default on all sites; 07-27); PHP **confirmed 8.2** (07-27), move to 8.3+ pending target decision (HANDOFF decision 4). Still open: Cloudflare Polish, PHP limits, bandwidth alerts. |
 | ME-8 | Steven | Move the plaintext credentials in `kinsta_onboarding.md` §1/§3 into a vault | 2026-07-24 | ⬜ Open |
 | ME-9 | Steven | Send CD-N1 through CD-N6 notifications before acting on any of them | Before acting | ⬜ Open |
 | ME-10 | Steven | Admin account identity reconciliation — stamp `sis_user_id` (= Entra `employeeId`) on each auto-login admin account **before its first SSO login**, so MyKinsta/SSO/LTI resolve to one account; verify DU email and role preservation | Before SSO go-live | 🟡 Steven (ID 3) and Persis (ID 2) stamped 2026-07-27; their auto-login accounts already carry DU emails. **Developer (Amanda) pending — she must first launch into Live via MyKinsta auto-login to provision her account, then be stamped + verified.** |
-| IT-1 | DU IT | Entra app registration + test account | Est. TBD | 🟡 Option 1 chosen 07-27 (SIS-faculty group gates the app; JIT provisioning); Entra ID P1 confirmed. Awaiting app registration, test account, and turnaround estimate. |
-| IT-2 | DU IT | M365 mailbox + Graph credentials | Est. TBD Monday | ⬜ Open |
+| IT-1 | DU IT | Entra app registration + test account | Est. TBD | 🟡 **Request submitted 2026-07-27** (Ellen email). Option 1 (SIS-faculty group gates the app; JIT provisioning); Entra ID P1 confirmed. Awaiting the app registration, test account, and turnaround estimate. |
+| IT-2 | DU IT | M365 mailbox + Graph credentials | Est. TBD | 🟡 Request submitted 2026-07-27 (Ellen email) — `ctle-noreply@dom.edu` mailbox + Graph `Mail.Send`. Awaiting provisioning + credentials. |
 | IT-3 | DU IT | Kinsta DPA execution confirmation | Before SSO goes live | ✅ Executed — confirmed 2026-07-27. |
 | IT-4 | DU IT | Decision on `ctle@dom.edu` mailbox access list | 2026-07-31 | ⬜ Open |
-| IT-6 | DU IT | **Security sign-off on the replacement administrator protection model** (MyKinsta 2FA + obfuscated login URL + Administrator login alerting), superseding the withdrawn TOTP-on-break-glass sign-off | 2026-07-31 | ⬜ Open — raised at the 07-27 meeting; account removal was approved but a written sign-off on the protection model itself is not yet confirmed. Follow up in the post-meeting email. |
+| IT-6 | DU IT | **Security sign-off on the replacement administrator protection model** (MyKinsta 2FA + obfuscated login URL + Administrator login alerting), superseding the withdrawn TOTP-on-break-glass sign-off | 2026-07-31 | ✅ **Signed off 2026-07-27.** |
 | IT-5 | DU IT | CAA record fix, if ME-2 shows one is needed | Conditional | ✅ Closed 07-24 — not needed; no CAA records exist. Do not raise Monday. |
 | LT-1 | DU LT | Canvas LTI 1.3 tool registration | Est. TBD | ⬜ Open |
 | LT-4 | DU LT | Retract break-glass request if sent | 2026-07-27 | ⬜ Open |
@@ -219,6 +221,7 @@ That is a real August launch rather than a missed one. The Director's call.
 | 0.1.5 | 2026-07-27 | sendres | Captured the 07-27 IT meeting: added a meeting-outcomes block; SSO Option 1 chosen (SIS-faculty group gates the app, JIT provisioning, admins via MyKinsta auto-login, Entra P1 confirmed); email sender `ctle-noreply@dom.edu`; Graph split (calendar → Phase 3, `Mail.Send` in scope); vendor security approved; IT-3 DPA executed; CD-2 decided (build on Live); CD-N1 waived and ME-6 advanced (SSH confirmed both environments); IT-6 noted still open. |
 | 0.1.6 | 2026-07-27 | sendres | Added ME-10 (multi-path admin identity reconciliation). Linking meta key named `sis_user_id`; Steven (ID 3) and Persis (ID 2) stamped; developer to launch into Live and be stamped before first SSO. |
 | 0.1.7 | 2026-07-27 | sendres | LT-2 confirmed — Canvas and Entra key on the same identifier, so SSO and LTI will not create duplicate accounts. |
+| 0.1.8 | 2026-07-27 | sendres | IT-1/IT-2 requests submitted (Ellen email sent); IT-6 signed off; ME-6 recovery verified (clears the `topsecretuser` deletion gate); ME-4 WPS Hide Login done (old login path edge-verified 404, `/wp-admin/`→`/404/`); ME-5 re-verify auto-login on the new path still pending. Noted Steven also heads DU Learning Technologies. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 

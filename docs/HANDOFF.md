@@ -10,7 +10,7 @@ This file exists so a new session can pick up without re-deriving context. It is
 
 Dominican University's Center for Teaching and Learning Excellence is standing up a WordPress site at `https://ctle.dom.edu`, hosted on Kinsta (Single 20GB plan, $350/year). Faculty authenticate through Microsoft Entra SSO and launch into the site from Canvas via LTI 1.3. Target launch is August 2026 — **see the timeline risk below, this is the project's central problem.**
 
-**Team:** Steven Endres (infrastructure, this repo), Persis (CTLE Director), Amanda (developer). DU IT owns identity and mail; DU Learning Technologies owns Canvas.
+**Team:** Steven Endres (infrastructure, this repo; also head of DU Learning Technologies), Persis (CTLE Director), Amanda (developer). DU IT owns identity and mail; DU Learning Technologies (Steven's team) owns Canvas.
 
 ---
 
