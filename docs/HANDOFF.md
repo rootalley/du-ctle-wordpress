@@ -33,7 +33,7 @@ Every doc carries a changelog table at the bottom. Keep that convention; bump th
 
 ---
 
-## Verified state of the live site as of 2026-07-24
+## Verified state of the live site as of 2026-07-24 (re-verified 2026-07-27)
 
 Confirmed by direct inspection, not assumed:
 
@@ -43,9 +43,10 @@ Confirmed by direct inspection, not assumed:
 - WordPress `siteurl`/`home` cut over; zero `kinsta.cloud` references in page output
 - TLS via Google Trust Services, **expires 2026-08-31** — inside the launch window, auto-renews, verify in late August
 - No CAA records on `dom.edu`, so certificate issuance is unconstrained
-- HTTP/2 active; Kinsta page cache active; **Kinsta CDN not yet enabled**
+- HTTP/2 active; Kinsta page cache active; **Kinsta CDN enabled** (default on all Kinsta sites; confirmed 2026-07-27)
 - Search engines discouraged (`blog_public=0`) — set deliberately during the build, with a matching 🚩 launch gate in §23 to undo it
-- WordPress core still needs updating to 7.0.2; default theme cleanup deferred pending the theme decision
+- WordPress core **updated to 7.0.2** (confirmed 2026-07-27 via generator meta); default theme cleanup deferred pending the theme decision
+- PHP **confirmed 8.2** (2026-07-27) — must move off it before its Dec 2026 security-support end; target now under review (decision 4)
 
 **Site content is a bare WordPress install.** No theme chosen, no plugins installed, sample content still present.
 
@@ -63,7 +64,7 @@ Two consequences that must stay managed: the `ctle@dom.edu` shared mailbox now r
 
 **3. Mail goes through Microsoft Graph, not SMTP AUTH.** Microsoft disables SMTP AUTH basic authentication by default for existing tenants at the end of December 2026 — four months post-launch. `kinsta_onboarding.md` §15 amended 2026-07-24 to Graph-only; SMTP AUTH dropped as a co-equal option.
 
-**4. PHP target moved from 8.2 to 8.3.** 8.2 loses security support in December 2026. Not yet applied to the server.
+**4. PHP target moved from 8.2 to 8.3 — now worth revisiting.** Server **confirmed still on 8.2** (07-27), which loses security support in December 2026. PHP **8.5 is now available** on Kinsta, so the real choice is 8.3 (the documented target, supported to ~Dec 2027) versus 8.4/8.5 for more runway — gated on WordPress + plugin compatibility. Not yet applied to the server.
 
 **5. Deferred deliberately:** HSTS (hard to walk back; add post-launch); disabling the `ductle.kinsta.cloud` hostname (fallback route during the build).
 
@@ -73,7 +74,7 @@ Two consequences that must stay managed: the `ctle@dom.edu` shared mailbox now r
 
 **Kinsta serves stale HTML after settings changes.** Anything altering rendered output stays cached at the edge for anonymous visitors. Diagnostic pattern: request the URL with a `?v=random` query string. If the buster shows the change and the plain URL doesn't, it is cache, not configuration. Check `x-kinsta-cache` (page cache) and `ki-cf-cache-status` (Cloudflare layer) separately — they purge independently, and a second layer appears once the CDN is enabled.
 
-**As of end of session, one unresolved instance:** the homepage was still returning the pre-`noindex` HTML with `x-kinsta-cache: HIT` after a MyKinsta cache purge, while every other page served correctly. Low urgency — the site has no inbound links yet — but if it persists it warrants a Kinsta support ticket, because their page cache should evict on request.
+**Update 2026-07-27 — resolved:** the homepage stale-`noindex` cache instance has cleared. Re-verified 07-27: the `noindex, nofollow` robots meta is present in *both* the cached (`x-kinsta-cache: HIT`) and cache-busted (`x-kinsta-cache: BYPASS`) renders, so anonymous visitors now receive the discouraged-indexing copy. No Kinsta support ticket needed.
 
 **The redirect-loop trap.** Never enable Kinsta's redirect-all-to-primary while WordPress still believes it lives at the old hostname: WordPress canonical-redirects back to the old host, Kinsta redirects forward, and `wp-admin` becomes unreachable. Always cut `siteurl` over first. Documented in §9.
 

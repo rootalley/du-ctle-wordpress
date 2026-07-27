@@ -2,7 +2,7 @@
 
 **Purpose:** Track project status and action items by audience. Each audience section is written to be read aloud or pasted into an email without editing.
 
-**Maintainer:** Steven Endres · **Last updated:** 2026-07-24
+**Maintainer:** Steven Endres · **Last updated:** 2026-07-27
 
 ---
 
@@ -170,14 +170,14 @@ That is a real August launch rather than a missed one. The Director's call.
 |---|---|---|---|---|
 | ME-1 | Steven | Complete §9 — add domain in MyKinsta, set primary, verify SSL, force HTTPS, cut over site URL | 2026-07-24 | ✅ Done 07-24 — verified: HTTP and `www` both redirect to `https://ctle.dom.edu`, `siteurl` cut over, zero `kinsta.cloud` refs remaining |
 | ME-1b | Steven | Switch Force HTTPS to **redirect-all-to-primary** | 2026-07-24 | ✅ Done 07-24 — all hostnames fold to `https://ctle.dom.edu` except `https://ductle.kinsta.cloud`, which Kinsta does not redirect. Gap accepted and documented in §9: it is `noindex`ed by Kinsta, is not a login-obfuscation bypass, and is the DNS fallback. |
-| ME-1d | Steven | Set Settings → Reading → **Discourage search engines from indexing this site** | 2026-07-24 | 🟡 Set 07-24 and confirmed in origin HTML, but the **edge cache is still serving the pre-change copy** to anonymous visitors. Purge the Kinsta cache, then re-verify. |
+| ME-1d | Steven | Set Settings → Reading → **Discourage search engines from indexing this site** | 2026-07-24 | ✅ Done — set 07-24; edge cache re-verified 07-27: `noindex, nofollow` present in both cached (`x-kinsta-cache: HIT`) and cache-busted (`BYPASS`) renders. Stale-cache instance cleared; no Kinsta ticket needed. |
 | ME-1c | Steven | **Post-launch:** disable the `ductle.kinsta.cloud` hostname entirely. Deliberately deferred — during the build it is the fallback route into the site if `ctle.dom.edu` DNS (controlled by DU IT) breaks, and a 301 keeps the Director's and Developer's existing bookmarks working. Redirecting already closes the duplicate-content and second-login-door concerns. Revisit once DNS has been stable for several weeks and Kinsta analytics show no traffic on the old hostname. | Post-launch | ⏸ Deferred |
 | ME-2 | Steven | Check `dig dom.edu CAA` before the URL cutover; escalate to IT Monday if it blocks Let's Encrypt | 2026-07-24 | ✅ Closed 07-24 — no CAA records at `ctle.dom.edu` or `dom.edu`; certificates issued and valid. Nothing for IT. |
-| ME-3 | Steven | Finish §4 — remove default plugins, sample content, default comment (themes deferred to CD-1) | 2026-07-24 | ⬜ Open |
+| ME-3 | Steven | Finish §4 — remove default plugins, sample content, default comment (themes deferred to CD-1) | 2026-07-24 | 🟡 Partial — WordPress core updated to 7.0.2 (confirmed 07-27). Still open: Hello Dolly + Akismet removal, sample content (`/hello-world/` and `/sample-page/` both still 200 on 07-27), default comment. Content deletion gated on the CD-N5 notice. |
 | ME-4 | Steven | §5 partial — install WPS Hide Login, WP Activity Log, Query Monitor | 2026-07-24 | ⬜ Open |
 | ME-5 | Steven | Verify MyKinsta auto-login works, then re-verify after the login URL changes | 2026-07-24 | 🟡 Confirmed working 07-24 after the domain cutover. Still to do: re-verify once WPS Hide Login changes the login path (ME-4), and audit the Users list per §7. |
 | ME-6 | Steven | §8 — SSH keys on file for two people; test WP-CLI recovery procedure | 2026-07-24 | ⬜ Open |
-| ME-7 | Steven | §10–§12 — PHP 8.3, verify PHP limits, enable CDN + Polish, baseline manual backup | 2026-07-24 | 🟡 Partial — baseline backup taken 07-24; anonymous edge-cache HIT verified. PHP version and CDN/Polish still open. |
+| ME-7 | Steven | §10–§12 — PHP 8.3, verify PHP limits, enable CDN + Polish, baseline manual backup | 2026-07-24 | 🟡 Partial — baseline backup 07-24; **Kinsta CDN confirmed enabled** (default on all sites; 07-27); PHP **confirmed 8.2** (07-27), move to 8.3+ pending target decision (HANDOFF decision 4). Still open: Cloudflare Polish, PHP limits, bandwidth alerts. |
 | ME-8 | Steven | Move the plaintext credentials in `kinsta_onboarding.md` §1/§3 into a vault | 2026-07-24 | ⬜ Open |
 | ME-9 | Steven | Send CD-N1 through CD-N6 notifications before acting on any of them | Before acting | ⬜ Open |
 | IT-1 | DU IT | Entra app registration + test account | Est. TBD Monday | ⬜ Open |
@@ -204,5 +204,6 @@ That is a real August launch rather than a missed one. The Director's call.
 | 0.1.1 | 2026-07-24 | sendres | §9 complete — closed ME-1, ME-2, IT-5; added ME-1b (redirect-to-primary still outstanding); ME-7 partial. Updated the Monday agenda: DNS ticket can be closed, CAA item withdrawn. |
 | 0.1.2 | 2026-07-24 | sendres | Closed ME-1b with a documented accepted gap on the HTTPS Kinsta hostname. Added ME-1c (post-launch hostname removal) and ME-1d (discourage indexing during build, with a matching launch gate in §23). |
 | 0.1.3 | 2026-07-24 | sendres | `REQUIREMENTS.md` and `IMPLEMENTATION_PHASES.md` formally amended for the break-glass withdrawal. Rewrote Monday agenda item 4 as a requirements-change disclosure with two IT asks; added IT-6 (security sign-off on the replacement protection model). |
+| 0.1.4 | 2026-07-27 | sendres | Monday live-site re-verification: closed ME-1d (stale-`noindex` cache cleared); ME-3 → partial (core now 7.0.2; sample content still present); ME-7 → Kinsta CDN confirmed enabled (default) and PHP confirmed 8.2 (target decision pending). |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
