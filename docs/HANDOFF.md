@@ -50,6 +50,14 @@ Confirmed by direct inspection, not assumed:
 
 **Site content is still largely a bare WordPress install** — no theme chosen, sample content (Hello World / Sample Page) still present. Security hardening done 2026-07-27: WPS Hide Login active (login path obfuscated; old `wp-login.php` → 404, new URL serves 200 anonymously), and `topsecretuser` deleted — only the two passwordless MyKinsta auto-login admins (Persis ID 2, Steven ID 3) remain, so **no password-authenticated login exists on the site**.
 
+**Plugin/infra stack built 2026-07-28 (all on Live):**
+- **Active:** WPS Hide Login; WP Activity Log (audit *logging*); Query Monitor.
+- **Custom must-use plugins** (source version-controlled in `mu-plugins/`): `ctle-admin-alerts.php` (emails admins on any Administrator login / role change — **delivery pending WP Mail SMTP/IT-2**; recipients currently just `sendres@dom.edu`) and `ctle-hardening.php` (XML-RPC off — verified 403 at Nginx — and `X-Pingback` removed).
+- **Staged, inactive:** WP Mail SMTP (config pending IT-2); Relevanssi (config pending content/theme).
+- **Deactivated:** LTI Tool + ceLTIc (LTI dropped — decision 10; kept installed for optionality).
+- **Config:** open registration off; PHP 8.4; CDN + Cloudflare Polish (Lossless) + bandwidth alerts on; authenticated cache `BYPASS` verified; daily backups + point-in-time restore confirmed.
+- **Still to clean (ME-3, needs CD-N5):** Hello Dolly + Akismet (inactive) and the sample content are still present.
+
 ---
 
 ## Decisions made this session — do not re-litigate without cause
@@ -96,25 +104,47 @@ Two consequences that must stay managed: the `ctle@dom.edu` shared mailbox now r
 
 **Credentials must never enter this repo.** Two plaintext passwords were removed from `kinsta_onboarding.md` on 2026-07-24 before the first commit. Confirmed never committed. Use vault pointers instead.
 
+**`wp eval` / WP-CLI reports the CLI SAPI's PHP limits, not the site's.** Checking `memory_limit`/`upload_max_filesize` via `wp eval` returned CLI defaults (`-1`/`2M`/`8M`), *not* the live php-fpm values. Read PHP limits from **Site Health → Info → Server** or Query Monitor's PHP panel (SAPI shows `fpm-fcgi`). Confirmed 2026-07-28 (web values: 256M / 300s / 128M).
+
+**WP Activity Log's email alerts are Premium-only.** The free plugin logs but does not send custom notifications. Rather than license it for two rules, admin-login / role-change alerting lives in the free `mu-plugins/ctle-admin-alerts.php` (core `wp_login` + `set_user_role` hooks). Delivery still needs WP Mail SMTP (IT-2).
+
+**Kinsta blocks XML-RPC at the Nginx layer (403).** `POST /xmlrpc.php` returns 403 before WordPress runs, so the app-layer `xmlrpc_enabled` filter in `ctle-hardening.php` is belt-and-suspenders. Confirmed 2026-07-28.
+
+**Canvas `declared_user_type` is readable by non-admin users via `/api/v1/users/self/logins`.** This is the validated hook for gating the CTLE global-nav button (decision 10): set `declared_user_type=teacher` (an enum value) via the nightly SIS `users.csv`, then the global-nav JS reads it from `self/logins` and shows the button. It is *not* in `window.ENV` or `users/self`, and the response for this endpoint has no `while(1);` prefix. Gating is cosmetic — Entra is the real gate. Confirmed 2026-07-28.
+
 ---
 
 ## Immediate next actions
 
-From `STATUS_AND_ACTIONS.md` — that register is authoritative, this is the short version.
+`STATUS_AND_ACTIONS.md` is the authoritative register; this is the prioritized short version. **The infra/plugin build (§4–§12) is done. SSO (IT-1) is the single external blocker** — it gates the Canvas launch link, forums, admin elevation, and (with IT-2) mail. Everything below is ordered so the top items move *without* waiting on SSO or email.
 
-The security-hardening arc is done; what remains is lighter cleanup plus external waits.
+### Do now — Steven, self-serve (no SSO/email dependency)
+1. **Chase IT-1** (and IT-2) — the Entra app + a realistic **turnaround estimate**. It's a nudge, not a build, but it's the highest-leverage thing here: it unblocks the SSO plugin, the Canvas launch link, forums, admin elevation, and it's the missing input for the CD-6 launch-scope call.
+2. **ME-3 / §4 cleanup** — **send CD-N5 first**, then: `wp plugin delete hello akismet` and delete the Hello World post, Sample Page, and default comment (`wp post delete <id> --force`; `wp comment delete <id> --force`). Leave the themes (CD-1) and the draft Privacy Policy page (§22 needs it).
+3. **§6 residual** — MyKinsta live-chat: confirm brute-force protection still applies to the custom (WPS Hide Login) login URL. Just get it on record.
+4. **CD-N6** — one-line heads-up to Amanda that PHP is now 8.4 (no visible effect; courtesy before she starts theme work).
+5. **Widen `ctle-admin-alerts.php` recipients** beyond `sendres@dom.edu` (add Persis / the CTLE admin group), redeploy. Can't verify delivery until IT-2, but set it now.
+6. **ME-8** — confirm the redacted §1/§3 credentials are actually recorded in the CTLE vault.
+7. *(Optional)* pre-stage **wpForo** (free) to round out the plugin roster — install only; config waits on SSO + the CD-8 privacy language.
 
-**Unblocked, do anytime (Steven):**
-1. **ME-4** — install WP Activity Log and Query Monitor (WPS Hide Login is done and verified).
-2. **ME-3** — §4 cleanup: remove Hello Dolly + Akismet, delete sample content (Hello World, Sample Page) and the default comment. **Send CD-N5 first.** Leave themes alone (CD-1); do not delete the draft Privacy Policy page (§22 needs it). Core is already on 7.0.2.
-3. **ME-7** — decide the PHP target (8.3 vs 8.4/8.5 — decision 4), apply it, verify PHP limits, enable Cloudflare Polish, set bandwidth alerts. (CDN is already on.)
-4. **ME-10** — have Amanda launch into Live (provisions her auto-login admin), then stamp her `sis_user_id` before her first SSO.
-5. **ME-8** — confirm the redacted credentials are actually recorded in the CTLE vault.
-6. Add the developer's SSH key so recovery is held by two people (ME-6 redundancy).
+### Do now — needs Amanda (developer)
+8. **ME-10** — have Amanda launch into Live via MyKinsta auto-login (provisions her admin account), then stamp her `sis_user_id` (= her Entra `employeeId`) **before her first SSO**. Does not require SSO to be live.
+9. **ME-6** — add Amanda's SSH public key in MyKinsta so recovery is held by two people (§8).
 
-**External clocks (submitted 2026-07-27, awaiting IT):** IT-1 (Entra app + test account) and IT-2 (`ctle-noreply@dom.edu` mailbox + Graph `Mail.Send`). Chase the **Entra turnaround estimate** — it's the missing input for CD-6. LT-1 is re-scoped (2026-07-28, decision 10): no LTI — instead retarget the Canvas global-nav button to the SSO-initiation URL and faculty-gate its visibility, once SSO is configured (Steven's own team).
+### Do now — DU LT (Steven's team, Canvas-side — the launch mechanism, minus the final URL)
+10. **Prototype the global-nav gating JS** in Canvas: read `declared_user_type` from `/api/v1/users/self/logins`, show the CTLE button when it's `teacher` (validated non-admin-readable). Pure Canvas-side — build and test now.
+11. **Set `declared_user_type=teacher`** for faculty in the nightly SIS `users.csv` (enum value; currently unused, no collision).
+12. The final step — point the button at the **SSO-initiation URL** — waits on SSO config (IT-1). Everything up to that URL is buildable now.
 
-**Blocked on the Director & Developer:** theme selection (CD-1, the biggest gap), page builder (CD-3), Events Calendar Pro license (CD-4), course catalog structure (CD-5), launch scope (CD-6), forum privacy language (CD-8).
+### External — chase, don't wait
+- **IT-1** (Entra app + estimate) — the gate. **IT-2** (`ctle-noreply@dom.edu` mailbox + Graph `Mail.Send`) — unblocks all mail (alerts + event/registration notices).
+- **IT-4 / CD-7** — decide who holds `ctle@dom.edu` (it carries MyKinsta 2FA codes, so it's a security control).
+
+### Blocked on the Director & Developer
+- **CD-1 theme** (the biggest gap — gates WCAG + brand review, and content), **CD-3** page builder, **CD-4** Events Calendar Pro license, **CD-6** launch scope (take it once the Entra estimate lands), **CD-8** start the OPC forum-privacy conversation now (long lead time).
+
+### Parked (post-launch)
+- **ME-11** off-site 30-day backup; **ME-1c** disable `ductle.kinsta.cloud`; HSTS; full Relevanssi + forum config; §14 admin elevation.
 
 ---
 
@@ -130,9 +160,11 @@ The Monday meeting is done and the Entra turnaround estimate was requested in th
 
 ## Housekeeping still open
 
-- **ME-8** — the credential redaction is done, but confirm the passwords are actually recorded in the CTLE vault before anyone needs them
+- **ME-8** — the credential redaction is done, but confirm the passwords are actually recorded in the CTLE vault before anyone needs them.
+- **Widen `ctle-admin-alerts.php` recipients** beyond `sendres@dom.edu` before launch.
+- ~~Cross-document consistency audit~~ — **done 2026-07-28.** Aligned every doc to what was actually built: image optimization → **Cloudflare Polish** (no plugin) in `REQUIREMENTS.md` §3/§17 and `IMPLEMENTATION_PHASES.md`; alerting → the **`ctle-admin-alerts.php` mu-plugin** (WP Activity Log notifications are Premium); LTI withdrawn everywhere (decision 10); the two custom mu-plugins added to both §17 plugin stacks. All docs changelog-bumped. `Kinsta_Checklist.md` and `VENDOR_REQS.md` left untouched (historical evaluation records).
 - ~~Amend `REQUIREMENTS.md` and `IMPLEMENTATION_PHASES.md` for the break-glass withdrawal~~ — **done 2026-07-24**
-- ~~Correct the LTI plugin naming in `kinsta_onboarding.md` §5 and §16, **and `REQUIREMENTS.md` §17** (decision 2)~~ — **done 2026-07-24** (also corrected the same reference in `REQUIREMENTS.md` §6, which had the wrong name too)
+- ~~Correct the LTI plugin naming (decision 2)~~ — **done 2026-07-24**; then the whole LTI approach was **withdrawn 2026-07-28 (decision 10)**.
 - ~~Amend `kinsta_onboarding.md` §15 to drop SMTP AUTH as an option (decision 3)~~ — **done 2026-07-24**
 
 ---

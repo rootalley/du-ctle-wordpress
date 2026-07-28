@@ -625,7 +625,7 @@ Complete all items in this section on the staging environment first, then push t
 
 ### Security
 
-- [ ] Administrator access model is in place per §7: MyKinsta auto-login verified working, WP Activity Log alerts on Administrator logins and role changes confirmed, obfuscated login URL in use
+- [ ] Administrator access model is in place per §7: MyKinsta auto-login verified working, admin-login / role-change alerts confirmed (via the `ctle-admin-alerts.php` mu-plugin — requires WP Mail SMTP live to deliver), obfuscated login URL in use
 - [ ] Recovery path verified: at least two people hold working SSH keys, and `wp user create` has been tested on staging so the procedure is known to work before it is needed
 - [ ] The temporary provisioning account from §3 has been deleted, and `wp user list` shows no password-authenticated Administrator accounts remaining (§6)
 - [ ] MyKinsta company user list reviewed; access to the `ctle@dom.edu` shared mailbox is documented and minimal (§7)
@@ -699,5 +699,6 @@ Complete all items in this section on the staging environment first, then push t
 | 0.6.4 | 2026-07-27 | sendres | §6: marked the `topsecretuser` deletion done — the last password-authenticated admin is gone; only passwordless MyKinsta auto-login admins remain. |
 | 0.7.0 | 2026-07-28 | sendres | Build session marked complete on Live: §5 plugin installs (WP Activity Log, Query Monitor active; WP Mail SMTP + Relevanssi staged) + admin-alert mu-plugin note (WP Activity Log notifications are Premium-only, so alerts live in `mu-plugins/ctle-admin-alerts.php`); §6 open-registration off + XML-RPC disabled via `mu-plugins/ctle-hardening.php` (verified 403 at Nginx, X-Pingback removed); §10 PHP 8.4 + limits/cron verified + `DISABLE_WP_CRON`; §11 CDN Polish (Lossless) + bandwidth alerts + authenticated BYPASS; §12 daily backups + point-in-time restore confirmed (off-site 30-day deferred to ME-11). |
 | 0.7.1 | 2026-07-28 | sendres | **LTI superseded (decision 10):** §16 rewritten to the Canvas global-nav link + Entra SSO (original LTI 1.3 steps retained struck-through as history); §5 LTI Tool + ceLTIc marked deactivated/superseded. Faculty launch via the retargeted Canvas nav button → SSO-initiation URL; button visibility gated on `declared_user_type=teacher` (SIS `users.csv`, read from `users/self/logins`); the Entra faculty group is the access gate. Cross-doc: REQUIREMENTS §6 (0.2.6), IT_REQUESTS Request 3 withdrawn, IMPLEMENTATION_PHASES §6 (0.2.3), STATUS 0.1.12. |
+| 0.7.2 | 2026-07-28 | sendres | Audit sync: §23 verification names the actual alert mechanism (the `ctle-admin-alerts.php` mu-plugin, needs WP Mail SMTP live) rather than WP Activity Log, whose notifications are Premium. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*

@@ -39,7 +39,7 @@ All hosting and infrastructure requirements land in Phase 1 — they are the ven
 | Server-side page caching with authenticated-user bypass | 1 | Required for mixed anon/auth traffic (forums, events) |
 | CDN for static assets | 1 | Included in most managed WP plans; verify at vendor evaluation |
 | Page load ≤ 3 s uncached / ≤ 2 s cached | 1 | Validate against chosen plan |
-| Image auto-optimization (WebP, compression on upload) | 1 | Plugin-level (ShortPixel / Smush / Imagify) |
+| Image auto-optimization (WebP, compression) | 1 | **Cloudflare Polish** at the Kinsta CDN edge (enabled 2026-07-28, Lossless) — no server-side plugin (Kinsta bans them). |
 | Panopto iframe lazy-loading | 1 | Developer implementation task at launch |
 | Per-page plugin asset audit (CSS/JS loading only on needed pages) | 1 | Developer task at launch |
 
@@ -70,7 +70,7 @@ All hosting and infrastructure requirements land in Phase 1 — they are the ven
 | 24-hour session lifetime | 1 | Required |
 | Administrator access via MyKinsta WP Admin auto-login (no password assigned) | 1 | Supersedes the break-glass recovery account, withdrawn 2026-07-24. Must be verified before any content or users are live. |
 | Administrator recovery path via SSH + WP-CLI, held by at least two people | 1 | The fallback if MyKinsta is unavailable. Must be tested before launch, not discovered during an outage. |
-| Audit-log alerting on all Administrator logins and role changes; obfuscated login URL | 1 | Carries over from the break-glass design; only the alert trigger changed. |
+| Audit-log alerting on all Administrator logins and role changes; obfuscated login URL | 1 | Carries over from the break-glass design; only the alert trigger changed. Alerting is implemented via the custom `ctle-admin-alerts.php` mu-plugin — WP Activity Log's notifications are Premium-only. |
 | Single logout (SLO) | 3 | Preferred but explicitly not required |
 
 **Faculty Profiles — self-view dashboard and avatar:**
@@ -78,7 +78,7 @@ All hosting and infrastructure requirements land in Phase 1 — they are the ven
 | Requirement | Phase | Notes |
 |---|---|---|
 | Self-view dashboard (achievements, completion records, forum reputation) | 2 | Nothing to show in a WP dashboard until completion records are imported and achievements are configured |
-| Avatar from LTI launch payload; SSO-only placeholder | 2 | Avatar display on forum posts deferred; a generic placeholder suffices at launch |
+| Avatar (source TBD Phase 2 — was the LTI payload, superseded 2026-07-28 §6); SSO-only placeholder at launch | 2 | Avatar display on forum posts deferred; a generic placeholder suffices at launch |
 | Profile persistence on departure (formal policy and CTLE Admin workflow) | 2 | The practice of retaining WP accounts is Phase 1; the formal OPC-aligned policy is Phase 2 pending OPC consultation |
 
 ---
@@ -147,7 +147,7 @@ All achievement and engagement features are Phase 2. At launch, course completio
 | Course-specific discussion boards (organized by Canvas course topic) | 1 | Core forums; CTLE Admin creates and names these manually |
 | Full moderation tools (edit, delete, pin, lock) | 1 | Core forums |
 | SSO/LTI display name shown on posts | 1 | Name sync is Phase 1 (part of SSO) |
-| Generic avatar placeholder on forum posts | 1 | Full LTI avatar handling is Phase 2 |
+| Generic avatar placeholder on forum posts | 1 | Full avatar handling is Phase 2 (source TBD — was the LTI payload, dropped 2026-07-28 §6) |
 | wpForo reputation level display on posts | 2 | Part of the Phase 2 engagement feature set |
 | GamiPress integration for forum activity triggers | 2 | Tied to GamiPress Phase 2 rollout |
 
@@ -206,7 +206,7 @@ All achievement and engagement features are Phase 2. At launch, course completio
 | Forum footer link to privacy policy on every forum page | 1 | Minor template customization |
 | WordPress built-in Export Personal Data tool | 1 | No additional plugin; enable at launch |
 | WordPress built-in Erase Personal Data tool | 1 | No additional plugin; enable at launch |
-| Moderation audit trail (WP Activity Log) | 1 | Also provides Administrator login and role-change alerting |
+| Moderation audit trail (WP Activity Log) | 1 | Logging only; Administrator login and role-change **alerting** is via the custom `ctle-admin-alerts.php` mu-plugin (WP Activity Log notifications are Premium). |
 | Data retention and departure-handling policy (OPC consultation) | 2 | Needs OPC input (§18 open question #11) before completion records are imported in Phase 2 |
 | Panopto identified-user tracking review | 3 | Needs Learning Technologies input (§18 open question #14) |
 
@@ -229,7 +229,8 @@ All home page requirements (upcoming events, pinned event, course highlights, ne
 | Plugin | Phase | Notes |
 |---|---|---|
 | SSO (miniOrange SAML / OpenID Connect Generic) | 1 | |
-| WP Activity Log | 1 | Administrator login alerting + moderation audit trail |
+| WP Activity Log | 1 | Audit logging (logins, role changes, moderation). Alerting is separate — see custom mu-plugins below. |
+| Custom must-use plugins (`mu-plugins/`) | 1 | `ctle-admin-alerts.php` (admin-login + role-change email alerts, free core hooks) and `ctle-hardening.php` (XML-RPC off, `X-Pingback` removed). Source version-controlled in the repo. |
 | WPS Hide Login | 1 | |
 | The Events Calendar (Pro) + Event Tickets | 1 | |
 | wpForo (free core) | 1 | Forums; reputation features enabled in Phase 2 |
@@ -237,7 +238,7 @@ All home page requirements (upcoming events, pinned event, course highlights, ne
 | WP Mail SMTP | 1 | Via DU Microsoft 365 shared mailbox |
 | Page builder (Beaver Builder or Gutenberg blocks) | 1 | |
 | Relevanssi (free) | 1 | |
-| Image optimization (ShortPixel / Smush / Imagify) | 1 | |
+| ~~Image optimization plugin~~ → **Cloudflare Polish** (CDN edge) | 1 | No plugin — Polish enabled 2026-07-28 (Lossless). Kinsta bans server-side image-optimization plugins. |
 | Forum privacy consent (custom dev or plugin) | 1 | First-visit acknowledgment + posting reminder |
 | GamiPress (free core + add-ons) | 2 | Requires Canvas completion records to be imported first |
 | PublishPress Permissions | 2 | Not needed until Contributors are onboarded |
@@ -275,5 +276,6 @@ The following criteria must be confirmed with any prospective vendor before cont
 | 0.2.1 | 2026-07-24 | sendres | Corrected the LTI plugin name in the plugin summary: WordPress is the LTI **tool** launched from Canvas, so the software is the **LTI Tool** plugin (ceLTIc project) with its **ceLTIc LTI Library** dependency — not "LTI Platform for WordPress." Matches `IT_REQUESTS.md` Request 3. |
 | 0.2.2 | 2026-07-24 | sendres | Plugin summary: flagged the similarly named ceLTIc **LTI Platform** plugin as the wrong-direction plugin, not to be confused with **LTI Tool**. |
 | 0.2.3 | 2026-07-28 | sendres | §6 reversed: Canvas global-nav link + Entra SSO is now the **primary** launch; **LTI 1.3 withdrawn** (LTI Tool + ceLTIc row marked not-required; plugins deactivated on Live). Button visibility gated on `declared_user_type` via SIS `users.csv` (validated). Phase-2 avatar-from-LTI references superseded (source to be re-chosen in Phase 2). See REQUIREMENTS.md §6 / HANDOFF decision 10. |
+| 0.2.4 | 2026-07-28 | sendres | Cross-doc audit sync to match what was built: §3/§17 image optimization → **Cloudflare Polish** (no server-side plugin — Kinsta bans them); §5/§10/§17 alerting attributed to the custom `ctle-admin-alerts.php` mu-plugin (WP Activity Log = logging only; its notifications are Premium); added a custom-mu-plugins row (`ctle-admin-alerts` + `ctle-hardening`) to the §17 stack. |
 
 *This document reflects finalized phase assignments. See `REQUIREMENTS.md` for full requirement details and open questions.*
