@@ -87,9 +87,9 @@ All hosting and infrastructure requirements land in Phase 1 — they are the ven
 
 | Requirement | Phase | Notes |
 |---|---|---|
-| LTI 1.3 launch from Canvas (SSO passthrough) | 1 | Core integration; faculty navigate to the WP site from Canvas |
-| Canvas global-nav CTLE button URL update | 1 | DU IT task; no hosting dependency |
-| Navigation-link fallback (simple URL redirect) | 1 | Fallback if LTI setup is delayed |
+| Canvas global-nav CTLE button → Entra SSO-initiation URL (primary launch) | 1 | **Primary as of 2026-07-28.** Faculty launch from the Canvas global-nav button; the click completes Entra SSO (Canvas is on the same Entra tenant) and lands them logged in. No hosting dependency beyond the SSO URL. |
+| Button visibility gated on faculty (`declared_user_type=teacher` via SIS `users.csv`) | 1 | Validated 2026-07-28; read client-side from `users/self/logins`. The Entra group is the real access gate; button visibility is UX. |
+| ~~LTI 1.3 launch from Canvas (SSO passthrough)~~ | — | **Withdrawn 2026-07-28** — superseded by the nav-link + Entra SSO above; CTLE needs none of LTI Advantage's services. See `REQUIREMENTS.md` §6 / HANDOFF decision 10. |
 
 ---
 
@@ -233,7 +233,7 @@ All home page requirements (upcoming events, pinned event, course highlights, ne
 | WPS Hide Login | 1 | |
 | The Events Calendar (Pro) + Event Tickets | 1 | |
 | wpForo (free core) | 1 | Forums; reputation features enabled in Phase 2 |
-| LTI Tool (ceLTIc) + ceLTIc LTI Library | 1 | LTI 1.3 SSO passthrough from Canvas; WordPress is the tool, Canvas the platform. Not the similarly named "LTI Platform" plugin. |
+| ~~LTI Tool (ceLTIc) + ceLTIc LTI Library~~ | — | **Not required as of 2026-07-28** — LTI superseded by the Canvas nav-link + Entra SSO (§6). Installed then deactivated on Live (kept for optionality). |
 | WP Mail SMTP | 1 | Via DU Microsoft 365 shared mailbox |
 | Page builder (Beaver Builder or Gutenberg blocks) | 1 | |
 | Relevanssi (free) | 1 | |
@@ -274,5 +274,6 @@ The following criteria must be confirmed with any prospective vendor before cont
 | 0.2.0 | 2026-07-24 | sendres | §5: replaced the break-glass recovery account with MyKinsta WP Admin auto-login and an SSH/WP-CLI recovery path; audit-log alerting retargeted to all Administrator logins and role changes. §14, §17: removed the Two Factor / WP 2FA plugin, no longer required. See `REQUIREMENTS.md` §5 for the full rationale. |
 | 0.2.1 | 2026-07-24 | sendres | Corrected the LTI plugin name in the plugin summary: WordPress is the LTI **tool** launched from Canvas, so the software is the **LTI Tool** plugin (ceLTIc project) with its **ceLTIc LTI Library** dependency — not "LTI Platform for WordPress." Matches `IT_REQUESTS.md` Request 3. |
 | 0.2.2 | 2026-07-24 | sendres | Plugin summary: flagged the similarly named ceLTIc **LTI Platform** plugin as the wrong-direction plugin, not to be confused with **LTI Tool**. |
+| 0.2.3 | 2026-07-28 | sendres | §6 reversed: Canvas global-nav link + Entra SSO is now the **primary** launch; **LTI 1.3 withdrawn** (LTI Tool + ceLTIc row marked not-required; plugins deactivated on Live). Button visibility gated on `declared_user_type` via SIS `users.csv` (validated). Phase-2 avatar-from-LTI references superseded (source to be re-chosen in Phase 2). See REQUIREMENTS.md §6 / HANDOFF decision 10. |
 
 *This document reflects finalized phase assignments. See `REQUIREMENTS.md` for full requirement details and open questions.*

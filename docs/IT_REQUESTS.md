@@ -98,9 +98,11 @@ This request covers **mail sending only**. The separate Outlook *calendar* Graph
 
 ---
 
-## Request 3 — Canvas LTI 1.3 Tool Registration
+## ~~Request 3 — Canvas LTI 1.3 Tool Registration~~ (Withdrawn — superseded by Canvas nav-link + Entra SSO, 2026-07-28)
 
 **To:** DU Learning Technologies
+
+> **Withdrawn 2026-07-28.** CTLE no longer uses LTI. Faculty reach the site from the Canvas global-nav button linked to the Entra **SSO-initiation URL**; access is gated by the Entra faculty group (Request 1), and the button's visibility by `declared_user_type` in the SIS `users.csv` import. LTI Advantage's services (grades, roster, deep-linking, embedding) are not needed, so the Developer Key, platform registration, and JWKS exchange below are all unnecessary. The **one surviving item** is retargeting the existing global-nav button to the CTLE SSO-initiation URL. See `REQUIREMENTS.md` §6 and HANDOFF decision 10. Original request preserved below for the record.
 
 ### Correction to our earlier plan
 
@@ -165,5 +167,6 @@ This is a launch gate (`kinsta_onboarding.md` §22 and §23) and is easy to lose
 | 0.1.0 | 2026-07-24 | sendres | Initial version. Corrected LTI plugin direction (tool, not platform); specified Graph over SMTP AUTH given the December 2026 basic-auth retirement. |
 | 0.1.1 | 2026-07-24 | sendres | Withdrew Request 4 (break-glass account) — superseded by MyKinsta WP Admin auto-login. |
 | 0.2.0 | 2026-07-27 | sendres | Post-IT-meeting updates. Request 1: recorded the Option 1 provisioning model (Entra group refreshed from the SIS faculty list gates the app; JIT provisioning; admins/director/developer via MyKinsta console, not the group; Entra P1 confirmed). Request 2: send-as identity is now the dedicated `ctle-noreply@dom.edu` mailbox (separate from human `ctle@dom.edu`), with the ApplicationAccessPolicy scoped to it; clarified this covers mail-send only, calendar Graph deferred to Phase 3. |
+| 0.2.1 | 2026-07-28 | sendres | Withdrew Request 3 (Canvas LTI 1.3 registration) — superseded by the Canvas global-nav link + Entra SSO (no LTI). Surviving item: retarget the existing global-nav button to the SSO-initiation URL. See REQUIREMENTS.md §6 / HANDOFF decision 10. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*

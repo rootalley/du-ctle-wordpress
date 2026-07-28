@@ -1,6 +1,6 @@
 # CTLE WordPress — Session Handoff
 
-**Written:** 2026-07-24 · **Last updated:** 2026-07-27 · **For:** the next working session (expected 2026-07-28). The 07-27 IT meeting is done and its decisions are captured below; today also closed out the security hardening — `topsecretuser` deleted, login path obfuscated. Tomorrow is the remaining self-serve cleanup while IT provisions Entra and the mailbox.
+**Written:** 2026-07-24 · **Last updated:** 2026-07-28 · **For:** the next working session. The 2026-07-28 build session completed the WordPress infra/plugin stack (§4–§12: security plugins + custom mu-plugins, PHP 8.4, CDN/Polish, backups verified) and **dropped LTI in favor of a Canvas nav-link + Entra SSO (decision 10).** The critical path is now SSO alone (IT-1). Remaining self-serve work and external waits are in `STATUS_AND_ACTIONS.md`.
 
 This file exists so a new session can pick up without re-deriving context. It is a pointer document — the authoritative detail lives in the files it points to.
 
@@ -8,7 +8,7 @@ This file exists so a new session can pick up without re-deriving context. It is
 
 ## What this project is
 
-Dominican University's Center for Teaching and Learning Excellence is standing up a WordPress site at `https://ctle.dom.edu`, hosted on Kinsta (Single 20GB plan, $350/year). Faculty authenticate through Microsoft Entra SSO and launch into the site from Canvas via LTI 1.3. Target launch is August 2026 — **see the timeline risk below, this is the project's central problem.**
+Dominican University's Center for Teaching and Learning Excellence is standing up a WordPress site at `https://ctle.dom.edu`, hosted on Kinsta (Single 20GB plan, $350/year). Faculty authenticate through Microsoft Entra SSO and launch into the site from a link in the Canvas global navigation, arriving already authenticated (LTI was evaluated and dropped — decision 10). Target launch is August 2026 — **see the timeline risk below, this is the project's central problem.**
 
 **Team:** Steven Endres (infrastructure, this repo; also head of DU Learning Technologies), Persis (CTLE Director), Amanda (developer). DU IT owns identity and mail; DU Learning Technologies (Steven's team) owns Canvas.
 
@@ -20,7 +20,7 @@ Dominican University's Center for Teaching and Learning Excellence is standing u
 |---|---|
 | `STATUS_AND_ACTIONS.md` | **Start here.** Status by audience, plus the action register with owners. Most current. |
 | `kinsta_onboarding.md` | The 23-section build checklist. The operational spine of the project. |
-| `IT_REQUESTS.md` | Specifications for DU IT and DU LT. Requests 1 & 2 submitted 2026-07-27 (Ellen email); Request 3 (LTI — Steven's own team) pending. |
+| `IT_REQUESTS.md` | Specifications for DU IT and DU LT. Requests 1 & 2 submitted 2026-07-27 (Ellen email); **Request 3 (LTI) withdrawn 2026-07-28 — superseded by the Canvas nav-link + SSO (decision 10).** |
 | `REQUIREMENTS.md` | Full requirements. Reviewed by stakeholders — treat changes as consequential. |
 | `IMPLEMENTATION_PHASES.md` | Phase 1/2/3 assignments per requirement. |
 | `Kinsta_Checklist.md`, `VENDOR_REQS.md` | Record of the completed vendor evaluation. **Historical — do not retroactively edit.** |
@@ -46,7 +46,7 @@ Confirmed by direct inspection, not assumed:
 - HTTP/2 active; Kinsta page cache active; **Kinsta CDN enabled** (default on all Kinsta sites; confirmed 2026-07-27)
 - Search engines discouraged (`blog_public=0`) — set deliberately during the build, with a matching 🚩 launch gate in §23 to undo it
 - WordPress core **updated to 7.0.2** (confirmed 2026-07-27 via generator meta); default theme cleanup deferred pending the theme decision
-- PHP **confirmed 8.2** (2026-07-27) — must move off it before its Dec 2026 security-support end; target now under review (decision 4)
+- PHP **now 8.4.23** (set on Live 2026-07-28; was 8.2) — decision 4 resolved; clear of the Dec 2026 EOL that applied to 8.2. Limits verified (memory 256M, exec 300s, upload/post 128M); `DISABLE_WP_CRON=true` set
 
 **Site content is still largely a bare WordPress install** — no theme chosen, sample content (Hello World / Sample Page) still present. Security hardening done 2026-07-27: WPS Hide Login active (login path obfuscated; old `wp-login.php` → 404, new URL serves 200 anonymously), and `topsecretuser` deleted — only the two passwordless MyKinsta auto-login admins (Persis ID 2, Steven ID 3) remain, so **no password-authenticated login exists on the site**.
 
@@ -60,11 +60,11 @@ Two consequences that must stay managed: the `ctle@dom.edu` shared mailbox now r
 
 **Amended 2026-07-24.** `REQUIREMENTS.md` (v0.2.1) and `IMPLEMENTATION_PHASES.md` (v0.2.0) now carry the change: the break-glass rows are replaced by the auto-login and SSH recovery model, DU IT's credential-vault responsibility is struck, and the Two Factor / WP 2FA plugin is removed from both plugin stacks. The withdrawal and its reasoning are preserved in `REQUIREMENTS.md` §5 rather than deleted, so the decision remains auditable. Monday's IT agenda item 4 presents this as a formal requirements change and asks for fresh security sign-off (IT-6).
 
-**2. The LTI plugin in the original plan was backwards.** The docs named "LTI Platform for WordPress," which makes WordPress act as the LMS. CTLE needs the reverse — WordPress as the **tool**, launched from Canvas. Correct software is [LTI Tool](https://wordpress.org/plugins/lti-tool/) plus the [ceLTIc LTI Library](https://wordpress.org/plugins/celtic-lti/) dependency. Corrected in `IT_REQUESTS.md` Request 3, and (2026-07-24) in `kinsta_onboarding.md` §5 and §16 and `REQUIREMENTS.md` §6 and §17.
+**2. The LTI plugin in the original plan was backwards.** The docs named "LTI Platform for WordPress," which makes WordPress act as the LMS. CTLE needs the reverse — WordPress as the **tool**, launched from Canvas. Correct software is [LTI Tool](https://wordpress.org/plugins/lti-tool/) plus the [ceLTIc LTI Library](https://wordpress.org/plugins/celtic-lti/) dependency. Corrected in `IT_REQUESTS.md` Request 3, and (2026-07-24) in `kinsta_onboarding.md` §5 and §16 and `REQUIREMENTS.md` §6 and §17. **Superseded 2026-07-28 (decision 10): LTI is withdrawn entirely in favor of a nav-link + SSO; this plugin-direction correction is retained only as history.**
 
 **3. Mail goes through Microsoft Graph, not SMTP AUTH.** Microsoft disables SMTP AUTH basic authentication by default for existing tenants at the end of December 2026 — four months post-launch. `kinsta_onboarding.md` §15 amended 2026-07-24 to Graph-only; SMTP AUTH dropped as a co-equal option.
 
-**4. PHP target moved from 8.2 to 8.3 — now worth revisiting.** Server **confirmed still on 8.2** (07-27), which loses security support in December 2026. PHP **8.5 is now available** on Kinsta, so the real choice is 8.3 (the documented target, supported to ~Dec 2027) versus 8.4/8.5 for more runway — gated on WordPress + plugin compatibility. Not yet applied to the server.
+**4. PHP target — resolved to 8.4, applied 2026-07-28.** Server was on 8.2 (security-support end Dec 2026). Chose **8.4** over 8.3 (shorter runway, ~end 2027) and 8.5 (newest, plugin-lag risk): 8.4 is mature by launch and supported to ~end 2028. Applied on Live 2026-07-28; verified `fpm-fcgi` 8.4.23, all plugins load clean, PHP limits + cron confirmed, `DISABLE_WP_CRON=true` set (§10). CD-N6 heads-up to the developer still to send (no visible effect, reversible).
 
 **5. Deferred deliberately:** HSTS (hard to walk back; add post-launch); disabling the `ductle.kinsta.cloud` hostname (fallback route during the build).
 
@@ -72,9 +72,11 @@ Two consequences that must stay managed: the `ctle@dom.edu` shared mailbox now r
 
 **7. Automated mail sends from `ctle-noreply@dom.edu` (2026-07-27).** A dedicated shared mailbox on the established `dom.edu` domain, separate from the human `ctle@dom.edu` (which also receives MyKinsta 2FA codes), so WordPress mail inherits existing SPF/DKIM/DMARC with no new DNS. This is the send-as identity for the Graph `Mail.Send` app in Request 2.
 
-**8. Build SSO/LTI on Live, not staging (CD-2, decided 2026-07-27).** SSO/LTI config is hostname-bound and a staging→live push overwrites Live, so building on Live means IT registers one Entra redirect URI, not two. Staging is reserved for post-launch update testing. Nothing is live to break yet (noindex, unannounced).
+**8. Build SSO on Live, not staging (CD-2, decided 2026-07-27).** SSO config is hostname-bound and a staging→live push overwrites Live, so building on Live means IT registers one Entra redirect URI, not two. Staging is reserved for post-launch update testing. Nothing is live to break yet (noindex, unannounced). *(Originally "SSO/LTI"; LTI dropped 2026-07-28 — decision 10.)*
 
 **9. Graph is split — calendar deferred, mail in scope (2026-07-27).** Calendar-write Graph (`Calendars.ReadWrite`) stays Phase 3; launch uses an .ics "add to calendar" download. Mail-send Graph (`Mail.Send`) is still needed for launch — it's how WordPress sends notifications. Two different app-registration permissions; don't conflate them.
+
+**10. LTI dropped — Canvas nav-link + Entra SSO is the launch mechanism (2026-07-28).** CTLE is a standalone site needing none of LTI Advantage's services (grades, roster, deep-linking, embedding), and the Entra faculty group (Option 1) already gates access no matter how the site is reached. So faculty launch from the existing **CTLE button in Canvas global nav**, retargeted to the site's **SSO-initiation URL**; since Canvas is on the same Entra tenant, the click completes SSO silently and lands them logged in. This drops the whole LTI workstream (Developer Key, platform registration, JWKS exchange, LTI-vs-Entra identity reconciliation) and de-risks the timeline — **SSO (IT-1) is now the single launch integration.** Button visibility is gated client-side on `declared_user_type=teacher`, set via the nightly SIS `users.csv` and read from `/api/v1/users/self/logins` (validated 2026-07-28 as non-admin-readable); this is cosmetic since Entra is the real gate. LTI Tool + ceLTIc deactivated (kept installed for optionality). Recorded across `REQUIREMENTS.md` §6, `IT_REQUESTS.md` Request 3 (withdrawn), `IMPLEMENTATION_PHASES.md` §6, and `STATUS_AND_ACTIONS.md` (LT-1/LT-3 re-scoped). Supersedes decision 2.
 
 **Confirmed at the 2026-07-27 meeting (and after):** vendor security review approved; Kinsta DPA executed; **IT-6 admin-protection sign-off received**; `topsecretuser` deleted (never logged in; CD-N1 waived). Requests 1 & 2 submitted via the Ellen email; LT-2 (Canvas↔Entra ID match) confirmed. Still open: IT-4/CD-7 (`ctle@dom.edu` access-list decision).
 
@@ -110,7 +112,7 @@ The security-hardening arc is done; what remains is lighter cleanup plus externa
 5. **ME-8** — confirm the redacted credentials are actually recorded in the CTLE vault.
 6. Add the developer's SSH key so recovery is held by two people (ME-6 redundancy).
 
-**External clocks (submitted 2026-07-27, awaiting IT):** IT-1 (Entra app + test account) and IT-2 (`ctle-noreply@dom.edu` mailbox + Graph `Mail.Send`). Chase the **Entra turnaround estimate** — it's the missing input for CD-6. LT-1 (Canvas LTI registration) is Steven's own team to schedule.
+**External clocks (submitted 2026-07-27, awaiting IT):** IT-1 (Entra app + test account) and IT-2 (`ctle-noreply@dom.edu` mailbox + Graph `Mail.Send`). Chase the **Entra turnaround estimate** — it's the missing input for CD-6. LT-1 is re-scoped (2026-07-28, decision 10): no LTI — instead retarget the Canvas global-nav button to the SSO-initiation URL and faculty-gate its visibility, once SSO is configured (Steven's own team).
 
 **Blocked on the Director & Developer:** theme selection (CD-1, the biggest gap), page builder (CD-3), Events Calendar Pro license (CD-4), course catalog structure (CD-5), launch scope (CD-6), forum privacy language (CD-8).
 
@@ -118,9 +120,9 @@ The security-hardening arc is done; what remains is lighter cleanup plus externa
 
 ## The timeline problem
 
-**This is the thing to keep in view.** As of 2026-07-27 the launch target is August 2026. Entra SSO, the M365 mailbox, and Canvas LTI are now specified and requested (submitted 07-27) but not yet provisioned by IT. SSO gates admin elevation (§14), forums (§18), and roughly half of pre-launch verification (§23). Forums specifically cannot launch, since the requirement is that anonymous visitors see no forum content.
+**This is the thing to keep in view.** The launch target is August 2026. Entra SSO and the M365 mailbox are specified and requested (07-27) but not yet provisioned by IT. **Canvas LTI was dropped 2026-07-28 (decision 10)** in favor of the nav-link + SSO, so SSO is now the single launch integration — it gates admin elevation (§14), forums (§18), the Canvas launch link, and roughly half of pre-launch verification (§23). Forums specifically cannot launch, since the requirement is that anonymous visitors see no forum content.
 
-The proposal on the table, needing the Director's decision (CD-6): **launch the public layer in August** — home page, course catalog, events calendar, blog, search, none of which need Entra — and hold forums and LTI until SSO lands, taking the navigation-link fallback that `IMPLEMENTATION_PHASES.md` §6 already approves.
+The proposal on the table, needing the Director's decision (CD-6): **launch the public layer in August** — home page, course catalog, events calendar, blog, search, none of which need Entra — and hold forums until SSO lands. (The navigation link that `IMPLEMENTATION_PHASES.md` §6 once listed as the LTI *fallback* is now the *primary* launch mechanism — decision 10 — so there is no separate LTI wait.)
 
 The Monday meeting is done and the Entra turnaround estimate was requested in the follow-up email; it's the missing input for the CD-6 scope decision. Take the scope question to the Director once that estimate lands.
 

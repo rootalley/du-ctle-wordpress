@@ -125,23 +125,21 @@ Install plugins in the order listed. Activate and do a basic sanity check after 
 
 ### Security & Admin Plugins (install first)
 
-- [ ] **WPS Hide Login** — changes the default `wp-login.php` path
+- [x] **WPS Hide Login** (`wps-hide-login` v1.9.18) — changes the default `wp-login.php` path. Done + verified 2026-07-27 (old `wp-login.php` → 404; new path serves 200; MyKinsta auto-login compatible).
   - After activation, set a custom login path in Settings → WPS Hide Login
   - Record the new login path; it is also the URL the SSO sign-in button must point to (§13)
   - Verify: navigate to `/wp-login.php` and confirm it returns 404 or redirects; navigate to the new custom path and confirm the login form appears
   - **Compatible with MyKinsta auto-login.** Kinsta detects a customized login URL automatically; allow up to one minute after changing it before the auto-login button works again — [WP Admin](https://kinsta.com/docs/wordpress-hosting/site-management/wordpress-wp-admin/)
-- [ ] **WP Activity Log** — audit logging and Administrator login alerting
-  - After activation, run the setup wizard
-  - Configure notifications: WP Activity Log → Notifications → New Notification → trigger on any successful login by any user holding the **Administrator** role → send email to all CTLE Admin addresses
-  - Add a second notification triggered on **any user role change**
-  - Verify: log in via MyKinsta auto-login and confirm an alert email is received
+- [x] **WP Activity Log** (`wp-security-audit-log` v5.6.5) — audit logging. Installed + active on Live 2026-07-28.
+  - **Email alerting is handled by a custom must-use plugin, not this one.** WP Activity Log's custom email notifications are a Premium (paid) feature; the free tier only logs. Rather than license it for two rules, the alerts (any Administrator login; any role change) live in `mu-plugins/ctle-admin-alerts.php` (deployed to Live 2026-07-28), using free core hooks. See §7.
+  - Verify alert delivery once WP Mail SMTP → Graph is live (§15 / IT-2) — WordPress has no working mail transport until then.
+- [x] **Query Monitor** (`query-monitor` v4.0.7) — developer diagnostics; output renders to logged-in admins only (safe on Live). Installed + active on Live 2026-07-28. May be deactivated when not actively debugging.
 - ~~[ ] **Two Factor** (or **WP 2FA**) — TOTP 2FA for the break-glass account (see §7 for configuration)~~
 > **Not needed** as of 2026-07-24. This plugin existed solely to protect the break-glass account's password login (§7, withdrawn). Under the current model no privileged account has a password at all: faculty authenticate through Entra (which enforces DU's own MFA), and administrators enter through MyKinsta auto-login (which enforces MyKinsta 2FA per §2). There is no local password login left for a WordPress 2FA plugin to protect. Note that `REQUIREMENTS.md` §5 and `IMPLEMENTATION_PHASES.md` §17 still list this plugin as a Phase 1 requirement — both need the same amendment.
 
 ### Communication Plugin
 
-- [ ] **WP Mail SMTP** — configure after DU IT provisions the M365 mailbox (see §15)
-  - Install now; configure SMTP settings in §15
+- [x] **WP Mail SMTP** (`wp-mail-smtp` v4.9.0) — installed + active on Live 2026-07-28. **Not yet configured** — enter the Microsoft Graph credentials in §15 once IT-2 delivers the `ctle-noreply@dom.edu` mailbox + `Mail.Send` app registration. Until then WordPress falls back to default (non-working) mail.
 
 ### Events Plugin
 
@@ -159,8 +157,7 @@ Install plugins in the order listed. Activate and do a basic sanity check after 
 
 ### LTI Plugin
 
-- [ ] **LTI Tool** (ceLTIc project) — plus its required **ceLTIc LTI Library** dependency
-  - WordPress is the LTI *tool*, launched from Canvas (the platform). Install and activate both; full configuration in §16.
+- [x] ~~**LTI Tool** + **ceLTIc LTI Library**~~ — **superseded 2026-07-28 (decision 10): LTI dropped for a Canvas nav-link + Entra SSO.** Both were installed + active on Live 2026-07-28 (`lti-tool` 3.2.6, `celtic-lti` 5.3.2; correct plugin confirmed — title "LTI Tool", not "LTI Platform"), then **deactivated** the same day; kept installed for optionality. See §16 and `REQUIREMENTS.md` §6.
   - ⚠️ **Install "LTI Tool" — not "LTI Platform."** The ceLTIc project publishes two near-identically named plugins by the same author that sit side by side in the wordpress.org search results. **LTI Platform** (which the original checklist named as "LTI Platform for WordPress") is the *reverse* integration — it makes WordPress a platform that embeds external tools, so faculty could never launch *into* CTLE from Canvas. See `IT_REQUESTS.md` Request 3.
 
 ### SSO Plugin
@@ -192,14 +189,14 @@ Install plugins in the order listed. Activate and do a basic sanity check after 
 
 ## 6. Security Baseline
 
-- [ ] **Do not** use `admin` as the WordPress admin username — delete or rename the default admin user if it was created with that username (Users → create a new admin user with a non-obvious username, log in as that user, then delete the `admin` user)
-- [ ] Disable XML-RPC if no plugin requires it — add to a custom plugin or `functions.php`:
+- [x] **Do not** use `admin` as the WordPress admin username — delete or rename the default admin user if it was created with that username. ✅ Satisfied — the only accounts are the two random-username MyKinsta auto-login admins; `topsecretuser` deleted 2026-07-27.
+- [x] Disable XML-RPC — implemented in `mu-plugins/ctle-hardening.php` (deployed to Live 2026-07-28). **Verified 2026-07-28:** `xmlrpc.php` returns **403 at the Nginx layer** (Kinsta blocks it before WordPress runs), the app-layer `xmlrpc_enabled` filter is belt-and-suspenders behind that, and the `X-Pingback` header is gone. Reference snippet:
   ```php
   add_filter('xmlrpc_enabled', '__return_false');
   ```
   Note: Kinsta also blocks XML-RPC attacks at the Nginx level, but disabling it in WordPress adds defense in depth. — [Kinsta Infrastructure & Security](https://kinsta.com/docs/wordpress-hosting/wordpress-getting-started/wordpress-infrastructure/)
-- [ ] Verify Kinsta's built-in brute-force protection is active (automatic IP ban after > 6 failed logins/minute) — no configuration needed, but confirm with Kinsta support that this protection still applies after the login URL is changed in §5 (WPS Hide Login) — [Bot Protection](https://kinsta.com/docs/wordpress-hosting/mykinsta-tools/wordpress-tools-bot-protection/)
-- [ ] In MyKinsta, navigate to Sites → [site] → Security → IP Deny — add any known malicious IP ranges if applicable — [Block IP Addresses](https://kinsta.com/docs/wordpress-hosting/site-management/block-ip-address/)
+- [ ] Verify Kinsta's built-in brute-force protection is active (automatic IP ban after > 6 failed logins/minute) — no configuration needed, but confirm with Kinsta support that this protection still applies after the login URL is changed in §5 (WPS Hide Login) — [Bot Protection](https://kinsta.com/docs/wordpress-hosting/mykinsta-tools/wordpress-tools-bot-protection/) **[Open 2026-07-28 — async: confirm via MyKinsta live chat that protection follows the custom login URL. Likely fine (Kinsta auto-detects it), just get it on record.]**
+- [ ] In MyKinsta, navigate to Sites → [site] → Security → IP Deny — add any known malicious IP ranges if applicable — [Block IP Addresses](https://kinsta.com/docs/wordpress-hosting/site-management/block-ip-address/) *(N/A 2026-07-28 — none known to add.)*
 
 ### Eliminate password-based login paths
 
@@ -210,10 +207,10 @@ With the break-glass account withdrawn (§7), the goal is that **no account on t
   wp user list --role=administrator --fields=ID,user_login,user_email
   wp user delete <id> --reassign=<keep-user-id>
   ```
-- [ ] Disable open user registration: Settings → General → uncheck **Anyone can register**. All provisioning happens through SSO (§13) and LTI (§16).
+- [x] Disable open user registration: Settings → General → uncheck **Anyone can register**. All provisioning happens through SSO (§13) and LTI (§16). ✅ Verified 2026-07-28 — `users_can_register` = 0.
 - [ ] After SSO is live, audit for any remaining password-capable accounts: `wp user list --fields=ID,user_login,user_email,roles` — every account should trace to either an SSO/LTI-provisioned user or a MyKinsta auto-login user
 - [ ] Password-protect the staging environment: MyKinsta → Sites → [site] → staging → Tools → Password Protection. Staging carries the same code and often the same data as production but gets none of the attention — do not leave it publicly reachable.
-- [ ] Confirm the custom login path from §5 is not leaked in any published page, sitemap, or the repository
+- [x] Confirm the custom login path from §5 is not leaked in any published page, sitemap, or the repository — never committed to this repo; keep it that way.
 
 ---
 
@@ -263,9 +260,11 @@ MyKinsta account standing is now a single point of failure for administrator acc
 
 The audit requirement from the original break-glass design still applies; only the trigger changes. Administrator logins should be rare and deliberate once faculty are on SSO, so alerting on all of them stays low-noise.
 
-- [ ] Configure WP Activity Log (§5) to email all CTLE Admins on **any successful login by any user holding the Administrator role**
-- [ ] Configure a second alert on **any user role change**
-- [ ] Verify: use MyKinsta auto-login and confirm an alert email is received
+Implemented via the **`ctle-admin-alerts.php` must-use plugin** (source in the repo at `mu-plugins/`; deployed to Live 2026-07-28), **not** WP Activity Log — whose custom notifications are Premium-only (§5). A must-use plugin cannot be deactivated from the WP admin UI, which is the right property for a security alert.
+
+- [x] Email the CTLE admin list on **any successful login by any user holding the Administrator role** — `wp_login` hook
+- [x] Email on **any user role change** — `set_user_role` hook (with a documented filter to suppress routine new-Faculty provisioning once SSO is live)
+- [ ] Verify delivery once WP Mail SMTP → Graph is live (§15 / IT-2); today WordPress has no working mail transport. Recipients currently `sendres@dom.edu` — widen to all CTLE admins before launch.
 
 ---
 
@@ -325,25 +324,25 @@ The audit requirement from the original break-glass design still applies; only t
 
 Kinsta's defaults meet all CTLE requirements. Verify each value; contact Kinsta support if any differ.
 
-- [ ] In MyKinsta, navigate to Sites → [site] → Info → PHP engine — [PHP Configuration](https://kinsta.com/docs/wordpress-hosting/php/)
-  - Set PHP version to **8.2** (or the current WordPress-recommended version ≥ 8.1)
-- [ ] Confirm PHP memory limit is **256 MB** (Kinsta default — meets the ≥ 256 MB requirement) — [PHP Performance](https://kinsta.com/docs/wordpress-hosting/php/wordpress-php-performance/)
-- [ ] Confirm `max_execution_time` is **300 seconds** (Kinsta default — meets the ≥ 120 s requirement)
-- [ ] Confirm `upload_max_filesize` is **128 MB** (Kinsta default — meets the ≥ 64 MB requirement)
-- [ ] Verify server-level cron is available: connect via SSH and run `crontab -l` — if it returns empty or your entries, cron access is confirmed. Minimum interval is 5 minutes per Kinsta's documentation. — [Cron Jobs](https://kinsta.com/docs/wordpress-hosting/site-management/cron-jobs/)
+- [x] In MyKinsta, navigate to Sites → [site] → Tools → PHP engine — [PHP Configuration](https://kinsta.com/docs/wordpress-hosting/php/)
+  - **Set to PHP 8.4** on Live 2026-07-28 (decision 4 resolved: 8.4 over 8.3/8.5 for the runway-vs-maturity balance — security support to ~end of 2028; was 8.2, EOL Dec 2026). Verified `fpm-fcgi` reports **8.4.23**; `wp plugin list` clean, no fatals; Query Monitor clean after creating the optional `wp-content/plugins/lti/` sub-plugin dir that LTI Tool scans for.
+- [x] Confirm PHP memory limit is **256 MB** — ✅ verified 2026-07-28 (`fpm-fcgi`: `memory_limit=256M`). **Read the web values from Site Health → Info → Server or Query Monitor's PHP panel — not `wp eval`/WP-CLI**, which reports the CLI SAPI's own defaults (`memory_limit=-1`, `upload=2M`, `post=8M`), not the site's php-fpm values. — [PHP Performance](https://kinsta.com/docs/wordpress-hosting/php/wordpress-php-performance/)
+- [x] Confirm `max_execution_time` is **300 seconds** — ✅ verified 2026-07-28 (web: 300).
+- [x] Confirm `upload_max_filesize` is **128 MB** — ✅ verified 2026-07-28 (web: 128M; `post_max_size` also 128M). `display_errors` off + `log_errors` on, as wanted for production.
+- [x] Verify server-level cron is available — ✅ verified 2026-07-28: Kinsta system cron calls `wp-cron.php` every 15 min (`crontab -l`), and `wp cron event list` shows events queued. Set `DISABLE_WP_CRON=true` in wp-config 2026-07-28 (was undefined) so WP's pseudo-cron doesn't also fire on page loads. — [Cron Jobs](https://kinsta.com/docs/wordpress-hosting/site-management/cron-jobs/)
 - [ ] Note: any custom `php.ini` directives beyond the self-service dashboard options require a Kinsta support request — document any such customizations separately (see backup note in §12) — [Configuration Changes](https://kinsta.com/docs/wordpress-hosting/site-management/configuration-changes/)
 
 ---
 
 ## 11. CDN & Caching
 
-- [ ] In MyKinsta, navigate to Sites → [site] → Kinsta CDN → Enable — [Kinsta CDN](https://kinsta.com/docs/wordpress-hosting/wordpress-cdn/kinsta-cdn/)
-- [ ] Enable **Cloudflare Polish** (WebP image optimization) in the CDN settings — this replaces the need for a server-side image optimization plugin — [Image Optimization](https://kinsta.com/docs/image-optimization-for-wordpress/)
-  - Confirm lossless or lossy mode based on CTLE's preference for image quality vs. file size
+- [x] In MyKinsta, navigate to Sites → [site] → Kinsta CDN → Enable — ✅ enabled (default on all Kinsta sites; confirmed 2026-07-27). — [Kinsta CDN](https://kinsta.com/docs/wordpress-hosting/wordpress-cdn/kinsta-cdn/)
+- [x] Enable **Cloudflare Polish** (WebP image optimization) in the CDN settings — this replaces the need for a server-side image optimization plugin — [Image Optimization](https://kinsta.com/docs/image-optimization-for-wordpress/)
+  - ✅ Enabled 2026-07-28 in **Lossless** mode (CTLE chose image fidelity over max compression). Still does WebP conversion; easily switchable to Lossy later if bandwidth on the Single 20GB plan becomes a concern.
 - [x] Verify edge caching is active for public pages: open an incognito window, load the site home page, and confirm the `X-Kinsta-Cache: HIT` response header on second load (use browser dev tools → Network tab) — [Edge Caching](https://kinsta.com/docs/wordpress-hosting/caching/edge-caching/)
 > Confirmed 2026-07-24 for anonymous requests (`x-kinsta-cache: HIT` over HTTP/2), incidentally during the §9 verification. The authenticated-bypass half of this check is still outstanding, below.
-- [ ] Verify authenticated-user cache bypass: log in to WordPress, load the home page, and confirm the `X-Kinsta-Cache: BYPASS` response header — this ensures logged-in users (forum access, event registration state) do not receive cached pages
-- [ ] Configure Kinsta's bandwidth usage alerts: MyKinsta → Company → Notifications — enable alerts at 80% and 100% of plan bandwidth — [Notifications](https://kinsta.com/docs/user-settings/notifications/)
+- [x] Verify authenticated-user cache bypass: log in to WordPress, load the home page, and confirm the `X-Kinsta-Cache: BYPASS` response header — ✅ confirmed 2026-07-28 (logged-in request returned `x-kinsta-cache: BYPASS`). Ensures logged-in users (forum access, event registration state) do not receive cached pages.
+- [x] Configure Kinsta's bandwidth usage alerts: MyKinsta → Company → Notifications — ✅ usage alerts enabled 2026-07-28 (were on by default). — [Notifications](https://kinsta.com/docs/user-settings/notifications/)
 
 ---
 
@@ -351,14 +350,16 @@ Kinsta's defaults meet all CTLE requirements. Verify each value; contact Kinsta 
 
 ### Kinsta-Side Backups (14-day retention, fast restore)
 
-- [ ] Verify that daily automated backups are running: Sites → [site] → Backups → Automatic — backups should appear within 24 hours of site creation
+- [x] Verify that daily automated backups are running: Sites → [site] → Backups → Automatic — ✅ confirmed 2026-07-28 (daily backups listed with timestamps; 14-day rolling retention).
 - [x] Create a manual backup now as a baseline: Backups → Manual → Back up now
-> Taken 2026-07-24 immediately before the primary-domain cutover in §9.
-- [ ] Confirm point-in-time restore is available: verify that any listed backup has a "Restore to" button
+> Taken 2026-07-24 immediately before the primary-domain cutover in §9; a second baseline `pre-build-2026-07-28` taken before the 2026-07-28 build session. Both confirmed in Backups → Manual.
+- [x] Confirm point-in-time restore is available: verify that any listed backup has a "Restore to" button — ✅ confirmed 2026-07-28.
 
 ### CTLE-Operated Off-Site Backup (30-day retention)
 
-The Single 20GB plan retains 14 days of backups; the requirement is 30 days. A CTLE-operated daily backup fills this gap. Set this up before any content is added.
+The Single 20GB plan retains 14 days of backups; the requirement is 30 days. A CTLE-operated daily backup fills this gap.
+
+> **Deferred to post-launch (decided 2026-07-28, tracked as ME-11).** Needs a CTLE-controlled off-Kinsta storage destination (server / NAS / cloud bucket), which does not exist yet, plus an unattended backup job. Kinsta's 14-day retention + point-in-time restore covers the near term, so this is **not a launch-day blocker** — but it remains a requirement to close post-launch. Original setup steps below.
 
 - [ ] Provision a CTLE-controlled server or storage location (e.g., a university file server, NAS, or cloud storage bucket) to receive daily backup archives — must be physically separate from Kinsta's infrastructure
 - [ ] Create an SSH key pair for the unattended backup job: `ssh-keygen -t ed25519 -C "ctle-backup-job"` — add the public key to MyKinsta (see §8)
@@ -460,7 +461,11 @@ This is the one-time process to elevate the CTLE Admin and Developer Admin from 
 
 ---
 
-## 16. LTI / Canvas Integration
+## 16. Canvas Integration — Global-Nav Link + Entra SSO
+
+> **LTI superseded 2026-07-28 (decision 10).** CTLE does **not** use LTI. Faculty launch from the existing **CTLE button in the Canvas global navigation**, retargeted to the site's **Entra SSO-initiation URL** (§13). Because Canvas is on the same Entra tenant, the click completes SSO silently and lands the user logged in. Access is gated by the Entra faculty group (§13, Option 1); the button's visibility is gated client-side on `declared_user_type=teacher` (set via the nightly SIS `users.csv`, read from `GET /api/v1/users/self/logins` — validated non-admin-readable 2026-07-28), which is cosmetic since Entra is the real gate. This is Canvas/DU-LT-side work; the WordPress side owes only the SSO-initiation URL (§13). LTI Tool + ceLTIc were installed then deactivated (kept for optionality). **The original LTI 1.3 procedure is retained below, struck through, for the record only.**
+
+### ~~LTI 1.3 (withdrawn — historical)~~
 
 **Prerequisites — [DU LT]:**
 - Register the WordPress site as an LTI 1.3 tool in Canvas
@@ -692,5 +697,7 @@ Complete all items in this section on the staging environment first, then push t
 | 0.6.2 | 2026-07-27 | sendres | Post-IT-meeting: §8 documented Kinsta's one-SSH-user-per-environment model (multiple keys via MyKinsta members; SFTP users are not a WP-CLI path; ed25519 works); §13 recorded SSO Option 1 (SIS-faculty group gates the app; admins via console) and a build-on-Live note (CD-2); §15 set the sender to the dedicated `ctle-noreply@dom.edu` mailbox. |
 | 0.6.3 | 2026-07-27 | sendres | Renamed the SSO/LTI account-linking user-meta key `du_employee_id` → `sis_user_id` (§13, §16). Added a §13 step to reconcile the multi-path admin accounts before first SSO by stamping `sis_user_id` (matching Entra's `employeeId`) and verifying role preservation. |
 | 0.6.4 | 2026-07-27 | sendres | §6: marked the `topsecretuser` deletion done — the last password-authenticated admin is gone; only passwordless MyKinsta auto-login admins remain. |
+| 0.7.0 | 2026-07-28 | sendres | Build session marked complete on Live: §5 plugin installs (WP Activity Log, Query Monitor active; WP Mail SMTP + Relevanssi staged) + admin-alert mu-plugin note (WP Activity Log notifications are Premium-only, so alerts live in `mu-plugins/ctle-admin-alerts.php`); §6 open-registration off + XML-RPC disabled via `mu-plugins/ctle-hardening.php` (verified 403 at Nginx, X-Pingback removed); §10 PHP 8.4 + limits/cron verified + `DISABLE_WP_CRON`; §11 CDN Polish (Lossless) + bandwidth alerts + authenticated BYPASS; §12 daily backups + point-in-time restore confirmed (off-site 30-day deferred to ME-11). |
+| 0.7.1 | 2026-07-28 | sendres | **LTI superseded (decision 10):** §16 rewritten to the Canvas global-nav link + Entra SSO (original LTI 1.3 steps retained struck-through as history); §5 LTI Tool + ceLTIc marked deactivated/superseded. Faculty launch via the retargeted Canvas nav button → SSO-initiation URL; button visibility gated on `declared_user_type=teacher` (SIS `users.csv`, read from `users/self/logins`); the Entra faculty group is the access gate. Cross-doc: REQUIREMENTS §6 (0.2.6), IT_REQUESTS Request 3 withdrawn, IMPLEMENTATION_PHASES §6 (0.2.3), STATUS 0.1.12. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*

@@ -173,26 +173,23 @@ In Phase 2, once completion records are imported from Canvas (see §7) and the a
 
 ## 6. Canvas LMS Integration
 
-### Learning Tools Interoperability (LTI) 1.3 Launch (Preferred)
+### Canvas Global-Nav Link + Entra SSO (Primary — 2026-07-28)
 
-- A WordPress LTI plugin (the **LTI Tool** plugin from the ceLTIc project, with its **ceLTIc LTI Library** dependency) will allow Canvas users having a faculty role to launch the CTLE site as an external tool. WordPress acts as the LTI **tool**, launched from Canvas as the platform. **Note:** the ceLTIc project also publishes a similarly named **LTI Platform** plugin for the reverse integration (WordPress embedding external tools); that is *not* what CTLE uses and must not be installed in its place.
-- **Integration level:** LTI 1.3 launch only (SSO passthrough). The CTLE site recognizes the Canvas user context but does **not** pass grades or completions back to Canvas.
-- This provides a seamless SSO bridge for faculty navigating from Canvas.
+Faculty reach the CTLE site from a **CTLE button in the Canvas global navigation** that links to the site's Entra **SSO-initiation URL**. Because DU's Canvas authenticates through the same Microsoft Entra tenant as the CTLE site, a faculty member already signed into Canvas has a live Entra session, so the click completes SSO without re-prompting and lands them in WordPress authenticated. No LTI plugin, Developer Key, or platform registration is involved.
 
-### Navigation Link (Fallback Option)
+- **Access control is Entra, not the button.** The CTLE Entra app is gated on the SIS-faculty group (assignment required — §5, Option 1), and that gate applies no matter how the site is reached (button, bookmark, or direct URL). The button's visibility is therefore UX only; an unauthorized click is denied by Entra at sign-in.
+- **Button visibility** is driven by the existing Canvas global-nav JavaScript, gated on a per-user signal readable client-side. Validated mechanism (2026-07-28): the nightly SIS `users.csv` import sets `declared_user_type=teacher` for faculty; the global-nav JS reads the current user's `declared_user_type` from `GET /api/v1/users/self/logins` (confirmed readable by non-admin users) and shows the button for `teacher`. Alternative signals (CTLE-course enrollment, `ENV.current_user_roles`) are equally viable; the choice is DU LT's. De-provisioning of the button is cosmetic — Entra remains the real gate.
+- **Integration level:** launch/SSO only. The CTLE site does not pass grades or completions back to Canvas (unchanged from the LTI plan).
 
-- DU IT has an existing custom JavaScript injection that adds a **CTLE button** to the Canvas global navigation menu (visible to faculty only).
-- This button currently points to the Canvas-based CTLE site and will be updated to point to the new WordPress URL (`ctle.dom.edu`).
-- No plugin or LTI required for this — it is a simple URL redirect.
+### Rationale — supersedes the LTI 1.3 launch design
+
+An earlier version of this section specified an **LTI 1.3 launch** (the ceLTIc **LTI Tool** plugin + **ceLTIc LTI Library**), with the navigation link as a fallback. **On 2026-07-28 that was reversed: the navigation link + Entra SSO is now the primary and only launch mechanism, and LTI is withdrawn.** CTLE is a standalone site that requires none of LTI Advantage's services — no grade passback, no per-course roster (Names & Roles), no deep-linking, and no iframe embedding. LTI would have added a Developer Key, platform registration, a JWKS handshake, and a second identity path (LTI `lis_person_sourcedid` vs Entra `employeeId`) to reconcile — all to achieve "launch the site, logged in," which the nav link plus a single Entra identity already deliver. It also removes an entire pre-launch integration workstream and its timeline risk. The LTI Tool + ceLTIc LTI Library plugins were installed and then **deactivated 2026-07-28** (kept installed for optionality). This supersedes the LTI-launch language throughout the document: every "SSO or LTI" provisioning/identity reference (§5, Faculty Profiles) now resolves through **Entra SSO only**. The **Phase 2 avatar** source, previously the LTI launch payload, will need a different mechanism (e.g., the Canvas API, or a placeholder) — to be resolved in Phase 2.
 
 ### Learning Technologies Responsibilities
 
-- Register the WordPress site as an LTI 1.3 tool in Canvas.
-- Provide the platform's OIDC and JWKS endpoints to the WordPress developer.
-- Confirm that the LTI tool configuration in Canvas includes the email claim and a DU employee identifier claim (e.g., `lis_person_sourcedid` or a custom user attribute). The employee identifier is used as the primary account key (see §5).
-- Confirm that the LTI launch payload also includes the user avatar URL. Although avatar handling is Phase 2 (see Faculty Profiles under §5), configuring this claim at initial LTI setup avoids a later reconfiguration.
-- Provide the developer with a copy of the Canvas "no picture provided" default avatar icon, for Phase 2 use as an SSO-only placeholder (see Faculty Profiles under §5).
-- Update the existing Canvas global-nav JavaScript to point to the new URL.
+- Update the existing Canvas global-nav CTLE button to point at the CTLE site's Entra SSO-initiation URL (available once SSO is configured — §5 / Request 1).
+- Gate the button's visibility on the faculty population (validated approach: `declared_user_type=teacher` via SIS `users.csv`, read client-side from `users/self/logins`).
+- ~~Register the WordPress site as an LTI 1.3 tool in Canvas; provide OIDC/JWKS endpoints, claims, and avatar URL.~~ **Withdrawn 2026-07-28** — no LTI registration is needed. See "Rationale — supersedes the LTI 1.3 launch design" above.
 
 ---
 
@@ -627,6 +624,7 @@ The following is a starting-point recommendation for the developer to evaluate. 
 | 0.2.3 | 2026-07-24 | sendres | §6 and §17: flagged the similarly named ceLTIc **LTI Platform** plugin as the wrong-direction plugin that must not be installed in place of **LTI Tool**. |
 | 0.2.4 | 2026-07-27 | sendres | Post-IT-meeting decisions. §5: SSO access is gated on an Entra group refreshed from the SIS faculty list (Option 1), with CTLE admins/director/developer reaching WordPress via the hosting console rather than the group; noted the Kinsta one-SSH-user constraint on the two-person recovery path. §13/§17: sender is now the dedicated `ctle-noreply@dom.edu` mailbox, sending via Microsoft Graph `Mail.Send` only (SMTP AUTH dropped); resolved open question #15. |
 | 0.2.5 | 2026-07-27 | sendres | §5: named the SSO/LTI account-linking WordPress user-meta key `sis_user_id`, and documented the multi-path admin reconciliation — admins who are also faculty get `sis_user_id` stamped (matching Entra's `employeeId`) before first SSO so MyKinsta/SSO/LTI resolve to one account, with role preservation verified afterward. |
+| 0.2.6 | 2026-07-28 | sendres | §6 reversed: the **Canvas global-nav link + Entra SSO** is now the primary and only launch mechanism; the **LTI 1.3 launch is withdrawn** (LTI Tool + ceLTIc LTI Library plugins deactivated, kept installed). Rationale added (CTLE needs none of LTI Advantage's services; nav-link + single Entra identity delivers the launch with far less complexity and removes a pre-launch workstream). Validated the Canvas-side button gating via `declared_user_type` read from `users/self/logins`. LTI-launch/provisioning references elsewhere (§5, Faculty Profiles) now resolve through Entra SSO only; the Phase-2 avatar source (was the LTI payload) is to be re-chosen in Phase 2. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
 
