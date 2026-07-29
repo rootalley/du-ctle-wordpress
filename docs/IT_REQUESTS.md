@@ -2,7 +2,9 @@
 
 **Purpose:** Ready-to-send specifications for every task owned by DU IT, DU Learning Technologies, or DU procurement. Each request is written to be complete on first send so it does not bounce back for clarification.
 
-**Status as of 2026-07-24:** DNS delivered (ticket 26363781). Requests 1–5 outstanding.
+**Status as of 2026-07-29:** DNS delivered (ticket 26363781, closed). **Requests 1 and 2 submitted 2026-07-27** and awaiting provisioning — chased again 2026-07-29, including a request for a turnaround estimate. **Request 3 withdrawn** (LTI dropped). **Request 4 withdrawn** (break-glass superseded). **Request 5 closed** — Kinsta DPA executed and the vendor security review approved, both confirmed 2026-07-27.
+
+So the live asks are **Requests 1 and 2 only**, and they are the project's entire critical path.
 
 **Why these are the critical path:** Requests 1 and 2 gate §13–§18 and most of §23 in `kinsta_onboarding.md`. At typical university turnaround these are the only items that cannot be compressed by working harder on the WordPress side.
 
@@ -14,9 +16,9 @@
 |---|---|---|---|---|
 | 1 | Entra ID app registration (SSO) | DU IT — Identity | §13 → §14 → §18, most of §23 | **None.** No SSO means no authenticated users, which means no forums at launch. |
 | 2 | M365 shared mailbox + Graph app | DU IT — Messaging | §15 → all of §17's email | **None.** No email means no event registration confirmations or reminders. |
-| 3 | Canvas LTI 1.3 tool registration | DU LT | §16 | Yes — navigation-link redirect, already blessed in `IMPLEMENTATION_PHASES.md` §6. |
+| 3 | ~~Canvas LTI 1.3 tool registration~~ | ~~DU LT~~ | — | **Withdrawn 2026-07-28.** Do not send. The navigation-link redirect became the *primary* mechanism, not a fallback. |
 | 4 | ~~Break-glass account coordination~~ | ~~DU LT~~ | — | **Withdrawn 2026-07-24.** Do not send. |
-| 5 | Kinsta DPA execution + SOC 2 on file | DU IT / Procurement | §22, §23 launch gate | **None.** Contractual gate before any faculty data is collected. |
+| 5 | ~~Kinsta DPA execution + SOC 2 on file~~ | DU IT / Procurement | §22, §23 launch gate | ✅ **Closed 2026-07-27** — DPA executed, vendor security review approved. |
 
 Requests 1 and 2 usually route to different teams inside IT. Send them as **separate tickets on the same day** — do not bundle them, or the slower one holds the faster one hostage.
 
@@ -33,7 +35,9 @@ CTLE is standing up a WordPress site at `https://ctle.dom.edu` (hosted by Kinsta
 
 ### Protocol preference
 
-**We prefer OIDC over SAML**, but will implement whichever DU IT supports as standard — please confirm which. Our reasoning for OIDC: the LTI 1.3 Canvas integration (Request 3) and the Graph mail integration (Request 2) are both OAuth/OIDC-based, so a single protocol keeps one troubleshooting model across all three integrations. If DU IT standardizes on SAML for third-party apps, that is fine and we will adjust.
+**We prefer OIDC over SAML**, but will implement whichever DU IT supports as standard — please confirm which. Our reasoning for OIDC: the Graph mail integration (Request 2) is OAuth-based, so a single protocol keeps one troubleshooting model across both integrations. If DU IT standardizes on SAML for third-party apps, that is fine and we will adjust.
+
+*(Amended 2026-07-28: this previously also cited the Canvas LTI 1.3 integration, which has since been withdrawn. The preference is unchanged but now rests on Graph alone, so it is a weaker argument — treat DU's standard as the deciding factor.)*
 
 ### What we need registered
 
@@ -167,6 +171,7 @@ This is a launch gate (`kinsta_onboarding.md` §22 and §23) and is easy to lose
 | 0.1.0 | 2026-07-24 | sendres | Initial version. Corrected LTI plugin direction (tool, not platform); specified Graph over SMTP AUTH given the December 2026 basic-auth retirement. |
 | 0.1.1 | 2026-07-24 | sendres | Withdrew Request 4 (break-glass account) — superseded by MyKinsta WP Admin auto-login. |
 | 0.2.0 | 2026-07-27 | sendres | Post-IT-meeting updates. Request 1: recorded the Option 1 provisioning model (Entra group refreshed from the SIS faculty list gates the app; JIT provisioning; admins/director/developer via MyKinsta console, not the group; Entra P1 confirmed). Request 2: send-as identity is now the dedicated `ctle-noreply@dom.edu` mailbox (separate from human `ctle@dom.edu`), with the ApplicationAccessPolicy scoped to it; clarified this covers mail-send only, calendar Graph deferred to Phase 3. |
+| 0.2.2 | 2026-07-29 | sendres | Status header rewritten — Requests 1 and 2 are the only live asks (3 and 4 withdrawn, 5 closed with the DPA executed); the header still claimed "Requests 1–5 outstanding" as of 07-24. Priority table updated to match. Request 1's OIDC-preference rationale amended: it cited the now-withdrawn LTI integration as half its justification, so the argument now rests on Graph alone and DU's standard should decide. |
 | 0.2.1 | 2026-07-28 | sendres | Withdrew Request 3 (Canvas LTI 1.3 registration) — superseded by the Canvas global-nav link + Entra SSO (no LTI). Surviving item: retarget the existing global-nav button to the SSO-initiation URL. See REQUIREMENTS.md §6 / HANDOFF decision 10. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*

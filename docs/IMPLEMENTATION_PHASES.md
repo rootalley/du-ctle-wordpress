@@ -234,7 +234,7 @@ All home page requirements (upcoming events, pinned event, course highlights, ne
 | WPS Hide Login | 1 | |
 | The Events Calendar (Pro) + Event Tickets | 1 | |
 | wpForo (free core) | 1 | Forums; reputation features enabled in Phase 2 |
-| ~~LTI Tool (ceLTIc) + ceLTIc LTI Library~~ | — | **Not required as of 2026-07-28** — LTI superseded by the Canvas nav-link + Entra SSO (§6). Installed then deactivated on Live (kept for optionality). |
+| ~~LTI Tool (ceLTIc) + ceLTIc LTI Library~~ | — | **Not required as of 2026-07-28** — LTI superseded by the Canvas nav-link + Entra SSO (§6). Installed, deactivated 07-28, then **deleted 2026-07-29**: "kept for optionality" was reversed, since unused plugin code on disk is surface area and both are free to reinstall. |
 | WP Mail SMTP | 1 | Via DU Microsoft 365 shared mailbox |
 | Page builder (Beaver Builder or Gutenberg blocks) | 1 | |
 | Relevanssi (free) | 1 | |
@@ -276,6 +276,7 @@ The following criteria must be confirmed with any prospective vendor before cont
 | 0.2.1 | 2026-07-24 | sendres | Corrected the LTI plugin name in the plugin summary: WordPress is the LTI **tool** launched from Canvas, so the software is the **LTI Tool** plugin (ceLTIc project) with its **ceLTIc LTI Library** dependency — not "LTI Platform for WordPress." Matches `IT_REQUESTS.md` Request 3. |
 | 0.2.2 | 2026-07-24 | sendres | Plugin summary: flagged the similarly named ceLTIc **LTI Platform** plugin as the wrong-direction plugin, not to be confused with **LTI Tool**. |
 | 0.2.3 | 2026-07-28 | sendres | §6 reversed: Canvas global-nav link + Entra SSO is now the **primary** launch; **LTI 1.3 withdrawn** (LTI Tool + ceLTIc row marked not-required; plugins deactivated on Live). Button visibility gated on `declared_user_type` via SIS `users.csv` (validated). Phase-2 avatar-from-LTI references superseded (source to be re-chosen in Phase 2). See REQUIREMENTS.md §6 / HANDOFF decision 10. |
+| 0.2.5 | 2026-07-29 | sendres | §17: LTI Tool + ceLTIc row updated to **deleted 2026-07-29** rather than deactivated-and-kept. No phase assignments change. |
 | 0.2.4 | 2026-07-28 | sendres | Cross-doc audit sync to match what was built: §3/§17 image optimization → **Cloudflare Polish** (no server-side plugin — Kinsta bans them); §5/§10/§17 alerting attributed to the custom `ctle-admin-alerts.php` mu-plugin (WP Activity Log = logging only; its notifications are Premium); added a custom-mu-plugins row (`ctle-admin-alerts` + `ctle-hardening`) to the §17 stack. |
 
 *This document reflects finalized phase assignments. See `REQUIREMENTS.md` for full requirement details and open questions.*

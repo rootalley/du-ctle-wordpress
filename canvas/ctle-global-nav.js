@@ -31,7 +31,7 @@
 		enabled: false,
 
 		// The CTLE SSO-initiation URL. PLACEHOLDER — replace once DU IT delivers the
-		// Entra app registration (IT-1) and §13 SSO configuration is complete. Until
+		// Entra app registration and the WordPress SSO plugin is configured. Until
 		// then `enabled` must stay false: this URL is the whole point of the retarget.
 		ssoUrl: 'https://ctle.dom.edu/',
 

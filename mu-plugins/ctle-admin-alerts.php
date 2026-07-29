@@ -20,10 +20,10 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Who receives the alerts.
  *
- * Named individuals only — deliberately NOT the shared ctle@dom.edu mailbox. That
+ * Named individuals only — we deliberately exclude the shared ctle@dom.edu mailbox. That
  * mailbox receives the MyKinsta 2FA codes gating Administrator access, and its access
- * list is still an open decision (IT-4 / CD-7); routing Administrator-login alerts to
- * the same inbox that holds the second factor weakens both. Revisit once IT-4 closes.
+ * list is subject to change. Routing Administrator-login alerts to the same inbox that
+ * holds the second factor weakens both.
  *
  * Entries that are not valid email addresses are dropped, so a half-edited placeholder
  * can never become a live recipient. If every entry is dropped, this falls back to the
@@ -33,7 +33,7 @@ defined( 'ABSPATH' ) || exit;
  */
 function ctle_alert_recipients() {
 	$recipients = array(
-		'sendres@dom.edu',      // Steven Endres — infrastructure lead.
+		'sendres@dom.edu',      // Steven Endres — Director of Learning Technologies
 		'pdriver@dom.edu',      // Persis Driver — CTLE Director.
 	);
 

@@ -13,11 +13,12 @@
 | §13 SSO config, §14 admin elevation, §15 mail config | Blocked on IT-1 / IT-2. |
 | Retargeting the Canvas button to the real SSO URL | The URL does not exist until IT-1 lands. Everything *else* about the button is in scope (Part B). |
 | CD-1 theme, CD-3 builder, CD-4 license, CD-5 CPT, §17–§21 content | Director / Developer decisions. |
+| **CD-14 — the WordPress sample content** (Hello World, Sample Page, default comment) | Posts and pages are CTLE's domain (decided 2026-07-29). Now a CTLE-owned item with a §23 launch gate. |
 | ME-6 (Amanda's SSH key), ME-10 (Amanda's account stamp) | Require Amanda. Both are asks in the CTLE email. |
 | ME-11 off-site backup, ME-1c hostname removal, HSTS | Deliberately deferred post-launch. |
 | IT-4 / CD-7 `ctle@dom.edu` access list | Decision belongs to IT and the Director. Chased in both emails. |
 
-**Order matters in two places.** Part A2 runs *before* the CTLE email in Part C2, because that email states the cleanup is done. And Part C3 (the login URL) never goes in a shared email.
+**Order matters in two places.** Part A2 runs *before* the CTLE email in Part C2, because that email states the plugin removals are done. And Part C3 (the login URL) never goes in a shared email.
 
 ---
 
@@ -28,71 +29,63 @@ All commands run over SSH on **Live**. Connection details: MyKinsta → Sites �
 ```bash
 ssh <user>@<host> -p <port>
 cd public
-wp --info          # confirm WP-CLI v2 and the expected PHP 8.4 CLI binary
+wp --info
 ```
+
+- [X] # Confirm WP-CLI v2 and the expected PHP 8.4 CLI binary
 
 ### A1 — Take a manual backup first
 
-- [ ] MyKinsta → Sites → DU-CTLE → **Backups → Manual** → create one, label it `pre-cleanup-2026-07-29`
+- [X] MyKinsta → Sites → DU-CTLE → **Backups → Manual** → create one, label it `pre-cleanup-2026-07-29`
 
 Everything in A2 is destructive and irreversible from the WP UI. Kinsta keeps 14 days of dailies plus point-in-time, so this is belt-and-suspenders — but a labelled restore point costs 30 seconds and makes the rest of this section safe to run without hesitation.
 
-### A2 — ME-3: finish §4 cleanup
+### A2 — ME-3: remove the unused plugins
 
-**Read the listings before deleting anything.** Two things must survive: the **draft Privacy Policy page** (§22 needs it) and **all themes** (CD-1 has not been decided).
+Inactive on Live: `akismet`, `hello`, `lti-tool`, `celtic-lti`, `relevanssi`. **Delete the first four. Keep Relevanssi** — it is staged for the §19 search build.
+
+Deleting the two LTI plugins reverses decision 10's "kept installed for optionality" clause. That is the better call: LTI is withdrawn, both plugins are free and reinstallable from wordpress.org in about a minute, and unused plugin code sitting on disk is surface area with no offsetting benefit. Note that `wp plugin delete` runs each plugin's uninstall routine — which is what we want here, since neither was ever configured and there is no LTI state to preserve.
+
+**Themes must survive** — CD-1 has not been decided. Do not add `--all` to anything.
 
 ```bash
-# 1. Inspect. Confirm hello and akismet are the only inactive plugins.
+# 1. Inspect. Confirm the inactive set matches expectations.
 wp plugin list --fields=name,status,version
 
-# 2. Delete the two default plugins.
-wp plugin delete hello akismet
+# 2. Delete the four. Relevanssi is deliberately absent from this list.
+wp plugin delete akismet hello lti-tool celtic-lti
 
-# 3. Inspect posts and pages. Note the IDs — and note that the Privacy Policy
-#    page will appear here as a draft. Do NOT delete it.
-wp post list --post_type=post --post_status=any --fields=ID,post_title,post_status
-wp post list --post_type=page --post_status=any --fields=ID,post_title,post_status
-
-# 4. Delete the two sample items by ID (--force skips the trash).
-wp post delete <hello-world-id> --force
-wp post delete <sample-page-id> --force
-
-# 5. The default "A WordPress Commenter" comment.
-wp comment list --fields=comment_ID,comment_author,comment_post_ID,comment_approved
-wp comment delete <comment-id> --force
-
-# 6. Confirm the end state.
-wp plugin list --fields=name,status
-wp post list --post_type=any --post_status=any --fields=ID,post_type,post_title,post_status
+# 3. Confirm: relevanssi should be the only inactive plugin left, and the
+#    active set should be wps-hide-login, wp-security-audit-log,
+#    query-monitor, and wp-mail-smtp.
+wp plugin list --fields=name,status,version
+wp plugin list --status=must-use --fields=name,status
 ```
 
-Verify externally — remember Kinsta serves stale HTML, so cache-bust:
+- [X] Akismet, Hello Dolly, LTI Tool, and ceLTIc LTI Library deleted
+- [X] Relevanssi still present and inactive
+- [X] Themes untouched
+- [X] Must-use plugins still loading (`ctle-admin-alerts`, `ctle-hardening`)
 
-```bash
-curl -sS -o /dev/null -w 'hello-world: %{http_code}\n' "https://ctle.dom.edu/hello-world/?v=$RANDOM"
-curl -sS -o /dev/null -w 'sample-page: %{http_code}\n' "https://ctle.dom.edu/sample-page/?v=$RANDOM"
-# both → 404
-```
+> Closes **ME-3**'s plugin half.
 
-- [ ] Hello Dolly and Akismet deleted
-- [ ] Hello World post, Sample Page, and the default comment deleted
-- [ ] Privacy Policy draft still present; all themes untouched
-- [ ] Both URLs return 404 from outside
-
-> Closes **ME-3**. Note the ordering choice: CD-N5 is being sent as an after-the-fact notice in the CTLE email (Part C2) rather than in advance. That is a deliberate departure from the notify-before-acting rule in `STATUS_AND_ACTIONS.md`, justified by the content being WordPress's own sample data, the change being restorable from the A1 backup, and neither the Director nor the Developer having begun site work. Record it that way in the register — do not quietly re-label it as notified.
+**Sample content stays — decided 2026-07-29.** Posts and pages are CTLE's domain, so the Hello World post, Sample Page, and default comment now belong to the Director and Developer to remove or replace as content gets built. Tracked as **CD-14**, with a matching §23 launch gate so the site cannot ship with "Hello World" on it. Two consequences:
+>
+> - **CD-N5 shrinks to a plugin notice.** The after-the-fact departure from notify-before-acting now covers only plugin removals — nothing either of them authored. Still record it as after-the-fact rather than relabeling it.
+> - **Nobody is currently scheduled to delete it.** That is the risk this hands off, and it is why CD-14 needs to be a launch gate rather than an assumption.
 
 ### A3 — Widen the admin-alert recipients
 
 The repo copy of `mu-plugins/ctle-admin-alerts.php` now lists `sendres@dom.edu` and `pdriver@dom.edu`, and drops any entry that is not a valid address so a half-edited placeholder can never become a live recipient. **It deliberately does not include `ctle@dom.edu`:** that mailbox holds the MyKinsta 2FA codes gating Administrator access, so routing Administrator-login alerts to it would put the alert and the second factor in the same inbox. Revisit once IT-4 closes.
 
-- [ ] Deploy and confirm it loaded:
+- [X] Deploy and confirm it loaded:
 
 ```bash
 scp -P <port> mu-plugins/ctle-admin-alerts.php <user>@<host>:~/public/wp-content/mu-plugins/
 ssh <user>@<host> -p <port> 'cd public && wp plugin list --status=must-use'
 ```
 
-- [ ] `ctle-admin-alerts.php` shows in the must-use list
+- [X] `ctle-admin-alerts.php` shows in the must-use list
 
 Delivery stays unverifiable until IT-2 lands — expected, and already tracked in §7.
 
@@ -102,23 +95,121 @@ MyKinsta → live chat. Ask verbatim:
 
 > Our site uses WPS Hide Login, so `wp-login.php` returns 404 and the login form lives at a custom path. Does Kinsta's automatic brute-force protection (IP ban after 6 failed logins per minute) follow the custom login URL, or does it only watch `wp-login.php`?
 
-- [ ] Answer received and pasted into `kinsta_onboarding.md` §6 with the date
+- [X] Answer received 2026-07-29 and recorded in `kinsta_onboarding.md` §6
 
-Expected to be yes — Kinsta auto-detects a customized login URL. This is about getting it on record, not about doubting it.
+**The answer was no, and the assumption behind this step was wrong.** Kinsta support confirmed the automatic IP ban watches `/wp-login.php` specifically. WPS Hide Login moved the form to a custom path, so the endpoint that actually accepts logins has **no rate limiting and no IP ban at all** — unlimited password attempts. Kinsta's protection now guards a path that returns 404, which is worth exactly nothing. Getting it on record was the right instinct.
+
+Severity today is low and it does not stay low: with no password-authenticated account on the site, there is currently nothing to guess. That changes at SSO go-live, when JIT provisioning gives every faculty account a WordPress password hash.
+
+### A4b — Close the gap: remove password authentication
+
+Rather than bolt a rate-limiting plugin onto a login nobody is supposed to use, remove the thing being attacked. `mu-plugins/ctle-hardening.php` v1.1.0 drops the username/password and email/password authenticators, disables application passwords, and turns off password reset. This is §6's stated goal — "no account on the site can be logged into with a password" — enforced in code rather than assumed. Faculty use Entra; administrators use MyKinsta auto-login, which issues an auth cookie directly and never runs those authenticators.
+
+**Deploy to staging first.** The one thing that must be verified is that MyKinsta auto-login still works.
+
+```bash
+# 1. Staging.
+scp -P <staging-port> mu-plugins/ctle-hardening.php <user>@<staging-host>:~/public/wp-content/mu-plugins/
+
+# 2. In MyKinsta, open the STAGING site → "Create admin and log in".
+#    Confirm it lands you in wp-admin. This is the gate.
+
+# 3. Confirm the login form can no longer authenticate: visit the custom login
+#    path on staging and submit any username/password. Expect failure.
+
+# 4. Only then, Live.
+scp -P <port> mu-plugins/ctle-hardening.php <user>@<host>:~/public/wp-content/mu-plugins/
+```
+
+- [X] Staging: MyKinsta auto-login still works with v1.1.0 in place — **verified 2026-07-29.** (The username/password prompts seen during this test were HTTP Basic Auth from the A5 staging password protection, enforced at Nginx before WordPress runs — not WordPress login, and not related to this plugin. They will not appear on Live.)
+- [X] Staging: password authentication refused **against a positive control** — verified 2026-07-29: `wp_check_password` returned true for the test user's correct password while `wp_authenticate` returned a `WP_Error` for the same credentials.
+
+> ⚠️ **A bare "the login failed" proves nothing here.** No account on this site has a password, so submitting bad credentials fails identically whether or not the hardening is in place. The test needs a user who genuinely *has* a valid password and still cannot use it.
+>
+> ```bash
+> cd public
+>
+> # 1. Confirm v1.1.0 actually landed — a stale v1.0.0 on disk invalidates everything below.
+> wp eval 'var_dump(
+>   has_filter("authenticate","wp_authenticate_username_password"),
+>   has_filter("authenticate","wp_authenticate_email_password"),
+>   has_filter("authenticate","wp_authenticate_application_password")
+> );'
+> # → bool(false) bool(false) bool(false).   Any int(20) = still running the old file.
+>
+> # 2. The control.
+> wp user create hardening-test hardening-test@example.com --role=subscriber \
+>   --user_pass='Correct-Horse-Battery-Staple-9'
+>
+> # 3. The password is genuinely correct...
+> wp eval 'var_dump( wp_check_password( "Correct-Horse-Battery-Staple-9", get_user_by("login","hardening-test")->user_pass ) );'
+> # → bool(true)
+>
+> # 4. ...and authentication refuses it anyway.
+> wp eval 'var_dump( is_wp_error( wp_authenticate( "hardening-test", "Correct-Horse-Battery-Staple-9" ) ) );'
+> # → bool(true)
+>
+ > # 5. End-to-end through both auth layers and the real form (OPTIONAL — steps
+> #    3 and 4 already settle it; this only re-confirms the HTTP endpoint).
+> #    Derive the URL on the box instead of typing it: the login path is
+> #    deliberately unrecorded in this repo and should stay out of shell history.
+> #    Ask WordPress, not the plugin's storage — WPS Hide Login rewrites through
+> #    the site_url filter, so this is correct regardless of its option names
+> #    (`whl_page` does not exist in 1.9.18).
+> LOGIN_URL="$(wp eval 'echo wp_login_url();')"
+> echo "$LOGIN_URL"      # sanity-check: staging, not Live
+> #    If this prints .../wp-login.php, WPS Hide Login is not active in THIS
+> #    environment (it was configured on Live; staging is separate). Fine — the
+> #    test is about authentication, not the path. Use whatever URL is printed.
+>
+> # Pass -u with the USERNAME ONLY — curl then prompts for the password rather
+> # than taking it from the command line. Credentials are the A5 staging
+> # password-protection pair (MyKinsta → Staging → Tools → Password Protection).
+> curl -sSi -u '<staging-basic-auth-user>' \
+>   --cookie 'wordpress_test_cookie=WP Cookie check' \
+>   -d 'log=hardening-test&pwd=Correct-Horse-Battery-Staple-9&wp-submit=Log+In' \
+>   "$LOGIN_URL" \
+>   | grep -iE '^HTTP/|^set-cookie: wordpress_logged_in|Invalid username'
+> # → 200, no wordpress_logged_in cookie, and the invalid-credentials string.
+> #   Unhardened this would be 302 + the cookie. The wordpress_test_cookie is
+> #   required, or WordPress fails the cookie check instead of the auth check —
+> #   which looks like a pass but tests nothing.
+>
+> # 6. Clean up (after step 5).
+> wp user delete $(wp user get hardening-test --field=ID) --yes
+> ```
+>
+> The create/delete fires `set_user_role`, so `ctle-admin-alerts` generates two alerts — inert on staging, which has no mail transport.
+
+**Resolved 2026-07-29.** Steps 1–4 passed: `wp_check_password` returned true and `wp_authenticate` returned a `WP_Error` for the same correct credentials. The optional HTTP probe turned into the more useful measurement recorded in §6 — `POST /wp-login.php` is refused **403 at Kinsta's edge**, while a `POST` to the Live custom login path returns **200** and is processed. Note WPS Hide Login is **not** active on Staging, only Live; the two environments differ here.
+
+### A4c — Rotate the custom login path before CD-N3 goes out
+
+The Live login path was pasted outside the repo during the diagnostics above, so its obscurity value is spent. Rotating it is **almost free right now** and stops being free the moment CD-N3 is sent.
+
+- [X] MyKinsta/WP Admin → Settings → WPS Hide Login → set a new path
+- [X] Re-verify: old path → 404, new path → 200 anonymously, MyKinsta auto-login still works (allow ~1 minute for Kinsta to re-detect)
+- [ ] Use the **new** path in the SecureTransfer (Part C3) — still pending, since C3 has not been sent. CD-N3 never went out with the old path, so nobody has anything to unlearn.
+
+Do this *after* ME-14 deploys to Live, not instead of it. The path is a speed bump; removing password authentication is the actual control, and it is what makes a leaked path uninteresting.
+- [X] Live: deployed, auto-login re-verified 2026-07-29
+- [X] Recovery procedures updated — **resetting a password over WP-CLI no longer grants login while this file is in place.** The sequence gains one step: move `ctle-hardening.php` aside over SSH first. Documented in the file header, `mu-plugins/README.md`, §7 (the sequence), §8 (a prerequisite warning), and §23 (the launch gate now requires walking the *full* path, since testing `wp user create` alone no longer exercises it). §8 needed no procedural change of its own — it covers access setup, not recovery.
+
+> If auto-login *does* break on staging, do not deploy to Live — fall back to installing **Limit Login Attempts Reloaded** (free, app-layer, so it follows the custom URL) and re-open this as an open item.
 
 ### A5 — CD-N4: password-protect staging
 
-- [ ] MyKinsta → Sites → DU-CTLE → **Staging** → Tools → **Password Protection** → enable
-- [ ] Record the credentials in the CTLE vault (not this repo)
-- [ ] Confirm staging prompts for credentials from a logged-out browser
+- [X] MyKinsta → Sites → DU-CTLE → **Staging** → Tools → **Password Protection** → enable
+- [X] Record the credentials in the CTLE vault (not this repo)
+- [X] Confirm staging prompts for credentials from a logged-out browser
 
-Staging carries the same code as production and gets none of the attention. The credentials go to the Director and Developer via the same channel as the login URL (Part C3), not in the shared email.
+Staging carries the same code as production and gets none of the attention. The credentials go to the Director and Developer **via DU SecureTransfer** (chosen 2026-07-29), alongside the custom login URL — see Part C3. Never in the shared email, never in this repo.
 
 ### A6 — §7 MyKinsta hygiene
 
-- [ ] Review the MyKinsta company user list; remove anyone no longer on the project (each MyKinsta user is a path into WP Admin)
-- [ ] Confirm each active person uses a per-person **Company Developer** account for routine work, so their 2FA codes go to individual DU addresses rather than the shared mailbox
-- [ ] Confirm the §1 billing contact is a monitored DU address and the annual renewal cannot lapse silently — a suspended Kinsta account takes the dashboard *and* SSH, the one scenario neither recovery path covers
+- [X] Review the MyKinsta company user list; remove anyone no longer on the project (each MyKinsta user is a path into WP Admin)
+- [X] Confirm each active person uses a per-person **Company Developer** account for routine work, so their 2FA codes go to individual DU addresses rather than the shared mailbox
+- [X] Confirm the §1 billing contact is a monitored DU address and the annual renewal cannot lapse silently — a suspended Kinsta account takes the dashboard *and* SSH, the one scenario neither recovery path covers
 
 ### A7 — Update what is safe to update
 
@@ -132,13 +223,20 @@ wp theme update --all --dry-run
 wp theme list --fields=name,status,version,update
 ```
 
-- [ ] Core, plugins, and themes reported and updated as appropriate; no theme deleted
+- [X] Core, plugins, and themes reported and updated as appropriate; no theme deleted
 
-### A8 — ME-8: confirm the vault entries
+### A8 — ME-8: the vault entries — closed on inspection, 2026-07-29
 
-- [ ] Confirm the credentials redacted from `kinsta_onboarding.md` §1 and §3 are actually recorded in the CTLE vault, reachable by someone other than Steven
+**Neither redacted credential still matters, so there is nothing to retrieve and nothing to transfer.** Checked against §1, §3, and the full git history:
 
-The redaction is done; what is unverified is whether the values survived it. This is a five-minute check that prevents a bad day later.
+- **§3 — the `topsecretuser` WordPress password.** That account was **deleted 2026-07-27**. §3's own note anticipated this: "after which the credential becomes moot." It authenticates nothing.
+- **§1 — the MyKinsta Company Owner password** for `ctle@dom.edu`. This is the Director's own account credential. It should **not** be redistributed: Persis holds it, and it is self-recoverable through Kinsta's password reset, which delivers to `ctle@dom.edu`. Amanda does not need it — §2 confirms she already has her own MyKinsta company user, which is the correct access model and the one §7 asks us to prefer.
+
+Confirmed by scanning every commit that touched the file: neither plaintext value was ever committed. The first commit already carries the redacted "held in the CTLE credential vault" wording, exactly as `HANDOFF.md` claims.
+
+- [X] ME-8 closed — no vault retrieval needed; nothing outstanding to record
+
+**What the SecureTransfer to Persis and Amanda actually needs** is the custom login URL and the staging password (Part C3) — both of which are current, both of which you hold.
 
 ### A9 — §22 groundwork that needs no CTLE content
 
@@ -146,14 +244,14 @@ The redaction is done; what is unverified is whether the values survived it. Thi
 wp option get wp_page_for_privacy_policy    # should be the draft Privacy Policy page ID
 ```
 
-- [ ] Privacy Policy page is designated in Settings → Privacy (the draft is fine — CTLE writes the content)
-- [ ] Confirm Tools → **Export Personal Data** and **Erase Personal Data** are present and reachable by an Administrator
+- [X] Privacy Policy page is designated in Settings → Privacy (the draft is fine — CTLE writes the content)
+- [X] Confirm Tools → **Export Personal Data** and **Erase Personal Data** are present and reachable by an Administrator
 
 ### A10 — Certificate renewal reminder
 
 The TLS certificates for `ctle.dom.edu` and `www.ctle.dom.edu` expire **2026-08-31**, inside the launch window. They auto-renew.
 
-- [ ] Put a calendar reminder on **2026-08-24** to verify renewal:
+- [X] Put a calendar reminder on **2026-08-24** to verify renewal:
 
 ```bash
 echo | openssl s_client -servername ctle.dom.edu -connect ctle.dom.edu:443 2>/dev/null \
@@ -169,7 +267,7 @@ wp plugin install wpforo          # do not activate
 wp plugin list --fields=name,status,version
 ```
 
-- [ ] wpForo installed, left inactive
+- [X] wpForo installed, left inactive
 
 Rounds out the §5 plugin roster so nothing is left to discover during the SSO push. Skip if you would rather not carry an unconfigured forum plugin on Live.
 
@@ -228,7 +326,9 @@ Carries CD-N2, CD-N4, CD-N5, CD-N6 as notices; asks Persis for CD-1/4/6/7/8 and 
 
 ### C3 — The login URL, separately
 
-- [ ] Send the custom login path (CD-N3) and the staging password (A5) to Persis and Amanda **individually** — not in the shared email, not in a channel, never in this repo
+- [ ] Send the custom login path (CD-N3) and the staging password (A5) to Persis and Amanda **individually via DU SecureTransfer** — not in the shared email, not in a channel, never in this repo
+
+Nothing from §1 or §3 goes in this transfer — see A8. The `topsecretuser` password is dead with its account, and the MyKinsta owner password is Persis's own and self-recoverable.
 
 ---
 

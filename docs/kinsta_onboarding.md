@@ -94,9 +94,10 @@ MyKinsta is Kinsta's hosting control panel. Access is separate from WordPress ad
 ## 4. WordPress Core Setup
 
 - [x] Update WordPress core to the latest stable version (Kinsta may have installed an earlier version at provisioning)
-- [ ] Update the default theme(s) and delete any unused themes (keep only the active theme and one fallback)
-- [ ] Delete Hello Dolly and Akismet plugins (will be replaced by the Phase 1 stack in §5)
-- [ ] Delete the default sample content: "Hello World" post, "Sample Page" page
+- [x] Update the default theme(s) — **updated 2026-07-29; none deleted.** Theme deletion waits on the CD-1 theme decision, since "keep the active theme and one fallback" cannot be applied before knowing which theme is active.
+- [x] Delete the unused plugins: Hello Dolly, Akismet, and — as of 2026-07-29 — **LTI Tool + ceLTIc LTI Library** (LTI withdrawn, decision 10; this reverses the earlier "kept installed for optionality"). **Keep Relevanssi**, staged inactive for §19. ✅ Done 2026-07-29: `wp plugin delete akismet hello lti-tool celtic-lti`
+- [ ] **[CTLE]** Delete or replace the default sample content: "Hello World" post, "Sample Page" page, and the default comment
+> **Re-assigned 2026-07-29 (CD-14).** Posts and pages are CTLE's domain, so the Director and Developer own this rather than infrastructure. **Nobody is otherwise scheduled to do it** — §23 therefore carries a matching hard launch gate.
 - [x] Settings → General:
   - [x] Site Title: `Dominican University CTLE`
   - [x] Tagline: leave blank for now
@@ -105,8 +106,8 @@ MyKinsta is Kinsta's hosting control panel. Access is separate from WordPress ad
   - [x] Administration Email: the DU shared mailbox (e.g., `ctle@dom.edu` — see §15) or a CTLE Admin DU email
   - [x] Timezone: `America/Chicago`
   - [x] Date and time format: Selected `F j, Y` date (e.g., `May 29, 2026`) and `g:i a` time (`8:00 pm`) as initial settings; this can be changed later
-- [ ] Settings → Reading → check **Discourage search engines from indexing this site**
-> Set 2026-07-24. As of the DNS cutover (§9) the site is publicly reachable and fully indexable at `ctle.dom.edu` — verified: no `x-robots-tag` header, no meta robots tag, and `robots.txt` advertises the sitemap. Without this, a bare install with placeholder content can be indexed under the DU brand.
+- [x] Settings → Reading → check **Discourage search engines from indexing this site**
+> Set 2026-07-24. *(Checkbox corrected 2026-07-29 — it had been left unticked while the register recorded ME-1d as done.)* As of the DNS cutover (§9) the site is publicly reachable and fully indexable at `ctle.dom.edu` — verified: no `x-robots-tag` header, no meta robots tag, and `robots.txt` advertises the sitemap. Without this, a bare install with placeholder content can be indexed under the DU brand.
 >
 > ⚠️ **This creates a launch-blocking failure mode: if it is not unchecked at launch, the site is invisible to search engines.** The corresponding un-check is a hard gate in §23. Do not remove one without the other.
 >
@@ -150,14 +151,14 @@ Install plugins in the order listed. Activate and do a basic sanity check after 
 
 ### Forum Plugin
 
-- [ ] **wpForo** (free core from WordPress.org)
+- [x] **wpForo** (free core from WordPress.org) — **installed 2026-07-29, left inactive.** Configuration waits on SSO (§13) and the CD-8 forum privacy language; pre-staged so nothing is left to discover during the SSO push.
   - Run setup wizard
   - Leave reputation features disabled for now (Phase 2)
   - Forum access configuration in §18
 
 ### LTI Plugin
 
-- [x] ~~**LTI Tool** + **ceLTIc LTI Library**~~ — **superseded 2026-07-28 (decision 10): LTI dropped for a Canvas nav-link + Entra SSO.** Both were installed + active on Live 2026-07-28 (`lti-tool` 3.2.6, `celtic-lti` 5.3.2; correct plugin confirmed — title "LTI Tool", not "LTI Platform"), then **deactivated** the same day; kept installed for optionality. See §16 and `REQUIREMENTS.md` §6.
+- [x] ~~**LTI Tool** + **ceLTIc LTI Library**~~ — **superseded 2026-07-28 (decision 10): LTI dropped for a Canvas nav-link + Entra SSO.** Both were installed + active on Live 2026-07-28 (`lti-tool` 3.2.6, `celtic-lti` 5.3.2; correct plugin confirmed — title "LTI Tool", not "LTI Platform"), then **deactivated** the same day, and **deleted 2026-07-29** (§4). The "kept installed for optionality" position was reversed deliberately: the integration is withdrawn, both plugins are free and reinstallable from wordpress.org in about a minute, and unused plugin code on disk is attack surface with no offsetting benefit. `wp plugin delete` runs each plugin's uninstall routine — desirable here, since neither was ever configured and there was no LTI state to preserve. See §16 and `REQUIREMENTS.md` §6.
   - ⚠️ **Install "LTI Tool" — not "LTI Platform."** The ceLTIc project publishes two near-identically named plugins by the same author that sit side by side in the wordpress.org search results. **LTI Platform** (which the original checklist named as "LTI Platform for WordPress") is the *reverse* integration — it makes WordPress a platform that embeds external tools, so faculty could never launch *into* CTLE from Canvas. See `IT_REQUESTS.md` Request 3.
 
 ### SSO Plugin
@@ -195,7 +196,26 @@ Install plugins in the order listed. Activate and do a basic sanity check after 
   add_filter('xmlrpc_enabled', '__return_false');
   ```
   Note: Kinsta also blocks XML-RPC attacks at the Nginx level, but disabling it in WordPress adds defense in depth. — [Kinsta Infrastructure & Security](https://kinsta.com/docs/wordpress-hosting/wordpress-getting-started/wordpress-infrastructure/)
-- [ ] Verify Kinsta's built-in brute-force protection is active (automatic IP ban after > 6 failed logins/minute) — no configuration needed, but confirm with Kinsta support that this protection still applies after the login URL is changed in §5 (WPS Hide Login) — [Bot Protection](https://kinsta.com/docs/wordpress-hosting/mykinsta-tools/wordpress-tools-bot-protection/) **[Open 2026-07-28 — async: confirm via MyKinsta live chat that protection follows the custom login URL. Likely fine (Kinsta auto-detects it), just get it on record.]**
+- [x] Verify Kinsta's built-in brute-force protection is active (automatic IP ban after > 6 failed logins/minute) and confirm whether it follows the custom login URL from §5 — [Bot Protection](https://kinsta.com/docs/wordpress-hosting/mykinsta-tools/wordpress-tools-bot-protection/)
+> **Answered by Kinsta support 2026-07-29 — and the answer was no.** In their words: the protection "specifically monitors requests to **/wp-login.php**… Requests to the **custom login URL** are not the endpoint the system watches for this protection."
+>
+> **Consequence:** WPS Hide Login moved the form to a custom path, so the endpoint that actually accepts credentials has **no rate limiting and no IP ban** — unlimited password attempts. Kinsta's protection now guards a path that returns 404. The obfuscated URL still raises the cost of *finding* the form, but it is not a rate limit, and obscurity was never meant to be the whole control.
+>
+> This had been assumed to be fine because Kinsta auto-detects a customized login URL for *auto-login* purposes. It does — but that is a different subsystem from the brute-force ban. **Do not generalize "Kinsta knows about the custom URL" across features.**
+>
+> **Compensating control — password authentication removed outright** (`mu-plugins/ctle-hardening.php` v1.1.0, 2026-07-29). See the subsection below. Rejected alternative: a rate-limiting plugin such as Limit Login Attempts Reloaded, which is the right answer for a site that *needs* password login. This one does not — so the stronger move is to delete the capability rather than throttle it. Keep the plugin in mind as the fallback if the removal ever has to be reverted.
+>
+> Severity was low at the time of discovery (no password-authenticated account existed) but would **not** have stayed low: SSO JIT provisioning gives every faculty account a WordPress password hash at go-live.
+>
+> **Measured 2026-07-29, not merely inferred from the support answer.** Two `curl` probes established the asymmetry directly:
+>
+> | Request | Result |
+> |---|---|
+> | `GET /wp-login.php` (staging, past Basic Auth) | **200** — page serves |
+> | `POST /wp-login.php` with credentials (staging, past Basic Auth) | **403** — refused at Kinsta's edge before WordPress runs |
+> | `POST <custom login path>` with credentials (Live) | **200** — form processed normally, no block, no throttle |
+>
+> So it is sharper than "the IP ban doesn't follow the custom URL." Kinsta *actively blocks automated login POSTs* on `wp-login.php` at the edge — real, working protection — and the custom path has **none of it**. Moving the login form traded a protected endpoint for an unprotected one. Obscuring a login URL and protecting it are different things, and only one of them was in place.
 - [ ] In MyKinsta, navigate to Sites → [site] → Security → IP Deny — add any known malicious IP ranges if applicable — [Block IP Addresses](https://kinsta.com/docs/wordpress-hosting/site-management/block-ip-address/) *(N/A 2026-07-28 — none known to add.)*
 
 ### Eliminate password-based login paths
@@ -208,9 +228,16 @@ With the break-glass account withdrawn (§7), the goal is that **no account on t
   wp user delete <id> --reassign=<keep-user-id>
   ```
 - [x] Disable open user registration: Settings → General → uncheck **Anyone can register**. All provisioning happens through SSO (§13) and LTI (§16). ✅ Verified 2026-07-28 — `users_can_register` = 0.
-- [ ] After SSO is live, audit for any remaining password-capable accounts: `wp user list --fields=ID,user_login,user_email,roles` — every account should trace to either an SSO/LTI-provisioned user or a MyKinsta auto-login user
-- [ ] Password-protect the staging environment: MyKinsta → Sites → [site] → staging → Tools → Password Protection. Staging carries the same code and often the same data as production but gets none of the attention — do not leave it publicly reachable.
+- [x] **Remove password authentication entirely** — `mu-plugins/ctle-hardening.php` v1.1.0 (2026-07-29) drops core's username/password and email/password authenticators (priority 20 on the `authenticate` filter), removes the application-password authenticator, hides application passwords, and disables password reset. `wp_authenticate_cookie` is deliberately left in place — it is what keeps existing sessions valid.
+> **This is the compensating control for the brute-force gap above**, and it turns §6's stated goal from an operational assumption into an enforced property: no account on this site can be logged into with a password, whether or not one exists. Faculty authenticate through Entra; administrators through MyKinsta auto-login, which issues an auth cookie directly and never reaches those authenticators.
+>
+> ⚠️ **Verify MyKinsta auto-login on staging before deploying to Live.** If it were to break, the site's only remaining entry is SSH.
+>
+> ⚠️ **This changes the §7/§8 recovery procedure** — resetting a password over WP-CLI no longer grants a login while this file is in place. See §7 "Recovery path."
+- [ ] After SSO is live, audit for any remaining password-capable accounts: `wp user list --fields=ID,user_login,user_email,roles` — every account should trace to either an Entra SSO-provisioned user or a MyKinsta auto-login user
+- [x] Password-protect the staging environment: MyKinsta → Sites → [site] → staging → Tools → Password Protection. Staging carries the same code and often the same data as production but gets none of the attention — do not leave it publicly reachable. ✅ **Enabled 2026-07-29** (HTTP Basic Auth at the Nginx layer, so it challenges before WordPress runs). Credentials go to the Director and Developer via DU SecureTransfer, never this repo.
 - [x] Confirm the custom login path from §5 is not leaked in any published page, sitemap, or the repository — never committed to this repo; keep it that way.
+> **Rotated 2026-07-29.** The then-current path was pasted into a working session outside the repo during the §6 brute-force diagnostics, so it was rotated the same day and the new path used for the CD-N3 notice — which had not yet been sent, making rotation free. The repo rule held: no login path has ever been committed. Treat the path as a speed bump, not a control; removing password authentication is what makes an exposed path uninteresting.
 
 ---
 
@@ -232,29 +259,40 @@ Notes:
 - If a WordPress user with that email already exists, MyKinsta logs into that existing account instead of creating a new one.
 - The WordPress password is never collected or stored by MyKinsta.
 - Auto-login is enabled by default; it is managed at Sites → DU-CTLE → User management → WP Admin auto-login. Only Company Owners, Company Administrators, and Company Developers can enable or disable it.
-- If a user ever needs a conventional password login, they must obtain one through the standard "Lost your password?" reset process since auto-login does not create one.
+- ~~If a user ever needs a conventional password login, they must obtain one through the standard "Lost your password?" reset process since auto-login does not create one.~~
+> **No longer possible as of 2026-07-29, by design.** `ctle-hardening.php` v1.1.0 removes password authentication and disables password reset, so there is no route to a conventional password login on this site — the "Lost your password?" flow would only mint a credential that authenticates nothing. Anyone who needs in uses MyKinsta auto-login, Entra SSO, or the SSH recovery sequence below.
 
 ### What this changes about the security model
 
 Administrator access to WordPress is now gated entirely by MyKinsta account security. Two consequences must be actively managed rather than assumed.
 
 - [ ] **The shared mailbox is now effectively an admin credential.** Per §2, two-factor codes for the Company Owner (`ctle@dom.edu`) are delivered to that shared mailbox — so anyone who can read CTLE mail can reach WordPress Administrator. Decide and document who has access to `ctle@dom.edu`, and keep that list at least as short as the break-glass vault list would have been.
-- [ ] Prefer per-person **Company Developer** accounts for routine work — their 2FA codes go to individual DU addresses (§2) rather than the shared mailbox. Reserve the Company Owner account for billing and ownership tasks.
-- [ ] Review MyKinsta company users quarterly and remove anyone no longer on the project — removing a MyKinsta user removes their path into WP Admin
+- [x] Prefer per-person **Company Developer** accounts for routine work — their 2FA codes go to individual DU addresses (§2) rather than the shared mailbox. Reserve the Company Owner account for billing and ownership tasks. ✅ Confirmed 2026-07-29
+- [x] Review MyKinsta company users quarterly and remove anyone no longer on the project — removing a MyKinsta user removes their path into WP Admin ✅ First review done 2026-07-29 — **recurring**, next due 2026-10-29
 - [ ] After each new person's first auto-login, check Users in WP Admin and confirm the auto-provisioned account is expected and that no unexpected Administrator accounts exist
 
 ### Recovery path if MyKinsta is unavailable
 
 MyKinsta account standing is now a single point of failure for administrator access: a billing lapse, account suspension, or dashboard outage removes the auto-login path. SSH is the fallback, and it is the real replacement for the break-glass account.
 
-- [ ] Confirm the developer's SSH key is on file and working **before launch** (§8). With SSH, administrator access can always be restored through WP-CLI regardless of the MyKinsta dashboard's state:
+- [ ] Confirm the developer's SSH key is on file and working **before launch** (§8). With SSH, administrator access can always be restored through WP-CLI regardless of the MyKinsta dashboard's state.
+
+  ⚠️ **Amended 2026-07-29.** `ctle-hardening.php` v1.1.0 removed password authentication (§6), so creating or resetting an account is no longer enough on its own — nothing can log in with the resulting password until the hardening file is moved aside. The recovery sequence is now:
   ```bash
+  ssh <user>@<host> -p <port>
+  mv ~/public/wp-content/mu-plugins/ctle-hardening.php ~/ctle-hardening.php.off
+
+  cd public
   wp user create <username> <email> --role=administrator
   # or reset an existing account
   wp user update <user> --user_pass="$(openssl rand -base64 24)"
+
+  # ... log in, resolve the incident, then restore the control:
+  mv ~/ctle-hardening.php.off ~/public/wp-content/mu-plugins/ctle-hardening.php
   ```
+  One extra step in a path that already requires SSH. The failure mode to avoid is discovering it mid-incident — which is why it is written here, in the file header, and in §6.
 - [ ] Ensure **at least two people** hold working SSH keys, so recovery never depends on one person's laptop being available
-- [ ] Confirm the billing contact (§1) is a monitored DU address and that the annual renewal cannot lapse silently — a suspended Kinsta account takes the dashboard *and* SSH with it, which is the one scenario neither path covers
+- [x] Confirm the billing contact (§1) is a monitored DU address and that the annual renewal cannot lapse silently — a suspended Kinsta account takes the dashboard *and* SSH with it, which is the one scenario neither path covers ✅ Confirmed 2026-07-29
 
 ### Administrator login alerting
 
@@ -264,19 +302,23 @@ Implemented via the **`ctle-admin-alerts.php` must-use plugin** (source in the r
 
 - [x] Email the CTLE admin list on **any successful login by any user holding the Administrator role** — `wp_login` hook
 - [x] Email on **any user role change** — `set_user_role` hook (with a documented filter to suppress routine new-Faculty provisioning once SSO is live)
-- [ ] Verify delivery once WP Mail SMTP → Graph is live (§15 / IT-2); today WordPress has no working mail transport. Recipients currently `sendres@dom.edu` — widen before launch (**ME-12**). Add the Director and any other named CTLE admin; **deliberately not `ctle@dom.edu`**, since that mailbox receives the MyKinsta 2FA codes gating Administrator access and would put the alert and the second factor in one inbox. Revisit once IT-4 settles the access list. The recipient list drops any entry that is not a valid address, so a half-edited placeholder cannot become a live recipient.
+- [ ] Verify delivery once WP Mail SMTP → Graph is live (§15 / IT-2); today WordPress has no working mail transport. Recipients **widened 2026-07-29 to Steven + the Director** and redeployed (**ME-12** closed). Add the Director and any other named CTLE admin; **deliberately not `ctle@dom.edu`**, since that mailbox receives the MyKinsta 2FA codes gating Administrator access and would put the alert and the second factor in one inbox. Revisit once IT-4 settles the access list. The recipient list drops any entry that is not a valid address, so a half-edited placeholder cannot become a live recipient.
 
 ---
 
 ## 8. Developer Access
 
-- [ ] In MyKinsta, navigate to Sites → [site] → Info → SFTP/SSH to find connection details — [Connect via SSH](https://kinsta.com/docs/wordpress-hosting/connect-to-ssh/) · [Connect via SFTP](https://kinsta.com/docs/wordpress-hosting/connecting-with-sftp/)
-- [ ] Generate a personal SSH key pair if you do not already have one: `ssh-keygen -t ed25519 -C "dev@example.com"`
-- [ ] Add your public key to MyKinsta: User Settings → SSH Keys → Add SSH Key — [SSH Key Authentication](https://kinsta.com/docs/wordpress-hosting/connect-to-ssh/)
+> **Steven's access verified 2026-07-27 (SSH, SFTP, WP-CLI on both Staging and Live); checkboxes below ticked 2026-07-29 to match.** The outstanding item is **Amanda's** public key, which is what the two-person recovery requirement in §7 actually depends on (ME-6).
+>
+> ⚠️ **Recovery has a prerequisite as of 2026-07-29.** SSH alone no longer restores a login: `ctle-hardening.php` removes password authentication, so a WP-CLI password reset produces a credential that authenticates nothing until that file is moved aside. The full sequence is in §7 → "Recovery path if MyKinsta is unavailable." Read it *before* an incident, not during one.
+
+- [x] In MyKinsta, navigate to Sites → [site] → Info → SFTP/SSH to find connection details — [Connect via SSH](https://kinsta.com/docs/wordpress-hosting/connect-to-ssh/) · [Connect via SFTP](https://kinsta.com/docs/wordpress-hosting/connecting-with-sftp/)
+- [x] Generate a personal SSH key pair if you do not already have one: `ssh-keygen -t ed25519 -C "dev@example.com"`
+- [x] Add your public key to MyKinsta: User Settings → SSH Keys → Add SSH Key — *Steven's key on file; **Amanda's still outstanding** (ME-6)* — [SSH Key Authentication](https://kinsta.com/docs/wordpress-hosting/connect-to-ssh/)
   - **One SSH user per environment.** Kinsta does not allow additional SSH users — but each MyKinsta company member adds their **own** key here, and all authorized keys connect as that single environment user. The two-person recovery requirement (§7) is therefore satisfied by two MyKinsta members each holding a key, not by two SSH accounts. Kinsta "additional users" are SFTP-only (no shell, no WP-CLI) and are **not** a recovery path. `ssh-keygen -t ed25519` works even though Kinsta's docs show `-t rsa`. (Confirmed on Staging + Live, 2026-07-27.)
-- [ ] Test SSH access: `ssh [user]@[host] -p [port]`
-- [ ] Test SFTP access using your preferred client (e.g., Transmit, FileZilla, Cyberduck) with key-based authentication
-- [ ] Test WP-CLI via SSH: `wp --info` — confirm WP-CLI v2 is available — [WP-CLI](https://kinsta.com/docs/wordpress-hosting/site-management/wordpress-wp-cli/)
+- [x] Test SSH access: `ssh [user]@[host] -p [port]` — verified on Staging + Live 2026-07-27
+- [x] Test SFTP access using your preferred client (e.g., Transmit, FileZilla, Cyberduck) with key-based authentication
+- [x] Test WP-CLI via SSH: `wp --info` — confirm WP-CLI v2 is available — re-confirmed 2026-07-29 — [WP-CLI](https://kinsta.com/docs/wordpress-hosting/site-management/wordpress-wp-cli/)
 - [ ] Provide SFTP/SSH credentials (or instruct on MyKinsta user creation) to CTLE Admin if they need direct file access — use a separate MyKinsta user account, not the developer's credentials — [User Management](https://kinsta.com/docs/company-settings/user-management/)
 
 ---
@@ -463,7 +505,7 @@ This is the one-time process to elevate the CTLE Admin and Developer Admin from 
 
 ## 16. Canvas Integration — Global-Nav Link + Entra SSO
 
-> **LTI superseded 2026-07-28 (decision 10).** CTLE does **not** use LTI. Faculty launch from the existing **CTLE button in the Canvas global navigation**, retargeted to the site's **Entra SSO-initiation URL** (§13). Because Canvas is on the same Entra tenant, the click completes SSO silently and lands the user logged in. Access is gated by the Entra faculty group (§13, Option 1); the button's visibility is gated client-side on `declared_user_type=teacher` (set via the nightly SIS `users.csv`, read from `GET /api/v1/users/self/logins` — validated non-admin-readable 2026-07-28), which is cosmetic since Entra is the real gate. This is Canvas/DU-LT-side work; the WordPress side owes only the SSO-initiation URL (§13). LTI Tool + ceLTIc were installed then deactivated (kept for optionality). **The original LTI 1.3 procedure is retained below, struck through, for the record only.**
+> **LTI superseded 2026-07-28 (decision 10).** CTLE does **not** use LTI. Faculty launch from the existing **CTLE button in the Canvas global navigation**, retargeted to the site's **Entra SSO-initiation URL** (§13). Because Canvas is on the same Entra tenant, the click completes SSO silently and lands the user logged in. Access is gated by the Entra faculty group (§13, Option 1); the button's visibility is gated client-side on `declared_user_type=teacher` (set via the nightly SIS `users.csv`, read from `GET /api/v1/users/self/logins` — validated non-admin-readable 2026-07-28), which is cosmetic since Entra is the real gate. This is Canvas/DU-LT-side work; the WordPress side owes only the SSO-initiation URL (§13). LTI Tool + ceLTIc were installed, deactivated 07-28, and **deleted 2026-07-29** (§4, §5). **The original LTI 1.3 procedure is retained below, struck through, for the record only.**
 >
 > **Built 2026-07-29 — see `canvas/`.** `ctle-global-nav.js` implements both halves (faculty gate + retarget); `canvas/README.md` carries the install path, the rollout order, and the SIS `users.csv` `declared_user_type` specification. The SSO URL is one config constant and the `enabled` switch defaults to `false`, so the script can be staged in Canvas before IT-1 lands without altering today's button. Remaining: beta test against a teacher and a student account, the SIS column, then the real URL.
 
@@ -604,9 +646,9 @@ All three disclosure mechanisms must be live before any faculty user accesses th
 
 ## 22. Privacy & Compliance
 
-- [ ] Enable **WordPress Export Personal Data** tool: Settings → Privacy — confirm the tool is accessible to CTLE Admin
-- [ ] Enable **WordPress Erase Personal Data** tool: same location — confirm the tool is accessible to CTLE Admin
-- [ ] Set the Privacy Policy page in Settings → Privacy → select or create the privacy policy page
+- [x] Enable **WordPress Export Personal Data** tool: Settings → Privacy — confirm the tool is accessible to CTLE Admin ✅ 2026-07-29
+- [x] Enable **WordPress Erase Personal Data** tool: same location — confirm the tool is accessible to CTLE Admin ✅ 2026-07-29
+- [x] Set the Privacy Policy page in Settings → Privacy → select or create the privacy policy page ✅ 2026-07-29 — the WordPress-generated draft is designated; **CTLE writes the content** (see the `[CTLE]` item below)
 - [ ] **[CTLE]** Draft the site privacy policy page using the WordPress built-in template as a starting point. Required content (per REQUIREMENTS.md §14):
   1. What personal data is collected
   2. How it is used
@@ -628,7 +670,7 @@ Complete all items in this section on the staging environment first, then push t
 ### Security
 
 - [ ] Administrator access model is in place per §7: MyKinsta auto-login verified working, admin-login / role-change alerts confirmed (via the `ctle-admin-alerts.php` mu-plugin — requires WP Mail SMTP live to deliver), obfuscated login URL in use
-- [ ] Recovery path verified: at least two people hold working SSH keys, and `wp user create` has been tested on staging so the procedure is known to work before it is needed
+- [ ] Recovery path verified: at least two people hold working SSH keys (**Amanda's is the outstanding one** — ME-6), and the **full** procedure has been walked on staging — including the step added 2026-07-29: `ctle-hardening.php` must be moved aside before a WP-CLI password reset grants a login, because password authentication is removed. Testing only `wp user create` no longer exercises the real path.
 - [ ] The temporary provisioning account from §3 has been deleted, and `wp user list` shows no password-authenticated Administrator accounts remaining (§6)
 - [ ] MyKinsta company user list reviewed; access to the `ctle@dom.edu` shared mailbox is documented and minimal (§7)
 - [ ] SSO is the primary login path; local password login is not promoted or accessible at the standard `/wp-login.php` URL
@@ -674,6 +716,11 @@ Complete all items in this section on the staging environment first, then push t
 ### Content & Compliance
 
 - [ ] 🚩 **Settings → Reading → UNCHECK "Discourage search engines from indexing this site."** This was deliberately enabled during the build (§4). Leaving it on means the launched site is invisible to search engines. Verify from outside afterward — `curl -sSI https://ctle.dom.edu | grep -i x-robots-tag` should return nothing, and the page source should contain no `<meta name="robots" ... noindex>`.
+- [ ] 🚩 **[CTLE — CD-14]** No WordPress sample content remains: the "Hello World" post, "Sample Page," and the default comment are deleted or replaced. This is a hard gate precisely because it is nobody's day job — it was re-assigned from infrastructure to CTLE on 2026-07-29 on the principle that posts and pages are CTLE's domain, which means it can only be caught here.
+  ```bash
+  wp post list --post_type=any --post_status=any --fields=ID,post_type,post_title,post_status
+  wp comment list --fields=comment_ID,comment_author,comment_approved
+  ```
 - [ ] Privacy policy page is published and linked from the site footer
 - [ ] Terms of service / accessibility statement pages are present if required by DU policy
 - [ ] Kinsta DPA is executed
@@ -701,6 +748,9 @@ Complete all items in this section on the staging environment first, then push t
 | 0.6.4 | 2026-07-27 | sendres | §6: marked the `topsecretuser` deletion done — the last password-authenticated admin is gone; only passwordless MyKinsta auto-login admins remain. |
 | 0.7.0 | 2026-07-28 | sendres | Build session marked complete on Live: §5 plugin installs (WP Activity Log, Query Monitor active; WP Mail SMTP + Relevanssi staged) + admin-alert mu-plugin note (WP Activity Log notifications are Premium-only, so alerts live in `mu-plugins/ctle-admin-alerts.php`); §6 open-registration off + XML-RPC disabled via `mu-plugins/ctle-hardening.php` (verified 403 at Nginx, X-Pingback removed); §10 PHP 8.4 + limits/cron verified + `DISABLE_WP_CRON`; §11 CDN Polish (Lossless) + bandwidth alerts + authenticated BYPASS; §12 daily backups + point-in-time restore confirmed (off-site 30-day deferred to ME-11). |
 | 0.7.1 | 2026-07-28 | sendres | **LTI superseded (decision 10):** §16 rewritten to the Canvas global-nav link + Entra SSO (original LTI 1.3 steps retained struck-through as history); §5 LTI Tool + ceLTIc marked deactivated/superseded. Faculty launch via the retargeted Canvas nav button → SSO-initiation URL; button visibility gated on `declared_user_type=teacher` (SIS `users.csv`, read from `users/self/logins`); the Entra faculty group is the access gate. Cross-doc: REQUIREMENTS §6 (0.2.6), IT_REQUESTS Request 3 withdrawn, IMPLEMENTATION_PHASES §6 (0.2.3), STATUS 0.1.12. |
+| 0.7.6 | 2026-07-29 | sendres | Part A executed — checkbox and consistency sweep. Ticked what was actually done: §4 plugin deletions + theme updates (none deleted, CD-1) and the stale Discourage-indexing box (done 07-24, never ticked); §5 wpForo installed-inactive; §6 staging password protection, plus a note that the login path was **rotated** after exposure in a diagnostic session; §7 MyKinsta hygiene ×3 and the widened alert recipients; §8 Steven's SSH/SFTP/WP-CLI (Amanda's key still outstanding) with a recovery-prerequisite warning added at the top; §22 privacy tooling. **Corrected two contradictions the hardening change created:** §7 no longer tells users to obtain a password via "Lost your password?" (reset is disabled, so that would mint a credential authenticating nothing), and §23's recovery gate now requires walking the *full* sequence including moving the hardening file aside — testing `wp user create` alone no longer exercises the real path. |
+| 0.7.5 | 2026-07-29 | sendres | **§6 brute-force finding.** Kinsta support confirmed the automatic IP ban watches `/wp-login.php` only, so the WPS Hide Login custom path had **no rate limiting at all** — the assumption that Kinsta's auto-detection covered it was wrong (auto-login detection ≠ brute-force ban; different subsystems). Compensating control: `ctle-hardening.php` v1.1.0 removes password authentication outright (username/password, email/password, and application-password authenticators; application passwords hidden; password reset off), making §6's "no password login" goal an enforced property rather than an assumption. Rejected alternative recorded (Limit Login Attempts Reloaded — right answer for a site that needs password login; this one does not). §7 recovery procedure amended: a WP-CLI password reset no longer grants login until the hardening file is moved aside — one extra SSH step, documented in three places. §8 unchanged. |
+| 0.7.4 | 2026-07-29 | sendres | §4 cleanup split by ownership. Plugins: added LTI Tool + ceLTIc to the deletion list (reversing decision 10's "kept installed for optionality" — withdrawn integration, free to reinstall, no upside to unused code on disk), Relevanssi explicitly retained; §5 LTI entry updated to deleted-not-just-deactivated with the uninstall-routine note. Content: the sample post/page/comment re-assigned to **[CTLE]** as CD-14, with a new 🚩 hard launch gate in §23 — it is nobody's day job now, so §23 is the only place it can be caught. |
 | 0.7.3 | 2026-07-29 | sendres | §16: recorded the built Canvas artifacts (`canvas/ctle-global-nav.js` + `canvas/README.md` — faculty gate, retarget behind one constant, `enabled: false` master switch, SIS `declared_user_type` spec). §7: alert-recipient widening scoped as ME-12 and explicitly excluding `ctle@dom.edu` (it carries the MyKinsta 2FA codes), with an `is_email` guard on the list. Execution runbook for the remaining §4/§6/§7/§22 self-serve items: `SELF_SERVE_CHECKLIST.md`. |
 | 0.7.2 | 2026-07-28 | sendres | Audit sync: §23 verification names the actual alert mechanism (the `ctle-admin-alerts.php` mu-plugin, needs WP Mail SMTP live) rather than WP Activity Log, whose notifications are Premium. |
 
