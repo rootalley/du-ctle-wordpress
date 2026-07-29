@@ -2,7 +2,15 @@
 
 **Written:** 2026-07-29 · **Owner:** Steven Endres · **Status:** working document
 
-**Purpose.** Close every remaining task that does **not** depend on DU IT (SSO, email) or on the CTLE Director and Developer, then send the two status/chase emails. When this runbook is finished, the project's entire open-item list is external — nothing is waiting on us.
+> 🔴 **Status as of 2026-07-29 (later the same day): still usable, but no longer the whole list.** The environment-divergence finding reopened work on our side — **CD-N7, ME-16, ME-17, ME-18** — none of which is in this runbook. Three consequences:
+>
+> - **Part A is done and stays accurate.** Part B (Canvas) is unaffected — keep working it.
+> - **Part C2 must not be sent as written.** The CTLE email states the foundation is complete and hands over staging access without mentioning pushes. To someone building in Staging that combination reads as an invitation to push. **Send CD-N7 first** (`outbound/2026-07-29-amanda-do-not-push.md`), and send the amended C2 after.
+> - **Part D is now partly wrong** — it would re-introduce the "our queue is empty" claim that `HANDOFF.md` has since corrected. Corrected in place below.
+>
+> **`STATUS_AND_ACTIONS.md` is the authoritative list, not this file.** That was always true; it matters more now that the two have diverged.
+
+**Purpose.** Close every remaining task that does **not** depend on DU IT (SSO, email) or on the CTLE Director and Developer, then send the two status/chase emails. ~~When this runbook is finished, the project's entire open-item list is external — nothing is waiting on us.~~ **That closing premise no longer holds** — see the banner above.
 
 **Disposable.** This is a session runbook, not a reference document. When every box is checked, fold the outcomes into `STATUS_AND_ACTIONS.md` (Part D) and delete this file. Do not let it become a seventh document to keep in sync.
 
@@ -320,7 +328,8 @@ Chases IT-1 (the estimate above all), IT-2, and IT-4; confirms what has landed; 
 
 ### C2 — CTLE Director & Developer
 
-- [ ] Send [`docs/outbound/2026-07-29-ctle.md`](outbound/2026-07-29-ctle.md) — **after Part A2 is actually done**, so its "this is complete" statements are true
+- [ ] **First: send [`docs/outbound/2026-07-29-amanda-do-not-push.md`](outbound/2026-07-29-amanda-do-not-push.md)** (CD-N7) — urgent, on its own, not batched into the email below
+- [ ] Then send [`docs/outbound/2026-07-29-ctle.md`](outbound/2026-07-29-ctle.md) — **after Part A2 is actually done**, so its "this is complete" statements are true, and **after CD-N7**, since it hands over staging access and describes the Live build as finished
 
 Carries CD-N2, CD-N4, CD-N5, CD-N6 as notices; asks Persis for CD-1/4/6/7/8 and the CD-9–13 status questions; asks Amanda for ME-10, ME-6, and the theme decision.
 
@@ -338,8 +347,9 @@ Once Parts A–C are done, these register updates apply. Hand the results back a
 
 - [ ] `STATUS_AND_ACTIONS.md`: close **ME-3**, **ME-8**, **ME-9** (CD-N2/N4/N5/N6 sent; CD-N3 sent individually), **LT-4**; advance **LT-1/LT-3** to "gating JS built and beta-tested, retarget pending IT-1"; close **ME-12** once A3 has deployed (noting delivery stays unverifiable until IT-2)
 - [ ] `kinsta_onboarding.md`: check off §4 cleanup, §6 brute-force confirmation and staging password protection, §7 hygiene items, §22 privacy tooling
-- [ ] `HANDOFF.md`: rewrite "Immediate next actions" — the self-serve column should be empty, leaving IT-1/IT-2 and the CD decisions
-- [ ] Delete this file
+- [ ] ~~`HANDOFF.md`: rewrite "Immediate next actions" — the self-serve column should be empty, leaving IT-1/IT-2 and the CD decisions~~ — **do not do this.** Superseded 2026-07-29: `HANDOFF.md` has since been corrected to say the opposite, because CD-N7/ME-16/ME-17/ME-18 are ours. Following this line would re-introduce the error. Instead: confirm HANDOFF's "Start here" still leads with CD-N7.
+- [ ] `STATUS_AND_ACTIONS.md`: also close **CD-N7** once sent, and record Amanda's answers (theme, page builder, what she has built) against **ME-18** — it cannot be scoped without them
+- [ ] **Do not delete this file yet.** Part B is still open, and the close-out above no longer covers everything. Retire it only when Parts B and C are both complete *and* their outcomes are in the register.
 - [ ] Commit
 
 ---
