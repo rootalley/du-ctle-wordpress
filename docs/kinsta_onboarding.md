@@ -122,7 +122,9 @@ MyKinsta is Kinsta's hosting control panel. Access is separate from WordPress ad
 
 ## 5. Plugin Installation
 
-Install plugins in the order listed. Activate and do a basic sanity check after each one before proceeding. Use the [staging environment](https://kinsta.com/docs/wordpress-hosting/staging-environment/) for initial installation, then [push to production](https://kinsta.com/docs/wordpress-hosting/wordpress-push-environments/) after all plugins are validated.
+Install plugins in the order listed. Activate and do a basic sanity check after each one before proceeding.
+
+> ⚠️ **Install on Live, not staging.** This section originally said to install on staging and [push to production](https://kinsta.com/docs/wordpress-hosting/wordpress-push-environments/) afterwards. That is reversed as of 2026-07-29 and the original instruction was wrong for this site: Live is the build environment (CD-2), so Live holds the current plugin set, the activation states, and the hardening mu-plugins. A staging→live push would overwrite all three. See §24 for the push protocol that governs every environment sync on this site.
 
 ### Security & Admin Plugins (install first)
 
@@ -665,7 +667,9 @@ All three disclosure mechanisms must be live before any faculty user accesses th
 
 ## 23. Pre-Launch Verification
 
-Complete all items in this section on the staging environment first, then push to production and re-verify.
+Complete all items in this section **on Live**, and re-verify on Live.
+
+> ⚠️ **Do not stage-then-push this section.** It previously read "complete on staging first, then push to production." That is reversed as of 2026-07-29: Live is the build environment (CD-2), so pre-launch verification must exercise the environment that will actually serve faculty — the hardened one. Verifying on staging proves nothing about Live, and pushing staging's result *to* Live would undo the hardening being verified. See §24.
 
 ### Security
 
@@ -730,10 +734,68 @@ Complete all items in this section on the staging environment first, then push t
 
 ---
 
+## 24. Environment Push Protocol
+
+**Live is the source of truth for this site.** CD-2 put the build on Live because SSO is hostname-bound; the consequence, which was never written down until now, is that **Live accumulated state that exists nowhere else** — the hardening mu-plugins, the rotated login path, the deleted `topsecretuser`, the `sis_user_id` stamping, PHP 8.4, and the redirect-to-primary rule. Staging is a stale fork. A staging→live push is therefore a **destructive** operation on this site, not a routine deployment, and the ordinary "build on staging, push to live" habit is exactly backwards here.
+
+### What a Kinsta push actually moves
+
+Verified against Kinsta's [Push Environments](https://kinsta.com/docs/wordpress-hosting/wordpress-push-environments/) documentation, 2026-07-29.
+
+| Category | Selectable? | Behavior |
+|---|---|---|
+| **Files** | Yes — all, specific files/folders, or none | Source overwrites destination |
+| **Database** | Yes — all tables, specific tables, or none | Source overwrites destination; optional Search & Replace rewrites the domain to the destination's |
+| **Environment settings** — redirects, geolocation, PHP version, Nginx configuration | **No — always pushed** | Source **overwrites** destination, *even on a files-only or database-only push* |
+
+> ⚠️ **The third row is the trap.** There is no push configuration that leaves Live's environment settings alone. "Push files only" is the standard safety advice and it does **not** protect §9's redirect-to-primary or §10's PHP 8.4 — both are environment settings, and both get overwritten by staging's values on every push regardless of what you select.
+>
+> The fix is not to avoid pushing. It is to **keep staging's environment settings identical to Live's**, so the unavoidable overwrite writes the same values it replaces. Treat any divergence in PHP version or redirect rules between the two environments as a defect to be corrected on staging immediately.
+
+**Not transferred** (these survive a push, and some must be re-applied manually):
+
+- **.htpasswd password protection** — does not transfer in either direction. Staging's Basic Auth will not land on Live; equally, re-enable it on staging after any push *to* staging (§6).
+- **Bot protection level** — not transferred; set per environment.
+- **Custom Nginx configuration** — the *destination's* custom config is retained. (Distinct from the standard Nginx configuration in the table above, which is pushed. Do not conflate them.)
+- **Domains and SSL certificates** — bound to the environment, not the content.
+- **SSH keys** — but the **host key fingerprint is regenerated** by a push, which will trip a `known_hosts` mismatch on next connect. Expected, not a compromise.
+
+**Kinsta takes an automatic backup of the target before every push.** That is the undo. It is not a substitute for the checklist below, because a rollback also discards anything created on Live between the push and the rollback.
+
+### Before any push to Live
+
+- [ ] **Confirm the direction is deliberate.** Content and theme work flows staging→live. Everything in §4–§16 was built on Live and flows live→staging. If a single push would carry both, it is two pushes.
+- [ ] Take a **manual** backup of Live (§12) in addition to Kinsta's automatic one, named for the push
+- [ ] Confirm staging's **PHP version matches Live's** (8.4) — it is pushed whether or not you select it
+- [ ] Confirm staging's **redirect rules match Live's** (redirect all traffic to the primary domain, §9) — same reason
+- [ ] If pushing the database, **tick Run Search & Replace**. Without it, Live's `siteurl`/`home` are overwritten with staging's hostname and the site breaks.
+- [ ] If pushing files, confirm both mu-plugins are present **on staging** — see the asymmetry warning below
+
+### After any push to Live — re-verify, do not assume
+
+The push is not finished until these pass. Each corresponds to state that lives only on Live and that a push can silently revert.
+
+- [ ] PHP is **8.4** and limits are intact (§10) — read from Site Health → Info → Server, **not** `wp eval`
+- [ ] All hostnames still fold to `https://ctle.dom.edu` (§9 verification block)
+- [ ] `wp plugin list --status=must-use` shows **both** `ctle-admin-alerts.php` and `ctle-hardening.php`
+- [ ] Password authentication is still refused — positive control per §6, not merely "the file is present"
+- [ ] MyKinsta auto-login still works. **This is the gate**; it is the only interactive path into WP Admin
+- [ ] The custom login path is still the rotated one, and `/wp-login.php` still 404s (§6)
+- [ ] Users list contains **only** the expected admins — specifically, confirm `topsecretuser` has **not** returned. A database push from a staging copy predating 2026-07-27 will resurrect it, and nothing else in this checklist would catch that.
+- [ ] `sis_user_id` is still stamped on each admin account (ME-10) — if lost, first SSO login creates duplicate accounts
+- [ ] Search engines still discouraged pre-launch (`blog_public=0`, §4)
+- [ ] The four deleted plugins (§4) have not reappeared from staging's filesystem
+- [ ] Once SSO is live: the entire §13 configuration, which exists only on Live by design
+
+> ⚠️ **mu-plugin asymmetry — unresolved.** As of 2026-07-29, `ctle-hardening.php` was copied to staging for testing but **`ctle-admin-alerts.php` was deployed only to Live.** Whether a Kinsta file push *deletes* destination files absent from the source is **not documented** — confirm with Kinsta support before the first file push. Until that answer is in hand, the safe move is to keep both mu-plugins present and identical on both environments, which makes the question moot.
+
+---
+
 ## Changelog
 
 | Version | Date | Author | Notes |
 |---|---|---|---|
+| 0.8.0 | 2026-07-29 | sendres | **Added §24 Environment Push Protocol** and reversed two stale build-on-staging instructions that contradicted CD-2 and would have destroyed the Live build if followed: §5 ("use the staging environment for initial installation, then push to production") and §23 ("complete all items on the staging environment first, then push to production"). Both now direct the work to Live. §24 records the finding that drove this: Kinsta pushes **environment settings — redirects, geolocation, PHP version, Nginx configuration — unconditionally, even on a files-only or database-only push**, so "push files only" does *not* protect §9's redirect-to-primary or §10's PHP 8.4. Mitigation is to hold staging's environment settings identical to Live's so the forced overwrite is a no-op. Added pre-push and post-push checklists keyed to the state that exists only on Live (mu-plugins, rotated login path, deleted `topsecretuser`, `sis_user_id` stamping), and flagged one unresolved question — whether a Kinsta file push deletes destination files absent from the source, which determines whether a push would silently remove `ctle-admin-alerts.php` from Live. |
 | 0.1.0 | 2026-05-27 | sendres | Initial version. |
 | 0.2.0 | 2026-05-28 | sendres | Reordered sections; updated all cross-references; changed break-glass [DU IT] tags to [DU LT]. |
 | 0.3.0 | 2026-05-29 | sendres | Reordered §4–§12 to prioritize WordPress Configuration; added Infrastructure group; updated all cross-references. |
