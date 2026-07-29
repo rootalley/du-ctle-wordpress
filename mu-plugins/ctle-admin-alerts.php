@@ -20,17 +20,24 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Who receives the alerts.
  *
- * Set the $recipients array below with the CTLE admin email addresses. If the list is
- * left empty, it falls back to the site Administration Email (Settings → General).
+ * Named individuals only — deliberately NOT the shared ctle@dom.edu mailbox. That
+ * mailbox receives the MyKinsta 2FA codes gating Administrator access, and its access
+ * list is still an open decision (IT-4 / CD-7); routing Administrator-login alerts to
+ * the same inbox that holds the second factor weakens both. Revisit once IT-4 closes.
+ *
+ * Entries that are not valid email addresses are dropped, so a half-edited placeholder
+ * can never become a live recipient. If every entry is dropped, this falls back to the
+ * site Administration Email (Settings → General).
  *
  * @return string[]
  */
 function ctle_alert_recipients() {
 	$recipients = array(
-		'sendres@dom.edu',
+		'sendres@dom.edu',      // Steven Endres — infrastructure lead.
+		'pdriver@dom.edu',      // Persis Driver — CTLE Director.
 	);
 
-	$recipients = array_values( array_filter( array_map( 'trim', $recipients ) ) );
+	$recipients = array_values( array_filter( array_map( 'trim', $recipients ), 'is_email' ) );
 
 	if ( empty( $recipients ) ) {
 		$recipients = array( get_option( 'admin_email' ) );

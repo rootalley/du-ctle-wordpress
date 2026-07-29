@@ -1,6 +1,9 @@
 # CTLE WordPress — Session Handoff
 
-**Written:** 2026-07-24 · **Last updated:** 2026-07-28 · **For:** the next working session. The 2026-07-28 build session completed the WordPress infra/plugin stack (§4–§12: security plugins + custom mu-plugins, PHP 8.4, CDN/Polish, backups verified) and **dropped LTI in favor of a Canvas nav-link + Entra SSO (decision 10).** The critical path is now SSO alone (IT-1). Remaining self-serve work and external waits are in `STATUS_AND_ACTIONS.md`.
+**Written:** 2026-07-24 · **Last updated:** 2026-07-29 · **For:** the next working session.
+
+> **2026-07-29:** every task that depends on nobody else is now enumerated with exact commands in `SELF_SERVE_CHECKLIST.md`, the Canvas launch mechanism is built (`canvas/`), and the IT and CTLE chase emails are drafted in `docs/outbound/`. Once that runbook is executed, **nothing is waiting on us.**
+ The 2026-07-28 build session completed the WordPress infra/plugin stack (§4–§12: security plugins + custom mu-plugins, PHP 8.4, CDN/Polish, backups verified) and **dropped LTI in favor of a Canvas nav-link + Entra SSO (decision 10).** The critical path is now SSO alone (IT-1). Remaining self-serve work and external waits are in `STATUS_AND_ACTIONS.md`.
 
 This file exists so a new session can pick up without re-deriving context. It is a pointer document — the authoritative detail lives in the files it points to.
 
@@ -19,6 +22,8 @@ Dominican University's Center for Teaching and Learning Excellence is standing u
 | File | What it is |
 |---|---|
 | `STATUS_AND_ACTIONS.md` | **Start here.** Status by audience, plus the action register with owners. Most current. |
+| `SELF_SERVE_CHECKLIST.md` | Runbook for everything that depends on nobody else, with exact commands. **Disposable** — retires into the register when done. |
+| `../canvas/README.md` | The Canvas launch mechanism: the global-nav gating script and the SIS `declared_user_type` specification. |
 | `kinsta_onboarding.md` | The 23-section build checklist. The operational spine of the project. |
 | `IT_REQUESTS.md` | Specifications for DU IT and DU LT. Requests 1 & 2 submitted 2026-07-27 (Ellen email); **Request 3 (LTI) withdrawn 2026-07-28 — superseded by the Canvas nav-link + SSO (decision 10).** |
 | `REQUIREMENTS.md` | Full requirements. Reviewed by stakeholders — treat changes as consequential. |
@@ -119,22 +124,18 @@ Two consequences that must stay managed: the `ctle@dom.edu` shared mailbox now r
 `STATUS_AND_ACTIONS.md` is the authoritative register; this is the prioritized short version. **The infra/plugin build (§4–§12) is done. SSO (IT-1) is the single external blocker** — it gates the Canvas launch link, forums, admin elevation, and (with IT-2) mail. Everything below is ordered so the top items move *without* waiting on SSO or email.
 
 ### Do now — Steven, self-serve (no SSO/email dependency)
-1. **Chase IT-1** (and IT-2) — the Entra app + a realistic **turnaround estimate**. It's a nudge, not a build, but it's the highest-leverage thing here: it unblocks the SSO plugin, the Canvas launch link, forums, admin elevation, and it's the missing input for the CD-6 launch-scope call.
-2. **ME-3 / §4 cleanup** — **send CD-N5 first**, then: `wp plugin delete hello akismet` and delete the Hello World post, Sample Page, and default comment (`wp post delete <id> --force`; `wp comment delete <id> --force`). Leave the themes (CD-1) and the draft Privacy Policy page (§22 needs it).
-3. **§6 residual** — MyKinsta live-chat: confirm brute-force protection still applies to the custom (WPS Hide Login) login URL. Just get it on record.
-4. **CD-N6** — one-line heads-up to Amanda that PHP is now 8.4 (no visible effect; courtesy before she starts theme work).
-5. **Widen `ctle-admin-alerts.php` recipients** beyond `sendres@dom.edu` (add Persis / the CTLE admin group), redeploy. Can't verify delivery until IT-2, but set it now.
-6. **ME-8** — confirm the redacted §1/§3 credentials are actually recorded in the CTLE vault.
-7. *(Optional)* pre-stage **wpForo** (free) to round out the plugin roster — install only; config waits on SSO + the CD-8 privacy language.
+
+**→ `SELF_SERVE_CHECKLIST.md` Part A.** It supersedes the list that used to sit here: ME-3 §4 cleanup, the §6 brute-force confirmation, alert-recipient widening (ME-12), ME-8 vault check, staging password protection (CD-N4), MyKinsta hygiene, §22 privacy tooling, the TLS renewal reminder (ME-13), and optional wpForo pre-staging — each with the exact command and verification. Ordered so the destructive step is backed up first and the CTLE email goes out only after the cleanup is real.
+
+Chasing **IT-1** (and IT-2) is not on that list because it is not a build — it is the drafted email at `outbound/2026-07-29-it.md`, and it remains the single highest-leverage action in the project.
 
 ### Do now — needs Amanda (developer)
 8. **ME-10** — have Amanda launch into Live via MyKinsta auto-login (provisions her admin account), then stamp her `sis_user_id` (= her Entra `employeeId`) **before her first SSO**. Does not require SSO to be live.
 9. **ME-6** — add Amanda's SSH public key in MyKinsta so recovery is held by two people (§8).
 
 ### Do now — DU LT (Steven's team, Canvas-side — the launch mechanism, minus the final URL)
-10. **Prototype the global-nav gating JS** in Canvas: read `declared_user_type` from `/api/v1/users/self/logins`, show the CTLE button when it's `teacher` (validated non-admin-readable). Pure Canvas-side — build and test now.
-11. **Set `declared_user_type=teacher`** for faculty in the nightly SIS `users.csv` (enum value; currently unused, no collision).
-12. The final step — point the button at the **SSO-initiation URL** — waits on SSO config (IT-1). Everything up to that URL is buildable now.
+
+**→ `SELF_SERVE_CHECKLIST.md` Part B**, against the built artifacts in `canvas/`. The gating script is written (`ctle-global-nav.js`); what remains is the Canvas **beta** test with a teacher and a student account, the SIS `declared_user_type` column, and LT-4's break-glass retraction check. The SSO URL is one config constant, and the `enabled` switch defaults to `false` — so the script can ship to Canvas before IT-1 lands without touching today's button.
 
 ### External — chase, don't wait
 - **IT-1** (Entra app + estimate) — the gate. **IT-2** (`ctle-noreply@dom.edu` mailbox + Graph `Mail.Send`) — unblocks all mail (alerts + event/registration notices).

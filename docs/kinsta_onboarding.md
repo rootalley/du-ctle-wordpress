@@ -264,7 +264,7 @@ Implemented via the **`ctle-admin-alerts.php` must-use plugin** (source in the r
 
 - [x] Email the CTLE admin list on **any successful login by any user holding the Administrator role** — `wp_login` hook
 - [x] Email on **any user role change** — `set_user_role` hook (with a documented filter to suppress routine new-Faculty provisioning once SSO is live)
-- [ ] Verify delivery once WP Mail SMTP → Graph is live (§15 / IT-2); today WordPress has no working mail transport. Recipients currently `sendres@dom.edu` — widen to all CTLE admins before launch.
+- [ ] Verify delivery once WP Mail SMTP → Graph is live (§15 / IT-2); today WordPress has no working mail transport. Recipients currently `sendres@dom.edu` — widen before launch (**ME-12**). Add the Director and any other named CTLE admin; **deliberately not `ctle@dom.edu`**, since that mailbox receives the MyKinsta 2FA codes gating Administrator access and would put the alert and the second factor in one inbox. Revisit once IT-4 settles the access list. The recipient list drops any entry that is not a valid address, so a half-edited placeholder cannot become a live recipient.
 
 ---
 
@@ -464,6 +464,8 @@ This is the one-time process to elevate the CTLE Admin and Developer Admin from 
 ## 16. Canvas Integration — Global-Nav Link + Entra SSO
 
 > **LTI superseded 2026-07-28 (decision 10).** CTLE does **not** use LTI. Faculty launch from the existing **CTLE button in the Canvas global navigation**, retargeted to the site's **Entra SSO-initiation URL** (§13). Because Canvas is on the same Entra tenant, the click completes SSO silently and lands the user logged in. Access is gated by the Entra faculty group (§13, Option 1); the button's visibility is gated client-side on `declared_user_type=teacher` (set via the nightly SIS `users.csv`, read from `GET /api/v1/users/self/logins` — validated non-admin-readable 2026-07-28), which is cosmetic since Entra is the real gate. This is Canvas/DU-LT-side work; the WordPress side owes only the SSO-initiation URL (§13). LTI Tool + ceLTIc were installed then deactivated (kept for optionality). **The original LTI 1.3 procedure is retained below, struck through, for the record only.**
+>
+> **Built 2026-07-29 — see `canvas/`.** `ctle-global-nav.js` implements both halves (faculty gate + retarget); `canvas/README.md` carries the install path, the rollout order, and the SIS `users.csv` `declared_user_type` specification. The SSO URL is one config constant and the `enabled` switch defaults to `false`, so the script can be staged in Canvas before IT-1 lands without altering today's button. Remaining: beta test against a teacher and a student account, the SIS column, then the real URL.
 
 ### ~~LTI 1.3 (withdrawn — historical)~~
 
@@ -699,6 +701,7 @@ Complete all items in this section on the staging environment first, then push t
 | 0.6.4 | 2026-07-27 | sendres | §6: marked the `topsecretuser` deletion done — the last password-authenticated admin is gone; only passwordless MyKinsta auto-login admins remain. |
 | 0.7.0 | 2026-07-28 | sendres | Build session marked complete on Live: §5 plugin installs (WP Activity Log, Query Monitor active; WP Mail SMTP + Relevanssi staged) + admin-alert mu-plugin note (WP Activity Log notifications are Premium-only, so alerts live in `mu-plugins/ctle-admin-alerts.php`); §6 open-registration off + XML-RPC disabled via `mu-plugins/ctle-hardening.php` (verified 403 at Nginx, X-Pingback removed); §10 PHP 8.4 + limits/cron verified + `DISABLE_WP_CRON`; §11 CDN Polish (Lossless) + bandwidth alerts + authenticated BYPASS; §12 daily backups + point-in-time restore confirmed (off-site 30-day deferred to ME-11). |
 | 0.7.1 | 2026-07-28 | sendres | **LTI superseded (decision 10):** §16 rewritten to the Canvas global-nav link + Entra SSO (original LTI 1.3 steps retained struck-through as history); §5 LTI Tool + ceLTIc marked deactivated/superseded. Faculty launch via the retargeted Canvas nav button → SSO-initiation URL; button visibility gated on `declared_user_type=teacher` (SIS `users.csv`, read from `users/self/logins`); the Entra faculty group is the access gate. Cross-doc: REQUIREMENTS §6 (0.2.6), IT_REQUESTS Request 3 withdrawn, IMPLEMENTATION_PHASES §6 (0.2.3), STATUS 0.1.12. |
+| 0.7.3 | 2026-07-29 | sendres | §16: recorded the built Canvas artifacts (`canvas/ctle-global-nav.js` + `canvas/README.md` — faculty gate, retarget behind one constant, `enabled: false` master switch, SIS `declared_user_type` spec). §7: alert-recipient widening scoped as ME-12 and explicitly excluding `ctle@dom.edu` (it carries the MyKinsta 2FA codes), with an `is_email` guard on the list. Execution runbook for the remaining §4/§6/§7/§22 self-serve items: `SELF_SERVE_CHECKLIST.md`. |
 | 0.7.2 | 2026-07-28 | sendres | Audit sync: §23 verification names the actual alert mechanism (the `ctle-admin-alerts.php` mu-plugin, needs WP Mail SMTP live) rather than WP Activity Log, whose notifications are Premium. |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*

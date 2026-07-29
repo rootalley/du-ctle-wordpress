@@ -2,7 +2,7 @@
 
 **Purpose:** Track project status and action items by audience. Each audience section is written to be read aloud or pasted into an email without editing.
 
-**Maintainer:** Steven Endres · **Last updated:** 2026-07-27
+**Maintainer:** Steven Endres · **Last updated:** 2026-07-29
 
 ---
 
@@ -13,6 +13,8 @@
 **Action IDs.** `IT-n` (DU IT), `LT-n` (DU Learning Technologies), `CD-n` (CTLE Director + Developer), `ME-n` (Steven). IDs are permanent; closed items stay in the register with their status changed.
 
 **Section references** (`§4`, `§13`) point to `kinsta_onboarding.md`. Request numbers point to `IT_REQUESTS.md`.
+
+**Companion working files (2026-07-29).** `SELF_SERVE_CHECKLIST.md` is a disposable runbook for the tasks that depend on nobody else — it retires into this register once complete. `outbound/` holds what was actually sent to each audience, dated.
 
 ---
 
@@ -194,13 +196,15 @@ That is a real August launch rather than a missed one. The Director's call.
 | ME-8 | Steven | Move the plaintext credentials in `kinsta_onboarding.md` §1/§3 into a vault | 2026-07-24 | ⬜ Open |
 | ME-9 | Steven | Send CD-N1 through CD-N6 notifications before acting on any of them | Before acting | ⬜ Open |
 | ME-10 | Steven | Admin account identity reconciliation — stamp `sis_user_id` (= Entra `employeeId`) on each auto-login admin account **before its first SSO login**, so MyKinsta and SSO resolve to one account (LTI path dropped 2026-07-28); verify DU email and role preservation | Before SSO go-live | 🟡 Steven (ID 3) and Persis (ID 2) stamped 2026-07-27; their auto-login accounts already carry DU emails. **Developer (Amanda) pending — she must first launch into Live via MyKinsta auto-login to provision her account, then be stamped + verified.** |
+| ME-12 | Steven | Widen `ctle-admin-alerts.php` recipients beyond `sendres@dom.edu` — add the Director and redeploy. Deliberately **excludes** `ctle@dom.edu`: that mailbox carries the MyKinsta 2FA codes gating Administrator access, so alert and second factor would share an inbox. Revisit once IT-4 closes. | Before launch | 🟡 2026-07-29 — repo copy now lists `sendres@dom.edu` + `pdriver@dom.edu`, with an `is_email` guard on the list. Pending the deploy to Live (`SELF_SERVE_CHECKLIST.md` A3); delivery unverifiable until IT-2. |
+| ME-13 | Steven | Verify the `ctle.dom.edu` TLS certificates auto-renewed (expire **2026-08-31**, inside the launch window) | 2026-08-24 | ⬜ Open — reminder set |
 | IT-1 | DU IT | Entra app registration + test account | Est. TBD | 🟡 **Request submitted 2026-07-27** (Ellen email). Option 1 (SIS-faculty group gates the app; JIT provisioning); Entra ID P1 confirmed. Awaiting the app registration, test account, and turnaround estimate. |
 | IT-2 | DU IT | M365 mailbox + Graph credentials | Est. TBD | 🟡 Request submitted 2026-07-27 (Ellen email) — `ctle-noreply@dom.edu` mailbox + Graph `Mail.Send`. Awaiting provisioning + credentials. |
 | IT-3 | DU IT | Kinsta DPA execution confirmation | Before SSO goes live | ✅ Executed — confirmed 2026-07-27. |
 | IT-4 | DU IT | Decision on `ctle@dom.edu` mailbox access list | 2026-07-31 | ⬜ Open |
 | IT-6 | DU IT | **Security sign-off on the replacement administrator protection model** (MyKinsta 2FA + obfuscated login URL + Administrator login alerting), superseding the withdrawn TOTP-on-break-glass sign-off | 2026-07-31 | ✅ **Signed off 2026-07-27.** |
 | IT-5 | DU IT | CAA record fix, if ME-2 shows one is needed | Conditional | ✅ Closed 07-24 — not needed; no CAA records exist. Do not raise Monday. |
-| LT-1 | DU LT | ~~Canvas LTI 1.3 tool registration~~ → Retarget global-nav button to the SSO-initiation URL + faculty-gate its visibility | After SSO config (IT-1) | 🔄 Re-scoped 2026-07-28 (decision 10 — LTI withdrawn). Canvas-side; gated on IT-1 (SSO URL). |
+| LT-1 | DU LT | ~~Canvas LTI 1.3 tool registration~~ → Retarget global-nav button to the SSO-initiation URL + faculty-gate its visibility | After SSO config (IT-1) | 🟡 **Built 2026-07-29** — `canvas/ctle-global-nav.js` implements the faculty gate (`declared_user_type` from `users/self/logins`) and the retarget, with the SSO URL isolated in one constant and an `enabled` master switch defaulting to `false` (early upload is a no-op). Remaining: beta test, the SIS `declared_user_type` column, and the real URL from IT-1. |
 | LT-4 | DU LT | Retract break-glass request if sent | 2026-07-27 | ⬜ Open |
 | CD-1 | Developer | Theme selection | 2026-07-31 | ⬜ Open |
 | CD-2 | Developer | Build environment decision | 2026-07-28 | ✅ Decided 2026-07-27 — build SSO/LTI on Live/production; staging reserved for post-launch update testing. SSO is hostname-bound and a staging→live push overwrites Live, so building on Live means IT registers one Entra redirect URI, not two. |
@@ -227,6 +231,7 @@ That is a real August launch rather than a missed one. The Director's call.
 | 0.1.10 | 2026-07-28 | sendres | Build session (all on Live): closed ME-4 — WP Activity Log 5.6.5 + Query Monitor 4.0.7 installed/active; pre-staged WP Mail SMTP 4.9.0, LTI Tool 3.2.6, ceLTIc LTI Library 5.3.2 (config deferred to §15/§16). Admin-login / role-change alerting implemented as the free `mu-plugins/ctle-admin-alerts.php` must-use plugin (WP Activity Log notifications are Premium-only); email delivery pending IT-2. Live re-verified externally (site 200, redirects, noindex, WP 7.0.2, TLS→2026-08-31). |
 | 0.1.11 | 2026-07-28 | sendres | Build session cont'd: §6 baseline (open registration off; XML-RPC disabled via `ctle-hardening.php` mu-plugin — verified 403 at Nginx + X-Pingback removed); §10 PHP 8.4 + limits/cron verified + `DISABLE_WP_CRON`; §11 CDN Polish (Lossless) + bandwidth alerts + authenticated BYPASS; §12 daily backups + point-in-time restore confirmed. Closed ME-7; added ME-11 (off-site 30-day backup, post-launch). Decision 4 resolved (PHP 8.4). Relevanssi staged (inactive) pending content phase. |
 | 0.1.12 | 2026-07-28 | sendres | **LTI withdrawn (decision 10):** the Canvas global-nav link + Entra SSO replaces LTI 1.3 as the launch mechanism — CTLE needs none of LTI Advantage's services, and Entra already gates access URL-agnostically. LTI Tool + ceLTIc deactivated (kept installed). Validated the Canvas button-gating via `declared_user_type` read from `users/self/logins` (non-admin readable). Re-scoped LT-1/LT-3 (retarget the global-nav button to the SSO-initiation URL + faculty-gate visibility), retired LT-5, noted LT-2 moot; updated the critical-path + CD-6 narrative to drop LTI. Cross-doc: REQUIREMENTS §6 (0.2.6), IT_REQUESTS Request 3 withdrawn (0.2.1), IMPLEMENTATION_PHASES §6 (0.2.3). |
+| 0.1.14 | 2026-07-29 | sendres | Self-serve session. Added `SELF_SERVE_CHECKLIST.md` (disposable runbook covering every task that depends on nobody else) and `outbound/` (dated record of what was sent to each audience). LT-1 advanced — `canvas/ctle-global-nav.js` + `canvas/README.md` built: faculty gate via `declared_user_type`, retarget behind one config constant, `enabled: false` master switch, plus the SIS `users.csv` specification. Added ME-12 (widen alert recipients; excludes `ctle@dom.edu` on 2FA-separation grounds) and ME-13 (TLS renewal check 2026-08-24). Drafted the DU IT and CTLE emails. **Note:** CD-N5 is being sent as an after-the-fact notice, a deliberate departure from notify-before-acting. |
 | 0.1.13 | 2026-07-28 | sendres | Cross-doc audit sync: aligned the CD-6 narrative and ME-4 register entry to the LTI drop (plugins deactivated, not "config pending"); the image-optimization → Cloudflare Polish and audit-alerting → mu-plugin corrections landed in REQUIREMENTS (0.2.7) and IMPLEMENTATION_PHASES (0.2.4). |
 
 *This document is maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*
