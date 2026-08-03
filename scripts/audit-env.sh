@@ -1,18 +1,22 @@
-#!/usr/bin/env bash
+#!/bin/sh
 #
 # Capture the full state of a Kinsta WordPress environment.
 #
 # Designed to run over SSH without being uploaded first:
 #
-#   ssh <user>@<host> -p <port> 'bash -s' < scripts/audit-env.sh > docs/audit/staging-$(date +%F).txt
-#   ssh <user>@<host> -p <port> 'bash -s' < scripts/audit-env.sh > docs/audit/live-$(date +%F).txt
+#   ssh <user>@<host> -p <port> 'sh -s' < scripts/audit-env.sh > docs/audit/staging-$(date +%F).txt
+#   ssh <user>@<host> -p <port> 'sh -s' < scripts/audit-env.sh > docs/audit/live-$(date +%F).txt
 #
 # Everything goes to stdout so the redirect captures it. Output is plain text
 # with === MARKERS === so sections can be pulled out mechanically later.
 #
+# Deliberately POSIX sh, not bash: Kinsta containers are not guaranteed to
+# carry bash, and nothing here needs it. Keep it that way — no arrays, no
+# [[ ]], no pipefail.
+#
 # Read-only. Nothing here writes to the database or the filesystem.
 
-set -uo pipefail
+set -u
 
 WEBROOT="${WEBROOT:-$HOME/public}"
 
