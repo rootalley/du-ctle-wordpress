@@ -1,2 +1,6 @@
 *.pdf
 .DS_Store
+
+# Audit output contains real staff email addresses from wp user list.
+# Opt individual files in with: git add -f docs/audit/<file>
+docs/audit/
