@@ -168,7 +168,7 @@ Confirm Live is now the build environment and Staging is frozen.
 6. ⏸ **Blocked on IT — Exchange app-only access policy.** `sendMail` returns `403 [RAOP] Blocked by tenant configured AppOnly AccessPolicy settings`. That is Exchange's application access policy layer, not Entra: either no `RestrictAccess` policy exists for the app, it is scoped to a group not containing `ctle-noreply@dom.edu`, or a `DenyAccess` policy overrides it. Ticket update **sent 2026-08-04** (`docs/outbound/2026-08-04_it-ticket-mail-accesspolicy.md`). Policy changes take up to 30 min to propagate, so re-test after a wait, not immediately.
 7. **Re-test** once IT confirms: `wp eval 'var_dump( wp_mail( "sendres@dom.edu", "test", "body" ) );'` — `true` is HTTP 202 accepted; `false` puts the reason in the PHP error log prefixed `ctle-mail:`.
 8. **Confirm `ctle-admin-alerts.php` delivers** — log in as an admin, check the alert arrives.
-9. **Diary the client secret's expiry.** When it lapses, every send fails at the token step and the only signal is the error log.
+9. ✅ **Client secret expiry: 2028-08-02.** Recorded under *Not yours* below with a renewal reminder a month ahead. When it lapses, every send fails at the token step and the only signal is the error log — nothing emails you, because the thing that would is this plugin.
 10. **Re-run `scripts/audit-env.sh` and update `AS_BUILT.md`** — the plugin list and the mail row are both stale.
 
 > **Don't let IT "fix" this by widening the app's access.** A `RestrictAccess` policy scoped to the one mailbox is the control we asked for. Unrestricted app-only mailbox access would let a leaked secret send as anyone at DU.
@@ -242,6 +242,7 @@ Nothing here needs you this week.
 - **DU IT** — the two tickets
 - **Post-launch** — off-site 30-day backup, HSTS, disabling `ductle.kinsta.cloud`
 - **2026-08-24** — verify TLS auto-renewed; certificates expire 08-31
+- **2028-07-02** — ask IT to reissue the Graph mail client secret. **It expires 2028-08-02** and its lapse is silent: mail simply stops, and the only trace is `ctle-mail:` in the PHP error log. Put this in a calendar, not only here
 
 ---
 
