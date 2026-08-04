@@ -4,8 +4,11 @@
 #
 # Designed to run over SSH without being uploaded first:
 #
-#   ssh <user>@<host> -p <port> 'sh -s' < scripts/audit-env.sh > docs/audit/staging-$(date +%F).txt
-#   ssh <user>@<host> -p <port> 'sh -s' < scripts/audit-env.sh > docs/audit/live-$(date +%F).txt
+# cd "/Users/sendres/GitHub/github@rootalley.com/du-ctle-wordpress"
+# ssh -i ~/.ssh/id_ed25519_ctle_sendres_kinsta -p 26769 ductle@163.192.209.112 \
+#   'sh -s' < scripts/audit-env.sh > docs/audit/live-$(date +%F).txt
+# ssh -i ~/.ssh/id_ed25519_ctle_sendres_kinsta -p 50378 ductle@163.192.209.112 \
+#   'sh -s' < scripts/audit-env.sh > docs/audit/staging-$(date +%F).txt
 #
 # Everything goes to stdout so the redirect captures it. Output is plain text
 # with === MARKERS === so sections can be pulled out mechanically later.
