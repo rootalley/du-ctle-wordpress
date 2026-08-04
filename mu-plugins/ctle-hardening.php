@@ -12,8 +12,8 @@
  *              A must-use plugin: always active, no activation step, and it cannot
  *              be deactivated from the WP admin UI.
  *
- * SAFE TO DISABLE XML-RPC: nothing CTLE runs needs it — SSO and WP Mail SMTP
- * (Microsoft Graph) both work without XML-RPC. It is a well-worn brute-force and
+ * SAFE TO DISABLE XML-RPC: nothing CTLE runs needs it — SSO and Graph mail both work
+ * without XML-RPC. It is a well-worn brute-force and
  * pingback-amplification surface, so it is turned off outright.
  *
  * ⚠️ RECOVERY PROCEDURE CHANGED IN 1.1.0. The standard recovery procedure — reset a

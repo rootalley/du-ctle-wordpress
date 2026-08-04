@@ -6,11 +6,11 @@ For what the site *currently is*, see `docs/AS_BUILT.md`. Don't read it to find 
 
 ---
 
-# → RIGHT NOW: Job 3
+# → RIGHT NOW: send the IT ticket update
 
-**Write the mail plugin.** It's the only substantial thing not waiting on somebody else, and it can be finished before IT's credentials arrive.
+**Job 3 is built, deployed and configured.** Graph is refusing the send at Exchange's app-only access policy — an IT-side setting, not ours. The draft is at `docs/outbound/2026-08-04_it-ticket-mail-accesspolicy.md`; append it to the existing mailbox ticket.
 
-⏱ **2 hours.** Jump to Job 3 below.
+⏱ **5 minutes.** Then Job 3 waits on IT, and nothing else on your list is unblocked this week.
 
 ---
 
@@ -20,7 +20,7 @@ For what the site *currently is*, see `docs/AS_BUILT.md`. Don't read it to find 
 |---|---|---|---|---|
 | 1 | Communications | — | — | ✅ Done 2026-08-04 |
 | 2 | Merge Staging into Live | Amanda + a window | 2–3 hrs | ⏸ Waiting on them |
-| **3** | **Mail** | **you, then IT ticket** | **2 hrs** | **← start here** |
+| **3** | **Mail** | **IT — access policy** | **5 min + wait** | **⏸ built and deployed; send the ticket** |
 | 4 | SSO | IT + LT session | 3 hrs | ⏸ Ticket filed |
 | 5 | Content and features | Amanda + Persis | weeks | Not started |
 | 6 | Pre-launch | everyone | 1 day | Not started |
@@ -154,17 +154,22 @@ Confirm Live is now the build environment and Staging is frozen.
 
 ## Job 3 — Mail ← start here
 
-**Unblocked.** Steps 1–3 need nothing from anyone.
+**Code is written.** Everything remaining is a deploy step or waits on IT's credentials.
 
 **IT ticket covers:** separate app registration; Graph `Mail.Send` **application** permission; admin consent; scoped to `ctle-noreply@dom.edu` via application access policy.
 
-1. **Write `mu-plugins/ctle-mail.php`** — ~100 lines. Client-credentials token cached in a transient; `pre_wp_mail` filter posting to `/v1.0/users/ctle-noreply@dom.edu/sendMail`. ⏱ 90 min
-2. **Add config constants to `wp-config.php`** — tenant ID, client ID, secret. Never the database, never this repo.
-3. **Update `mu-plugins/README.md`** for the third file.
-4. *(needs credentials)* Test: `wp eval 'wp_mail("sendres@dom.edu","test","body");'`
-5. *(needs credentials)* Confirm `ctle-admin-alerts.php` delivers — log in as an admin, check the alert arrives.
-6. **Delete WP Mail SMTP.** Its Microsoft 365 mailer is Pro-only *and* delegated-only; it cannot do this job and shouldn't stay installed.
-7. **Diary the client secret's expiry** the day it arrives.
+1. ✅ **`mu-plugins/ctle-mail.php` written** 2026-08-04. Client-credentials token cached in a transient, refreshed once on a 401; `pre_wp_mail` posting to `/v1.0/users/ctle-noreply@dom.edu/sendMail`. Unconfigured, it fails fast and logs rather than falling back to PHP `mail()`.
+2. ✅ **`mu-plugins/README.md` updated** — third file, the `wp-config.php` constants, and the test command.
+3. ✅ **Deployed to Live** 2026-08-04. `wp plugin list --status=must-use` shows three CTLE files; `pre_wp_mail` confirmed hooked.
+4. ✅ **WP Mail SMTP deleted** 2026-08-04. Its only settings were `mailer: mail` and a from-address — nothing worth keeping. Its two tables (`wp_wpmailsmtp_debug_events`, `wp_wpmailsmtp_tasks_meta`) survive the uninstall; leave them for the pre-launch cleanup rather than dropping tables now.
+5. ✅ **Constants in `wp-config.php`** 2026-08-04. Token issues cleanly — decoded claims show `roles: Mail.Send`, `idtyp: app`. **The app registration and consent are correct; nothing more is needed there.**
+6. ⏸ **Blocked on IT — Exchange app-only access policy.** `sendMail` returns `403 [RAOP] Blocked by tenant configured AppOnly AccessPolicy settings`. That is Exchange's application access policy layer, not Entra: either no `RestrictAccess` policy exists for the app, it is scoped to a group not containing `ctle-noreply@dom.edu`, or a `DenyAccess` policy overrides it. Ticket update drafted at `docs/outbound/2026-08-04_it-ticket-mail-accesspolicy.md` — **send it.** Policy changes take up to 30 min to propagate, so re-test after a wait, not immediately.
+7. **Re-test** once IT confirms: `wp eval 'var_dump( wp_mail( "sendres@dom.edu", "test", "body" ) );'` — `true` is HTTP 202 accepted; `false` puts the reason in the PHP error log prefixed `ctle-mail:`.
+8. **Confirm `ctle-admin-alerts.php` delivers** — log in as an admin, check the alert arrives.
+9. **Diary the client secret's expiry.** When it lapses, every send fails at the token step and the only signal is the error log.
+10. **Re-run `scripts/audit-env.sh` and update `AS_BUILT.md`** — the plugin list and the mail row are both stale.
+
+> **Don't let IT "fix" this by widening the app's access.** A `RestrictAccess` policy scoped to the one mailbox is the control we asked for. Unrestricted app-only mailbox access would let a leaked secret send as anyone at DU.
 
 **Done when:** an Administrator login produces an email.
 
@@ -242,6 +247,9 @@ Nothing here needs you this week.
 
 | Version | Date | Notes |
 |---|---|---|
+| 1.2.2 | 2026-08-04 | Mail constants added; token verified to carry `roles: Mail.Send` as an app identity, so the Entra side is confirmed correct. `sendMail` blocked by Exchange's app-only access policy (`403 [RAOP]`) — drafted the ticket update and made explicit that the fix is to scope the `RestrictAccess` policy, not to widen the app's reach. |
+| 1.2.1 | 2026-08-04 | `ctle-mail.php` deployed to Live and WP Mail SMTP deleted. Job 3 is down to the `wp-config.php` constants and the delivery test. Added a step to refresh `AS_BUILT.md` from the audit script once mail is proven — the plugin list and the mail row are both stale. |
+| 1.2.0 | 2026-08-04 | Job 3 code written — `mu-plugins/ctle-mail.php` takes over `wp_mail()` through `pre_wp_mail` and posts to Graph `sendMail`. README documents the constants and the test. Stale WP Mail SMTP references removed from the other two mu-plugins. Job 3 resequenced: deploy and remove WP Mail SMTP now, constants and testing when IT delivers. |
 | 1.1.0 | 2026-08-04 | Job 1 closed — CTLE email sent; DU IT moved to two tickets, so the outbound email drafts were deleted. Jobs renumbered. Merge sequence reordered to match what was committed to in writing: Amanda's profile first, then the window, then lockdown, then backups. Mail promoted to the active job since it is the only substantial unblocked work. Recorded the deliberate deferral of theme accessibility and the launch date so neither gets re-raised before the platform is delivered. |
 | 1.0.0 | 2026-08-03 | Written from the audit of both environments. Replaced `NOW.md`, the `STATUS_AND_ACTIONS.md` register and `SELF_SERVE_CHECKLIST.md`. Merge method changed from Kinsta push to WP-CLI table export/import — no custom tables on Staging, so a content-level transfer is sufficient and far safer. Mail settled as a custom Graph mu-plugin. |
 

@@ -12,6 +12,7 @@ WP admin UI** — the right home for security controls that should never be swit
 |---|---|---|
 | `ctle-admin-alerts.php` | Emails the CTLE admin list on any Administrator login and any role change. Replaces WP Activity Log Premium's paid notifications with free core hooks. | §5, §7 |
 | `ctle-hardening.php` | **v1.1.0** — disables XML-RPC, stops advertising the pingback endpoint, and **removes password authentication entirely** (username/password, email/password, and application-password authenticators; application passwords hidden; password reset off). | §6 |
+| `ctle-mail.php` | Routes every `wp_mail()` through Microsoft Graph `sendMail` as `ctle-noreply@dom.edu`, using an Entra app registration and the client-credentials flow. Replaces WP Mail SMTP. | §15 |
 
 > ⚠️ **`ctle-hardening.php` v1.1.0 changed the recovery procedure.** A WP-CLI password reset no longer grants a login while the file is in place — move it aside first:
 >
@@ -37,9 +38,46 @@ No activation step. Confirm it loaded:
 wp plugin list --status=must-use
 ```
 
+## Mail configuration
+
+`ctle-mail.php` reads three secrets from `wp-config.php`. They belong there and in the
+CTLE vault — **never** the database, never this repository:
+
+```php
+define( 'CTLE_MAIL_TENANT_ID',     '...' );
+define( 'CTLE_MAIL_CLIENT_ID',     '...' );
+define( 'CTLE_MAIL_CLIENT_SECRET', '...' );
+define( 'CTLE_MAIL_FROM',          'ctle-noreply@dom.edu' );  // optional; this is the default
+```
+
+The Entra registration is **separate from the SSO one** and needs the Graph
+**application** permission `Mail.Send` — not delegated — admin-consented, and constrained
+by an application access policy to that single mailbox. Without the policy the app can
+send as any mailbox in the tenant.
+
+Until the credentials land, every send fails fast with `ctle_mail_unconfigured` rather
+than falling back to PHP `mail()`. That is deliberate: a fallback would produce mail that
+looks sent, arrives from the wrong domain, and lands in spam.
+
+Test once the constants are in place:
+
+```bash
+wp eval 'var_dump( wp_mail( "sendres@dom.edu", "CTLE mail test", "body" ) );'
+```
+
+`true` means Graph accepted it (HTTP 202). `false` means it did not — the reason is in the
+PHP error log, prefixed `ctle-mail:`. Failures also fire `wp_mail_failed`, so anything
+listening for that hook still sees them.
+
+**The client secret expires.** Diary the date the day it is issued. When it lapses every
+send fails at the token step, and the only signal is the error log — because the thing
+that would email you about it is this plugin.
+
 ## Notes
 
 - **Recipients:** edit `ctle_alert_recipients()` in `ctle-admin-alerts.php` with the real
   CTLE admin addresses. Left empty, it falls back to the site Administration Email (§4).
-- **Email delivery** depends on WP Mail SMTP wired to Microsoft Graph (§15 / IT-2).
-  Until that is live, alerts are generated but not delivered — expected; verify once IT-2 lands.
+- **WP Mail SMTP is to be deleted.** Its Microsoft 365 mailer is Pro-only *and*
+  delegated-only, so it cannot send as a sign-in-blocked shared mailbox. `ctle-mail.php`
+  takes over `wp_mail()` through `pre_wp_mail` regardless, so leaving it installed only
+  adds an unused attack surface and two orphan database tables.

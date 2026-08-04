@@ -12,7 +12,9 @@
  *              A must-use plugin: always active, no activation step, and it cannot
  *              be deactivated from the WP admin UI.
  *
- * DEPENDENCY:  Email delivery depends on WP Mail SMTP.
+ * DEPENDENCY:  Email delivery depends on ctle-mail.php, which routes wp_mail() through
+ *              Microsoft Graph. Until its credentials are in wp-config.php these alerts
+ *              are generated but not delivered, and the failure lands in the error log.
  */
 
 defined( 'ABSPATH' ) || exit;
