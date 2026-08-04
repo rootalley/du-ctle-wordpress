@@ -6,13 +6,13 @@ For what the site *currently is*, see `docs/AS_BUILT.md`. Don't read it to find 
 
 ---
 
-# → RIGHT NOW: nothing. Every job is waiting on somebody else.
+# → RIGHT NOW: send IT the second reply, then re-test tomorrow morning
 
-Job 3 is built, deployed and configured; the ticket is with IT. Jobs 2, 4, 5 and 6 all need Amanda, Persis or IT first.
+`docs/outbound/2026-08-04_it-ticket-mail-accesspolicy-reply2.md`. It answers their question about the group settings (those are irrelevant — don't let them change them) and shows why their access policy is not the blocker.
 
-**When IT confirms the access policy, come back to Job 3 step 7** — one command, then mail is closed.
+Then re-test in the morning regardless: Microsoft's propagation window is **several hours**, and today's tests may simply have been too early.
 
-⏱ **5 minutes**, whenever that lands.
+⏱ **5 minutes** to send. Everything else is waiting on Amanda, Persis or IT.
 
 ---
 
@@ -171,7 +171,13 @@ Confirm Live is now the build environment and Staging is frozen.
 3. ✅ **Deployed to Live** 2026-08-04. `wp plugin list --status=must-use` shows three CTLE files; `pre_wp_mail` confirmed hooked.
 4. ✅ **WP Mail SMTP deleted** 2026-08-04. Its only settings were `mailer: mail` and a from-address — nothing worth keeping. Its two tables (`wp_wpmailsmtp_debug_events`, `wp_wpmailsmtp_tasks_meta`) survive the uninstall; leave them for the pre-launch cleanup rather than dropping tables now.
 5. ✅ **Constants in `wp-config.php`** 2026-08-04. Token issues cleanly — decoded claims show `roles: Mail.Send`, `idtyp: app`. **The app registration and consent are correct; nothing more is needed there.**
-6. ⏸ **Blocked on IT — Exchange app-only access policy.** `sendMail` returns `403 [RAOP] Blocked by tenant configured AppOnly AccessPolicy settings`. That is Exchange's application access policy layer, not Entra: either no `RestrictAccess` policy exists for the app, it is scoped to a group not containing `ctle-noreply@dom.edu`, or a `DenyAccess` policy overrides it. Ticket update **sent 2026-08-04** (`docs/outbound/2026-08-04_it-ticket-mail-accesspolicy.md`). Policy changes take up to 30 min to propagate, so re-test after a wait, not immediately.
+6. ⏸ **Blocked on IT — but not on the access policy.** IT built a correct `RestrictAccess` policy scoped to `CTLE-NoReplyGroup`, and `Test-ApplicationAccessPolicy` returns `Granted` for `ctle-noreply@dom.edu`, `Denied` for others. `sendMail` still returns `403 [RAOP] Access to OData is disabled`.
+
+   **The discriminator test:** sending as a mailbox the policy *denies* produces a byte-identical error to sending as the one it *grants*. If the policy were refusing us, those would differ. The app is being blocked **before** per-mailbox scope is evaluated — something tenant-wide, above the policy layer. Second reply drafted at `docs/outbound/2026-08-04_it-ticket-mail-accesspolicy-reply2.md` — **send it.**
+
+   Prime suspects for IT: `EwsApplicationAccessPolicy` / `EwsAllowList` on the org config (the "Access to OData is disabled" wording is characteristic of that gate, and it governs Graph REST too), `EwsEnabled` on the mailbox, or a tenant migrated to RBAC for Applications, where `ApplicationAccessPolicy` is superseded by a role assignment.
+
+   **Correction to earlier guidance:** propagation can take *several hours*, not 30 minutes. Re-test the morning after any change before concluding it failed.
 7. **Re-test** once IT confirms: `wp eval 'var_dump( wp_mail( "sendres@dom.edu", "test", "body" ) );'` — `true` is HTTP 202 accepted; `false` puts the reason in the PHP error log prefixed `ctle-mail:`.
 8. **Confirm `ctle-admin-alerts.php` delivers** — log in as an admin, check the alert arrives.
 9. ✅ **Client secret expiry: 2028-08-02.** Recorded under *Not yours* below with a renewal reminder a month ahead. When it lapses, every send fails at the token step and the only signal is the error log — nothing emails you, because the thing that would is this plugin.
