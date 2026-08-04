@@ -94,6 +94,8 @@ rsync -avz -e "ssh -i $KEY -p 50378" \
 
 ### 2e. Push to Live and remap — 30 min
 
+> **The import replaces `wp_posts` wholesale, so Live's draft Privacy Policy page does not survive it.** Staging has no equivalent. Recreate it after the merge — Job 6 assumes one exists to publish. Live's other page is `Sample Page`, which is expendable.
+
 ```bash
 rsync -avz -e "ssh -i $KEY -p 26769" /tmp/ctle-uploads/ ductle@$IP:~/public/wp-content/uploads/
 rsync -avz -e "ssh -i $KEY -p 26769" \
@@ -106,16 +108,20 @@ wp db export /tmp/live-pre-merge-$(date +%F).sql     # local undo, on top of Kin
 wp db import /tmp/ctle-content.sql
 ```
 
-Staging and Live user IDs differ. Offset first so no mapping collides mid-flight:
+Staging and Live user IDs differ. Offset first so no mapping collides mid-flight.
+
+**Verified against both environments 2026-08-04.** Staging: `1` topsecretuser, `2` Amanda, `3` Persis, `5` Steven. Live: `2` Persis, `3` Steven. The three mappings below are correct as written.
 
 ```bash
 wp db query "UPDATE wp_posts SET post_author = post_author + 1000;"
 wp db query "UPDATE wp_posts SET post_author = 2 WHERE post_author = 1003;"   # pdriver
 wp db query "UPDATE wp_posts SET post_author = 3 WHERE post_author = 1005;"   # sendres
 wp db query "UPDATE wp_posts SET post_author = <AMANDA_LIVE_ID> WHERE post_author = 1002;"
-wp db query "UPDATE wp_posts SET post_author = 3 WHERE post_author > 1000;"   # topsecretuser → you
+wp db query "UPDATE wp_posts SET post_author = 3 WHERE post_author >= 1000;"  # topsecretuser and the orphan
 wp db query "SELECT post_author, COUNT(*) FROM wp_posts GROUP BY post_author;"
 ```
+
+> **The catch-all is `>= 1000`, not `> 1000`.** One `wp_navigation` row on Staging has `post_author = 0`, which the offset turns into exactly `1000`. A `>` comparison leaves it stranded there and the merge finishes with an author ID pointing at no user.
 
 Last query must show only IDs 2, 3 and Amanda's. Anything ≥1000 means a step was skipped.
 
@@ -227,7 +233,9 @@ Amanda and Persis lead. Yours is the plumbing.
 1. **WCAG 2.1 AA audit** and **DU brand review** — deferred above; raise once Jobs 2–4 close
 2. **Delete the sample content** — `Hello world!`, `Sample Page`, the default comment
 3. **Update the theme** — 0.3.5 has an update pending
-4. **Flip the switches:** `blog_public=1`, remove Live password protection, publish the privacy policy, upload the Canvas button to production
+4. **Recreate the privacy policy page** — the merge replaces `wp_posts`, so Live's draft does not survive it
+5. **Flip the switches:** `blog_public=1`, remove Live password protection, publish the privacy policy, upload the Canvas button to production
+6. **Drop the two orphan WP Mail SMTP tables** — `wp_wpmailsmtp_debug_events`, `wp_wpmailsmtp_tasks_meta`, left behind by the uninstall
 
 **Done when:** a logged-out stranger reaches `https://ctle.dom.edu` and sees a finished site.
 
@@ -250,6 +258,7 @@ Nothing here needs you this week.
 
 | Version | Date | Notes |
 |---|---|---|
+| 1.3.0 | 2026-08-04 | Job 2's merge sequence verified read-only against both environments. The user-ID mappings, the page IDs (18, 26), the search-replace hostname and the expected page count of 11 are all correct as written. Two defects fixed: the author catch-all was `> 1000`, which stranded a `wp_navigation` row whose `post_author` is 0, and nothing recorded that the import discards Live's draft privacy policy. Client secret expiry recorded (2028-08-02). |
 | 1.2.2 | 2026-08-04 | Mail constants added; token verified to carry `roles: Mail.Send` as an app identity, so the Entra side is confirmed correct. `sendMail` blocked by Exchange's app-only access policy (`403 [RAOP]`) — drafted the ticket update and made explicit that the fix is to scope the `RestrictAccess` policy, not to widen the app's reach. |
 | 1.2.1 | 2026-08-04 | `ctle-mail.php` deployed to Live and WP Mail SMTP deleted. Job 3 is down to the `wp-config.php` constants and the delivery test. Added a step to refresh `AS_BUILT.md` from the audit script once mail is proven — the plugin list and the mail row are both stale. |
 | 1.2.0 | 2026-08-04 | Job 3 code written — `mu-plugins/ctle-mail.php` takes over `wp_mail()` through `pre_wp_mail` and posts to Graph `sendMail`. README documents the constants and the test. Stale WP Mail SMTP references removed from the other two mu-plugins. Job 3 resequenced: deploy and remove WP Mail SMTP now, constants and testing when IT delivers. |
