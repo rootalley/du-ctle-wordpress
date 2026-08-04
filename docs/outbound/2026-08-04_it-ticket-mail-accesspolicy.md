@@ -1,6 +1,6 @@
-# DRAFT — ticket update to DU IT: Graph mail blocked by app-only access policy
+# Ticket update to DU IT: Graph mail blocked by app-only access policy
 
-**Status:** draft, not sent. Append to the existing mailbox/Graph ticket rather than opening a new one.
+**Sent 2026-08-04**, appended to the existing mailbox/Graph ticket. Awaiting IT.
 
 ---
 
