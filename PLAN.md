@@ -207,12 +207,18 @@ Confirm the plugin before the session — **OpenID Connect Generic** (free) is t
 
 **Our side, in WordPress:**
 
-1. Install and activate OpenID Connect Generic
-2. Endpoints from the tenant's OIDC discovery document
-3. Client ID and secret in `wp-config.php` constants
-4. Identity key: `employeeId` → the `sis_user_id` meta already stamped on your and Persis's accounts
-5. *Create user if none exists*, role Subscriber
-6. Profile sync on every login (display name, email)
+1. ✅ **OpenID Connect Generic 3.11.3 installed on Live 2026-08-05 — deliberately left inactive.** Actively maintained (last release 2026-02), PHP 7.4+, 200k+ installs.
+2. **Activate only when you can immediately test MyKinsta auto-login.** With password authentication removed, auto-login is the *only* interactive way into wp-admin. An unconfigured auth plugin has no upside until credentials exist, and a locked admin has a real downside. One command, then confirm you can still get in.
+3. Endpoints from the tenant's OIDC discovery document
+4. Client ID and secret in `wp-config.php` constants
+5. **Confirm JWT signature verification against the tenant JWKS is enabled.** 3.11.0 was a security release adding it, to stop token forgery. Don't leave it off.
+6. Identity key: `employeeId` → the `sis_user_id` meta already stamped on your and Persis's accounts
+7. *Create user if none exists*, role Subscriber
+8. Profile sync on every login (display name, email)
+
+> **Version gap to watch:** Live runs WordPress 7.0.2; the plugin declares "tested up to 6.9.0". Not a known break, but if activation misbehaves, that gap is the first thing to suspect.
+>
+> **Also check on activation:** WPS Hide Login is active. The redirect URI targets `admin-ajax.php`, which it does not intercept, so the sign-in flow should be unaffected — but any plugin redirect that lands on `wp-login.php` will 404. Verify the full round trip, not just the callback.
 
 **Test in this order:** IT's test account → you → Persis → Amanda. Each must land on their **existing** account. A duplicate means `sis_user_id` didn't match — stop before anyone else signs in.
 
