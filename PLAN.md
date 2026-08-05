@@ -239,7 +239,20 @@ All three asks confirmed doable: a CTLE allowlist security group populated from 
 >
 > **Also check on activation:** WPS Hide Login is active. The redirect URI targets `admin-ajax.php`, which it does not intercept, so the sign-in flow should be unaffected — but any plugin redirect that lands on `wp-login.php` will 404. Verify the full round trip, not just the callback.
 
-**Test in this order:** IT's test account → you → Persis → Amanda. Each must land on their **existing** account. A duplicate means `sis_user_id` didn't match — stop before anyone else signs in.
+### Group membership: Ellen first, `DOMFaculty` at launch
+
+Agreed with Pete 2026-08-05. The group starts with **Ellen** as its only member — she is both IT and adjunct faculty, so she can verify against a real faculty identity — and switches to `DOMFaculty`-populated membership at launch.
+
+**Steven, Persis and Amanda must be added during the build phase too.** Ellen alone cannot test what matters. She has no existing WordPress account, so her sign-in is a JIT provision — that exercises *provisioning*, not *matching*. The duplicate-account failure can only surface for Steven and Persis, the two with accounts already stamped with `sis_user_id`. Testing with Ellen alone defers that risk to launch day.
+
+**Test in this order:** Ellen → you → Persis → Amanda. Each of the last three must land on their **existing** account. A duplicate means `employeeId` didn't match — stop before anyone else signs in.
+
+Two questions raised with Aidan:
+
+- **Is Ellen's `employeeId` populated?** Adjunct records can differ from full-time in the SIS. If hers is empty, she is the one person whose passing test would mislead us.
+- **Is Pete's `DOMFaculty` population one-time or an ongoing sync?** One-time means faculty hired later silently cannot sign in.
+
+> **The launch-day membership swap is a cutover, not a checkbox.** Make the change a couple of days before launch and confirm a real `DOMFaculty` member can sign in. Exchange policy propagation on Job 3 took over 24 hours; assume nothing about how fast group and assignment changes take effect.
 
 Then LT: real SSO URL into `canvas/ctle-global-nav.js`, `enabled: true`, beta-test against a teacher and a student, add `declared_user_type` to the nightly SIS `users.csv`.
 
@@ -289,6 +302,7 @@ Nothing here needs you this week.
 
 | Version | Date | Notes |
 |---|---|---|
+| 1.5.1 | 2026-08-05 | Group membership plan recorded: Ellen alone during build, `DOMFaculty` at launch. Added the requirement that Steven, Persis and Amanda join during build too — Ellen has no existing WordPress account, so her sign-in tests provisioning rather than matching, and the duplicate-account risk would otherwise go untested until launch day. Flagged Ellen's adjunct record as a possible `employeeId` gap, the one-time-vs-ongoing question on Pete's population, and the launch swap as a cutover to rehearse early. |
 | 1.5.0 | 2026-08-05 | Job 4 handed to **Aidan** after the session with Pete. Recorded who owns what in IT — Aidan for Entra, Pete for the SIS and Canvas import, Ellen as project manager. OIDC confirmed over SAML. Three unknowns block progress: whether the allowlist group exists, what Aidan already built, and what Entra's `employeeId` contains. Flagged that `employeeId` needs a custom claims policy rather than a portal checkbox, and that the fallback costs a re-stamp of existing accounts. |
 | 1.4.0 | 2026-08-05 | **Job 3 closed — mail delivers.** IT's access policy was correct when built on 08-04 but took over 24 hours to propagate, well beyond any documented window. Recorded that the discriminator test which suggested a second cause is meaningless while a policy is still inert. Scoping verified live: the app sends as `ctle-noreply@dom.edu` and is refused for any other mailbox. OpenID Connect Generic 3.11.3 installed for Job 4, left inactive. |
 | 1.3.0 | 2026-08-04 | Job 2's merge sequence verified read-only against both environments. The user-ID mappings, the page IDs (18, 26), the search-replace hostname and the expected page count of 11 are all correct as written. Two defects fixed: the author catch-all was `> 1000`, which stranded a `wp_navigation` row whose `post_author` is 0, and nothing recorded that the import discards Live's draft privacy policy. Client secret expiry recorded (2028-08-02). |

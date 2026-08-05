@@ -65,7 +65,29 @@ not.
 - It must be a **security group**. `DOMFaculty` is a mailing list, and Entra can't gate app
   assignment on a distribution list — this is the one hard blocker.
 - **Flat membership.** Nested groups aren't supported for app assignment.
-- Pete owns populating it from `DOMFaculty`; I just need the object to exist and the name.
+- Pete owns populating it from `DOMFaculty` at launch; I just need the object to exist and the
+  name.
+
+**On membership while we build.** Pete and I agreed to start the group with **Ellen as the only
+member** — she's ideal for verification, being both IT and adjunct faculty — and swap to the
+`DOMFaculty`-populated membership at launch.
+
+I'd like to extend that slightly: **please also add me, Persis Driver and Amanda Norris**
+during the build phase. Ellen on her own can only prove that sign-in works; she has no existing
+WordPress account, so her first sign-in creates a fresh one. That exercises provisioning, not
+matching. The failure I'm actually worried about — an existing account being duplicated instead
+of matched — can only show up for Persis and me, because we're the two with accounts already
+stamped with our Jenzabar IDs. If we can't sign in during testing, that risk goes untested
+until launch day, which is precisely when I don't want to find it.
+
+So: Ellen, Persis, Amanda and me during build; swap to `DOMFaculty` at launch.
+
+Two related questions:
+
+- **Is Ellen's `employeeId` populated?** Adjunct records sometimes differ from full-time ones in
+  the SIS, and if hers is empty, she'd be the one person whose test result misleads us.
+- **Will Pete's population from `DOMFaculty` be a one-time copy or an ongoing sync?** If it's
+  one-time, faculty hired later won't be able to sign in and nobody will notice for months.
 
 **2. App registration** — or confirmation of the existing one.
 
@@ -100,9 +122,15 @@ mean re-stamping the existing accounts, and I'd much rather know beforehand.
 
 - Tenant ID, client ID and client secret — **individually via SecureTransfer**, not email
 - The client secret's expiry date at issue, so I can diary it as I did for mail
-- **A test account in the group, if you can provide one.** I want to test in this order: your
-  test account → me → Persis Driver → Amanda Norris. A duplicate account at any step means
-  `employeeId` didn't match, and I stop there before anyone else signs in.
+
+Given the group membership above, no separate test account is needed. I'll test in this order:
+
+1. **Ellen** — proves the end-to-end flow works with a real faculty identity
+2. **Me**, then **Persis** — proves matching works, since we both have existing accounts
+3. **Amanda Norris** — she'll have an account by then from the site build
+
+**A duplicate account at any step means `employeeId` didn't match, and I stop there** rather
+than let anyone else sign in and compound it.
 
 **5. One thing that will look like a fault and isn't.** The site sits behind HTTP Basic Auth
 while it's being built. Browser sign-in carries cached credentials and works normally, but any
@@ -126,6 +154,10 @@ Steven
 - Supersedes `2026-08-05_it-ticket-mail-resolved.md`, which was mail-only and never sent.
 - Three things Aidan has to answer before Job 4 can move: whether the group exists, what he
   already built, and what `employeeId` actually contains.
+- **The launch-day membership swap is a cutover event, not a checkbox.** Don't do it on launch
+  morning. Make the change a couple of days ahead and confirm a real `DOMFaculty` member can
+  sign in — Exchange policy propagation on the mail job took over 24 hours, and there's no
+  reason to assume group and assignment changes are instant either.
 - The `employeeId` custom claims policy is the likeliest place this stalls. If he pushes back,
   the fallback is matching on `upn` or `oid` — but both mean re-stamping Steven's and Persis's
   accounts, so decide before credentials are issued, not after.
