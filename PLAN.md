@@ -6,13 +6,15 @@ For what the site *currently is*, see `docs/AS_BUILT.md`. Don't read it to find 
 
 ---
 
-# → RIGHT NOW: check your inbox, then close the IT ticket
+# → RIGHT NOW: send Aidan the mail-and-SSO email before you travel
 
-**Mail works.** Confirm the test messages arrived at `sendres@dom.edu`, then send `docs/outbound/2026-08-05_it-ticket-mail-resolved.md` to close the ticket — it tells IT their configuration was right all along and to stop chasing my two wrong theories.
+`docs/outbound/2026-08-05_aidan-mail-resolved-sso-next.md`. It closes the mail ticket and hands him the three SSO questions — group, what he already built, and what `employeeId` contains. Sending it today means he can work while you're away.
 
-Also tell Persis the Administrator-login alert she just received was a test.
+Also tell Persis the Administrator-login alert she received was a test.
 
-⏱ **5 minutes.** Job 3 is done. Jobs 2, 4, 5 and 6 wait on Amanda, Persis or IT.
+⏱ **5 minutes.** Job 3 is done. Everything else waits on Amanda, Persis or Aidan.
+
+> **Travelling Thu 2026-08-06 → Mon 08-10, back Tue 08-11**, limited availability. Flagged to Aidan with an explicit "don't hold work for me."
 
 ---
 
@@ -23,7 +25,7 @@ Also tell Persis the Administrator-login alert she just received was a test.
 | 1 | Communications | — | — | ✅ Done 2026-08-04 |
 | 2 | Merge Staging into Live | Amanda + a window | 2–3 hrs | ⏸ Waiting on them |
 | 3 | Mail | — | — | ✅ Done 2026-08-05 |
-| 4 | SSO | IT + LT session | 3 hrs | ⏸ Ticket filed |
+| 4 | SSO | Aidan, then Pete | 3 hrs | ⏸ Handed to Aidan 08-05 |
 | 5 | Content and features | Amanda + Persis | weeks | Not started |
 | 6 | Pre-launch | everyone | 1 day | Not started |
 
@@ -190,19 +192,37 @@ Confirm Live is now the build environment and Staging is frozen.
 
 ## Job 4 — SSO
 
-**Waiting on:** the IT + LT working session. Ticket filed.
+**Waiting on:** Aidan. Email sent 2026-08-05 (`docs/outbound/2026-08-05_aidan-mail-resolved-sso-next.md`).
 
-Confirm the plugin before the session — **OpenID Connect Generic** (free) is the assumption below.
+### Who does what in IT
+
+| Person | Owns |
+|---|---|
+| **Aidan** | Entra admin. Did the mail app registration; **owns the SSO registration, the group and the claims**. Primary contact for this job. |
+| **Pete** | Runs the SIS (Jenzabar) and builds the Canvas SIS import files. Some SSO involvement, less than Aidan. **His piece — `declared_user_type` in the nightly import — comes after SSO works.** |
+| **Ellen** | IT project-manager role, and adjunct faculty. Not currently in the loop on either piece. |
+
+### Settled with Pete, 2026-08-05
+
+All three asks confirmed doable: a CTLE allowlist security group populated from `DOMFaculty`; OIDC sign-in to WordPress; `DOMFaculty` also driving `declared_user_type` for Canvas. **Pete leaned SAML from familiarity but agreed OIDC works — decision stands at OIDC**, since the installed plugin is OIDC-only and SAML would mean a different plugin and an unbudgeted licence. Pete found earlier SSO work already started by Aidan, so he handed the SSO piece to Aidan and asked to be picked up again for the Canvas file afterwards.
+
+### Three answers needed from Aidan before this can move
+
+1. **Does the allowlist security group exist?** He checks, and creates it if not. Must be a security group — `DOMFaculty` is a mailing list and can't gate app assignment. Flat membership; nested groups unsupported.
+2. **What did he already build?** Unknown. Must be a **separate registration from the mail one**.
+3. **What does Entra's `employeeId` actually contain?** Believed to be the Jenzabar ID. Unconfirmed.
 
 **IT's side, in Entra:**
 
-1. App registration, single tenant
+1. App registration, single tenant, platform **Web** (confidential client, client secret)
 2. Redirect URI: `https://ctle.dom.edu/wp-admin/admin-ajax.php?action=openid-connect-authorize`
-3. Gate on the faculty group — *Assignment required* = Yes
-4. Claims: `email`, `given_name`, `family_name`, `employeeId` in the token
-5. Hand back tenant ID, client ID, client secret
+3. Gate on the allowlist group — *Assignment required* = Yes
+4. Claims: `email`, `given_name`, `family_name`, `employeeId` in the ID token
+5. Hand back tenant ID, client ID, client secret via SecureTransfer, plus the secret's expiry
 
-> **Snag to raise in the ticket before the session:** a *mailing list* and a *security group* are different objects. App assignment needs a security group, so DOMFaculty can't be used directly — IT will need to create or mirror one.
+> **`employeeId` is where this will stall.** It is *not* in the portal's standard optional-claims list — emitting it needs a **custom claims policy** on the app's service principal. Microsoft's own docs use `employeeId` as the worked example, so it's a known path, not an exotic one.
+>
+> If Aidan can't emit it, the fallback is matching on `upn` or `oid` — but that means re-stamping the `sis_user_id` meta on Steven's and Persis's accounts. **Decide before credentials are issued, not after.**
 
 **Our side, in WordPress:**
 
@@ -269,6 +289,7 @@ Nothing here needs you this week.
 
 | Version | Date | Notes |
 |---|---|---|
+| 1.5.0 | 2026-08-05 | Job 4 handed to **Aidan** after the session with Pete. Recorded who owns what in IT — Aidan for Entra, Pete for the SIS and Canvas import, Ellen as project manager. OIDC confirmed over SAML. Three unknowns block progress: whether the allowlist group exists, what Aidan already built, and what Entra's `employeeId` contains. Flagged that `employeeId` needs a custom claims policy rather than a portal checkbox, and that the fallback costs a re-stamp of existing accounts. |
 | 1.4.0 | 2026-08-05 | **Job 3 closed — mail delivers.** IT's access policy was correct when built on 08-04 but took over 24 hours to propagate, well beyond any documented window. Recorded that the discriminator test which suggested a second cause is meaningless while a policy is still inert. Scoping verified live: the app sends as `ctle-noreply@dom.edu` and is refused for any other mailbox. OpenID Connect Generic 3.11.3 installed for Job 4, left inactive. |
 | 1.3.0 | 2026-08-04 | Job 2's merge sequence verified read-only against both environments. The user-ID mappings, the page IDs (18, 26), the search-replace hostname and the expected page count of 11 are all correct as written. Two defects fixed: the author catch-all was `> 1000`, which stranded a `wp_navigation` row whose `post_author` is 0, and nothing recorded that the import discards Live's draft privacy policy. Client secret expiry recorded (2028-08-02). |
 | 1.2.2 | 2026-08-04 | Mail constants added; token verified to carry `roles: Mail.Send` as an app identity, so the Entra side is confirmed correct. `sendMail` blocked by Exchange's app-only access policy (`403 [RAOP]`) — drafted the ticket update and made explicit that the fix is to scope the `RestrictAccess` policy, not to widen the app's reach. |
