@@ -247,10 +247,14 @@ Agreed with Pete 2026-08-05. The group starts with **Ellen** as its only member 
 
 **Test in this order:** Ellen → you → Persis → Amanda. Each of the last three must land on their **existing** account. A duplicate means `employeeId` didn't match — stop before anyone else signs in.
 
-Two questions raised with Aidan:
+**Who is faculty, confirmed 2026-08-05:** Persis and Amanda both hold faculty appointments alongside their CTLE Director and developer roles, so a `DOMFaculty`-mirrored group keeps them. Ellen Alamilla is adjunct faculty. **Steven is not** — Director of Learning Technologies sits in the Provost's Office.
 
-- **Is Ellen's `employeeId` populated?** Adjunct records can differ from full-time in the SIS. If hers is empty, she is the one person whose passing test would mislead us.
-- **Is Pete's `DOMFaculty` population one-time or an ongoing sync?** One-time means faculty hired later silently cannot sign in.
+> **At launch, the membership swap drops Steven out of the group.** Admin access survives through MyKinsta auto-login, so this is not a lockout — but SSO sign-in stops working, which means debugging faculty sign-in problems without being able to reproduce them. **Decide deliberately:** keep him as a permanent manual addition to the group, or accept auto-login as the only path. Drifting into the second by accident is the failure mode.
+
+Open questions:
+
+- **Is Ellen's `employeeId` populated?** Adjunct records can differ from full-time in the SIS. If hers is empty, her account provisions with no `sis_user_id` and nothing complains at the time.
+- **Who maintains the group after launch?** Membership is a CTLE decision expected to mirror `DOMFaculty`. If the list is hand-maintained rather than synced, faculty hired later silently cannot sign in. **Persis's question, not IT's.**
 
 > **The launch-day membership swap is a cutover, not a checkbox.** Make the change a couple of days before launch and confirm a real `DOMFaculty` member can sign in. Exchange policy propagation on Job 3 took over 24 hours; assume nothing about how fast group and assignment changes take effect.
 
@@ -290,7 +294,7 @@ Amanda and Persis lead. Yours is the plumbing.
 Nothing here needs you this week.
 
 - **Amanda** — Live profile, merge window, SSH key, then content build on Live
-- **Persis** — who may sign in (DOMFaculty proposed), Events Calendar licence, catalog structure, confidentiality language, forum categories, admin training
+- **Persis** — who may sign in (DOMFaculty proposed) **and who maintains that list after launch**, Events Calendar licence, catalog structure, confidentiality language, forum categories, admin training
 - **DU IT** — the two tickets
 - **Post-launch** — off-site 30-day backup, HSTS, disabling `ductle.kinsta.cloud`
 - **2026-08-24** — verify TLS auto-renewed; certificates expire 08-31
