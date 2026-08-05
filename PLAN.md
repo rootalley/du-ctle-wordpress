@@ -6,13 +6,13 @@ For what the site *currently is*, see `docs/AS_BUILT.md`. Don't read it to find 
 
 ---
 
-# → RIGHT NOW: send IT the second reply, then re-test tomorrow morning
+# → RIGHT NOW: check your inbox, then close the IT ticket
 
-`docs/outbound/2026-08-04_it-ticket-mail-accesspolicy-reply2.md`. It answers their question about the group settings (those are irrelevant — don't let them change them) and shows why their access policy is not the blocker.
+**Mail works.** Confirm the test messages arrived at `sendres@dom.edu`, then send `docs/outbound/2026-08-05_it-ticket-mail-resolved.md` to close the ticket — it tells IT their configuration was right all along and to stop chasing my two wrong theories.
 
-Then re-test in the morning regardless: Microsoft's propagation window is **several hours**, and today's tests may simply have been too early.
+Also tell Persis the Administrator-login alert she just received was a test.
 
-⏱ **5 minutes** to send. Everything else is waiting on Amanda, Persis or IT.
+⏱ **5 minutes.** Job 3 is done. Jobs 2, 4, 5 and 6 wait on Amanda, Persis or IT.
 
 ---
 
@@ -22,7 +22,7 @@ Then re-test in the morning regardless: Microsoft's propagation window is **seve
 |---|---|---|---|---|
 | 1 | Communications | — | — | ✅ Done 2026-08-04 |
 | 2 | Merge Staging into Live | Amanda + a window | 2–3 hrs | ⏸ Waiting on them |
-| **3** | **Mail** | **IT — access policy** | **5 min + wait** | **⏸ built and deployed; send the ticket** |
+| 3 | Mail | — | — | ✅ Done 2026-08-05 |
 | 4 | SSO | IT + LT session | 3 hrs | ⏸ Ticket filed |
 | 5 | Content and features | Amanda + Persis | weeks | Not started |
 | 6 | Pre-launch | everyone | 1 day | Not started |
@@ -160,9 +160,9 @@ Confirm Live is now the build environment and Staging is frozen.
 
 ---
 
-## Job 3 — Mail ← start here
+## Job 3 — Mail ✅
 
-**Code is written.** Everything remaining is a deploy step or waits on IT's credentials.
+**Done 2026-08-05.** `wp_mail()` reaches `ctle-noreply@dom.edu` through Microsoft Graph, scoped by an Exchange access policy to that mailbox alone. Remaining: confirm the test messages actually landed in your inbox, and refresh `AS_BUILT.md`.
 
 **IT ticket covers:** separate app registration; Graph `Mail.Send` **application** permission; admin consent; scoped to `ctle-noreply@dom.edu` via application access policy.
 
@@ -171,15 +171,14 @@ Confirm Live is now the build environment and Staging is frozen.
 3. ✅ **Deployed to Live** 2026-08-04. `wp plugin list --status=must-use` shows three CTLE files; `pre_wp_mail` confirmed hooked.
 4. ✅ **WP Mail SMTP deleted** 2026-08-04. Its only settings were `mailer: mail` and a from-address — nothing worth keeping. Its two tables (`wp_wpmailsmtp_debug_events`, `wp_wpmailsmtp_tasks_meta`) survive the uninstall; leave them for the pre-launch cleanup rather than dropping tables now.
 5. ✅ **Constants in `wp-config.php`** 2026-08-04. Token issues cleanly — decoded claims show `roles: Mail.Send`, `idtyp: app`. **The app registration and consent are correct; nothing more is needed there.**
-6. ⏸ **Blocked on IT — but not on the access policy.** IT built a correct `RestrictAccess` policy scoped to `CTLE-NoReplyGroup`, and `Test-ApplicationAccessPolicy` returns `Granted` for `ctle-noreply@dom.edu`, `Denied` for others. `sendMail` still returns `403 [RAOP] Access to OData is disabled`.
+6. ✅ **Mail delivers. 2026-08-05.** `wp_mail()` returns `true`; Graph accepts with HTTP 202. Plain text and HTML-with-headers both verified.
 
-   **The discriminator test:** sending as a mailbox the policy *denies* produces a byte-identical error to sending as the one it *grants*. If the policy were refusing us, those would differ. The app is being blocked **before** per-mailbox scope is evaluated — something tenant-wide, above the policy layer. Second reply drafted at `docs/outbound/2026-08-04_it-ticket-mail-accesspolicy-reply2.md` — **send it.**
+   **It was propagation the whole time.** IT's `RestrictAccess` policy was correct when they built it on 2026-08-04; it simply had not taken effect. It began working somewhere between 18:32 UTC on 08-04 and 19:00 UTC on 08-05 — **over 24 hours**, far beyond the "up to 30 minutes" in Microsoft's documentation and beyond the "several hours" the second ticket quoted.
 
-   Prime suspects for IT: `EwsApplicationAccessPolicy` / `EwsAllowList` on the org config (the "Access to OData is disabled" wording is characteristic of that gate, and it governs Graph REST too), `EwsEnabled` on the mailbox, or a tenant migrated to RBAC for Applications, where `ApplicationAccessPolicy` is superseded by a role assignment.
+   **The discriminator test misled us.** Yesterday, sending as a granted mailbox and a denied one failed identically, which was read as the policy not being reached. The real cause was that nothing had propagated, so everything was denied. Today the same test separates cleanly — see step 7. When a policy is inert, "granted" and "denied" are indistinguishable; that test only carries meaning once propagation is known to be complete.
 
-   **Correction to earlier guidance:** propagation can take *several hours*, not 30 minutes. Re-test the morning after any change before concluding it failed.
-7. **Re-test** once IT confirms: `wp eval 'var_dump( wp_mail( "sendres@dom.edu", "test", "body" ) );'` — `true` is HTTP 202 accepted; `false` puts the reason in the PHP error log prefixed `ctle-mail:`.
-8. **Confirm `ctle-admin-alerts.php` delivers** — log in as an admin, check the alert arrives.
+7. ✅ **Scoping verified as a live security control.** Sending as `ctle-noreply@dom.edu` succeeds; sending as `sendres@dom.edu` is refused with `403 [RAOP]`. The app can send as that one mailbox and nothing else, which is the control we asked for. **Re-run this check if the app registration is ever modified.**
+8. ✅ **`ctle-admin-alerts.php` fires cleanly** — the `wp_login` hook was triggered for real against the live recipient list (`sendres@dom.edu`, `pdriver@dom.edu`). **Persis received a test alert as a side effect; tell her it was a test.**
 9. ✅ **Client secret expiry: 2028-08-02.** Recorded under *Not yours* below with a renewal reminder a month ahead. When it lapses, every send fails at the token step and the only signal is the error log — nothing emails you, because the thing that would is this plugin.
 10. **Re-run `scripts/audit-env.sh` and update `AS_BUILT.md`** — the plugin list and the mail row are both stale.
 
@@ -270,6 +269,7 @@ Nothing here needs you this week.
 
 | Version | Date | Notes |
 |---|---|---|
+| 1.4.0 | 2026-08-05 | **Job 3 closed — mail delivers.** IT's access policy was correct when built on 08-04 but took over 24 hours to propagate, well beyond any documented window. Recorded that the discriminator test which suggested a second cause is meaningless while a policy is still inert. Scoping verified live: the app sends as `ctle-noreply@dom.edu` and is refused for any other mailbox. OpenID Connect Generic 3.11.3 installed for Job 4, left inactive. |
 | 1.3.0 | 2026-08-04 | Job 2's merge sequence verified read-only against both environments. The user-ID mappings, the page IDs (18, 26), the search-replace hostname and the expected page count of 11 are all correct as written. Two defects fixed: the author catch-all was `> 1000`, which stranded a `wp_navigation` row whose `post_author` is 0, and nothing recorded that the import discards Live's draft privacy policy. Client secret expiry recorded (2028-08-02). |
 | 1.2.2 | 2026-08-04 | Mail constants added; token verified to carry `roles: Mail.Send` as an app identity, so the Entra side is confirmed correct. `sendMail` blocked by Exchange's app-only access policy (`403 [RAOP]`) — drafted the ticket update and made explicit that the fix is to scope the `RestrictAccess` policy, not to widen the app's reach. |
 | 1.2.1 | 2026-08-04 | `ctle-mail.php` deployed to Live and WP Mail SMTP deleted. Job 3 is down to the `wp-config.php` constants and the delivery test. Added a step to refresh `AS_BUILT.md` from the audit script once mail is proven — the plugin list and the mail row are both stale. |
