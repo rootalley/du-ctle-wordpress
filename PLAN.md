@@ -6,15 +6,54 @@ For what the site *currently is*, see `docs/AS_BUILT.md`. Don't read it to find 
 
 ---
 
-# → RIGHT NOW: send Aidan the mail-and-SSO email before you travel
+# → RIGHT NOW: two blockers found on 2026-08-06. Both need a ticket.
 
-`docs/outbound/2026-08-05_aidan-mail-resolved-sso-next.md`. It closes the mail ticket and hands him the three SSO questions — group, what he already built, and what `employeeId` contains. Sending it today means he can work while you're away.
+**1. `ctle.dom.edu` does not exist in DNS.** Authoritative NXDOMAIN from `ns1.dom.edu`. Live is reachable only at `ductle.kinsta.cloud`. This blocks SSO testing and launch. **File a DNS ticket with DU IT.**
 
-Also tell Persis the Administrator-login alert she received was a test.
+**2. Take a Kinsta manual backup of Staging.** Its database has gone down twice, it holds the only copy of Amanda's build, and it has never had a manual backup. A defensive SQL dump is on the container, but that is not a backup.
 
-⏱ **5 minutes.** Job 3 is done. Everything else waits on Amanda, Persis or Aidan.
+⏱ **20 minutes for both.** Details in *Blockers* below.
 
-> **Travelling Thu 2026-08-06 → Mon 08-10, back Tue 08-11**, limited availability. Flagged to Aidan with an explicit "don't hold work for me."
+> **Also unconfirmed:** whether the email to Aidan actually went out before you travelled (`docs/outbound/2026-08-05_aidan-mail-resolved-sso-next.md`). Check sent items — if it didn't, that's the third thing to do, and Job 4 hasn't started.
+>
+> And tell Persis the Administrator-login alert she received on 08-05 was a test.
+
+---
+
+## ⚠ Blockers — found by the 2026-08-06 archive check
+
+### B1. `ctle.dom.edu` has no DNS record — DU IT owns this
+
+Verified against DU's own nameserver, so this is not caching or propagation:
+
+```
+dig @ns1.dom.edu ctle.dom.edu A     → status: NXDOMAIN, flags: aa
+```
+
+`AS_BUILT.md` previously recorded DNS as **delivered** by DU IT under ticket 26363781, with an A record to `162.159.135.42` and a `www` CNAME. It isn't there now. Either it was never created or it has been removed; the `dom.edu` zone serial was last bumped 2026072900.
+
+**What it breaks:**
+
+- **SSO cannot be tested.** The redirect URI given to Aidan is `https://ctle.dom.edu/wp-admin/admin-ajax.php?...`. Aidan can register it, but no browser can reach it. Job 4 is blocked at the testing step regardless of what he delivers.
+- **Launch is blocked.** Job 6 assumes a stranger can reach `https://ctle.dom.edu`.
+- **The TLS renewal reminder is moot.** Validation needs the hostname pointing at Kinsta. If DNS returns late, expect a fresh certificate rather than a renewal.
+- **Do not disable `ductle.kinsta.cloud`.** It was slated for post-launch removal; until DNS is restored it is the only entrance to production.
+
+**Ask for:** A record `ctle.dom.edu` → `162.159.135.42`, plus the `www` CNAME, quoting the original ticket 26363781 and asking what happened to it.
+
+### B2. Staging's database keeps going down
+
+MariaDB was unreachable on 2026-08-04 and again during the 2026-08-06 capture — `Can't connect to local server through socket '/run/mysqld/mysqld.sock'`, ten consecutive failures. It restarts itself and service returns. Container memory was not exhausted, so this is not a simple OOM.
+
+**Why it matters more than it looks:** Staging holds the only copy of the site build, it has never had a manual backup, and Job 2 reads everything from it. A database that drops mid-export can produce a truncated dump that imports into Live without complaint.
+
+**Done so far:** a defensive dump was taken while the database was up and verified complete — 12 tables, all content, trailer present, at `~/staging-safety-2026-08-08-0202.sql` on the Staging container. That guards against corruption, not against losing the container.
+
+**Still to do:**
+
+1. **Kinsta manual backup of Staging**, labelled `pre-merge`. MyKinsta only — cannot be done over SSH.
+2. **Open a Kinsta support ticket** with the socket error and both dates. Ask why MariaDB is restarting.
+3. **Before the merge**, re-verify the export rather than trusting it: row counts against the live database, and `tail -1` of the dump for the completion trailer.
 
 ---
 
@@ -23,11 +62,11 @@ Also tell Persis the Administrator-login alert she received was a test.
 | # | Job | Needs | Time | State |
 |---|---|---|---|---|
 | 1 | Communications | — | — | ✅ Done 2026-08-04 |
-| 2 | Merge Staging into Live | Amanda + a window | 2–3 hrs | ⏸ Waiting on them |
+| 2 | Merge Staging into Live | Amanda + a window | 2–3 hrs | ⏸ Waiting on them · **B2 risk** |
 | 3 | Mail | — | — | ✅ Done 2026-08-05 |
-| 4 | SSO | Aidan, then Pete | 3 hrs | ⏸ Handed to Aidan 08-05 |
+| 4 | SSO | Aidan, then Pete | 3 hrs | ⏸ With Aidan · **blocked by B1** |
 | 5 | Content and features | Amanda + Persis | weeks | Not started |
-| 6 | Pre-launch | everyone | 1 day | Not started |
+| 6 | Pre-launch | everyone | 1 day | Not started · **blocked by B1** |
 
 ---
 
@@ -76,6 +115,8 @@ MyKinsta → Live → Tools → Password Protection → Enable. Record in the CT
 
 MyKinsta → Backups → Manual, **both environments**, labelled `pre-merge`. Staging has never had one.
 
+> **Do this one early, not at merge time.** Staging's database has gone down twice (B2). The container holds the only copy of the build.
+
 ### 2d. Pull from Staging — 25 min
 
 ```bash
@@ -93,6 +134,13 @@ rsync -avz -e "ssh -i $KEY -p 50378" ductle@$IP:~/public/wp-content/uploads/ /tm
 rsync -avz -e "ssh -i $KEY -p 50378" \
   ductle@$IP:~/public/wp-content/themes/educational-university/ /tmp/ctle-theme/
 ```
+
+> **Verify the export before you trust it (B2).** A database that drops mid-dump produces a file that imports without complaint:
+>
+> ```bash
+> tail -1 /tmp/ctle-content.sql | grep -q 'Dump completed' && echo OK || echo TRUNCATED
+> grep -c 'INSERT INTO `wp_posts`' /tmp/ctle-content.sql    # must be ≥ 1
+> ```
 
 ### 2e. Push to Live and remap — 30 min
 
@@ -192,7 +240,11 @@ Confirm Live is now the build environment and Staging is frozen.
 
 ## Job 4 — SSO
 
-**Waiting on:** Aidan. Email sent 2026-08-05 (`docs/outbound/2026-08-05_aidan-mail-resolved-sso-next.md`).
+**Waiting on:** Aidan, and on DNS.
+
+> **Blocked by B1 at the testing step.** The redirect URI names `ctle.dom.edu`, which does not resolve. Aidan can build everything correctly and no sign-in will work until DNS exists. Tell him early so he doesn't debug a working configuration.
+
+**Email status unconfirmed** — `docs/outbound/2026-08-05_aidan-mail-resolved-sso-next.md` was final and ready when travel started, but never confirmed sent. Check sent items first.
 
 ### Who does what in IT
 
@@ -278,9 +330,11 @@ Amanda and Persis lead. Yours is the plumbing.
 
 ## Job 6 — Pre-launch
 
+0. **DNS must exist first (B1).** Everything below assumes `https://ctle.dom.edu` resolves.
 1. **WCAG 2.1 AA audit** and **DU brand review** — deferred above; raise once Jobs 2–4 close
 2. **Delete the sample content** — `Hello world!`, `Sample Page`, the default comment
 3. **Update the theme** — 0.3.5 has an update pending
+3b. **Set the site timezone** — currently unset, so every timestamp including the admin alert emails renders as UTC rather than Central
 4. **Recreate the privacy policy page** — the merge replaces `wp_posts`, so Live's draft does not survive it
 5. **Flip the switches:** `blog_public=1`, remove Live password protection, publish the privacy policy, upload the Canvas button to production
 6. **Drop the two orphan WP Mail SMTP tables** — `wp_wpmailsmtp_debug_events`, `wp_wpmailsmtp_tasks_meta`, left behind by the uninstall
@@ -297,7 +351,9 @@ Nothing here needs you this week.
 - **Persis** — who may sign in (DOMFaculty proposed) **and who maintains that list after launch**, Events Calendar licence, catalog structure, confidentiality language, forum categories, admin training
 - **DU IT** — the two tickets
 - **Post-launch** — off-site 30-day backup, HSTS, disabling `ductle.kinsta.cloud`
-- **2026-08-24** — verify TLS auto-renewed; certificates expire 08-31
+- **DU IT** — also the DNS record for `ctle.dom.edu` (B1), which their own ticket 26363781 recorded as delivered
+- **Kinsta support** — why Staging's MariaDB keeps restarting (B2)
+- **2026-08-24** — verify TLS auto-renewed; certificates expire 08-31. **Moot until DNS returns**, since validation needs the hostname pointing at Kinsta; if DNS comes back late, expect a fresh certificate rather than a renewal
 - **2028-07-02** — ask IT to reissue the Graph mail client secret. **It expires 2028-08-02** and its lapse is silent: mail simply stops, and the only trace is `ctle-mail:` in the PHP error log. Put this in a calendar, not only here
 
 ---
@@ -306,6 +362,7 @@ Nothing here needs you this week.
 
 | Version | Date | Notes |
 |---|---|---|
+| 1.6.0 | 2026-08-06 | **Archive integrity check.** Recaptured both environments and reconciled every live document. Two blockers found and recorded as B1 and B2: `ctle.dom.edu` returns authoritative NXDOMAIN despite `AS_BUILT` recording DNS as delivered under ticket 26363781, and Staging's MariaDB has gone down twice on the environment holding the only copy of the build. Took a verified defensive dump of Staging. Added export verification to Job 2, a DNS precondition to Jobs 4 and 6, and the unset site timezone to pre-launch. |
 | 1.5.1 | 2026-08-05 | Group membership plan recorded: Ellen alone during build, `DOMFaculty` at launch. Added the requirement that Steven, Persis and Amanda join during build too — Ellen has no existing WordPress account, so her sign-in tests provisioning rather than matching, and the duplicate-account risk would otherwise go untested until launch day. Flagged Ellen's adjunct record as a possible `employeeId` gap, the one-time-vs-ongoing question on Pete's population, and the launch swap as a cutover to rehearse early. |
 | 1.5.0 | 2026-08-05 | Job 4 handed to **Aidan** after the session with Pete. Recorded who owns what in IT — Aidan for Entra, Pete for the SIS and Canvas import, Ellen as project manager. OIDC confirmed over SAML. Three unknowns block progress: whether the allowlist group exists, what Aidan already built, and what Entra's `employeeId` contains. Flagged that `employeeId` needs a custom claims policy rather than a portal checkbox, and that the fallback costs a re-stamp of existing accounts. |
 | 1.4.0 | 2026-08-05 | **Job 3 closed — mail delivers.** IT's access policy was correct when built on 08-04 but took over 24 hours to propagate, well beyond any documented window. Recorded that the discriminator test which suggested a second cause is meaningless while a policy is still inert. Scoping verified live: the app sends as `ctle-noreply@dom.edu` and is refused for any other mailbox. OpenID Connect Generic 3.11.3 installed for Job 4, left inactive. |

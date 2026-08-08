@@ -2,7 +2,7 @@
 
 **What this is:** the recorded state of the CTLE WordPress infrastructure — what *is*, not what to do. For what to do, see `PLAN.md`.
 
-**Last verified:** 2026-08-03 by direct capture · **Maintainer:** Steven Endres
+**Last verified:** 2026-08-06 by direct capture · **Maintainer:** Steven Endres
 
 > **Regenerate this.** Everything below came from `scripts/audit-env.sh`, run against both environments:
 >
@@ -17,6 +17,26 @@
 
 ---
 
+## ⚠️ Two conditions that override everything below
+
+**1. `ctle.dom.edu` does not exist in DNS.** Verified 2026-08-06 against DU's authoritative nameserver: `dig @ns1.dom.edu ctle.dom.edu` returns **NXDOMAIN with the authoritative-answer flag**. Not a caching artefact, not propagation. The name is absent from the zone.
+
+WordPress still has `siteurl` and `home` set to `https://ctle.dom.edu`, so the configuration is right and the hostname behind it is missing. **Live is reachable only at `https://ductle.kinsta.cloud`**, which currently returns 200. This blocks SSO testing (the redirect URI points at a hostname nobody can resolve) and blocks launch.
+
+A previous version of this document recorded DNS as delivered by DU IT under ticket 26363781, with an A record to `162.159.135.42` and a `www` CNAME. **That is no longer true.** The record was either never created or has since been removed; the `dom.edu` zone serial was last bumped 2026072900.
+
+**2. Staging's database is unstable.** MariaDB has been observed down on 2026-08-04 and again on 2026-08-06, during which every query failed with `Can't connect to local server through socket '/run/mysqld/mysqld.sock'`. The process restarts on its own and service returns. Container memory is not exhausted, so this is not a simple OOM.
+
+This matters because **Staging holds the only copy of the site build and has never had a manual backup.** A defensive dump was taken while the database was up and verified complete — 12 tables, all content, dump trailer present:
+
+```
+~/staging-safety-2026-08-08-0202.sql   (140 KB, on the Staging container)
+```
+
+That guards against database corruption, not against loss of the container. **A Kinsta manual backup of Staging is still the first thing to do**, and it cannot be done over SSH.
+
+---
+
 ## Environments
 
 Both were provisioned at account setup and were present at first MyKinsta login. **They have no common ancestor after the original 2026-05-28 WordPress install** — they were never cloned from one another, and have diverged independently ever since. This is the single most important fact about this deployment.
@@ -24,16 +44,18 @@ Both were provisioned at account setup and were present at first MyKinsta login.
 | | Live | Staging |
 |---|---|---|
 | Host | `pjl-ductle-live-prod.incus` | `knh-ductle-staging-staging.incus` |
-| URL | `https://ctle.dom.edu` | `https://stg-ductle-staging.kinsta.cloud` |
+| Configured URL | `https://ctle.dom.edu` — **DNS absent** | `https://stg-ductle-staging.kinsta.cloud` |
+| Actually reachable at | `https://ductle.kinsta.cloud` → 200 | its Kinsta hostname → 401 (Basic Auth) |
 | SSH port | 26769 | 50378 |
 | SSH user / IP | `ductle@163.192.209.112` | same |
 | Webroot | `/www/ductle_136/public` | same |
 | PHP (web + CLI) | 8.4.23 | 8.4.23 |
 | WP-CLI | 2.12.0 | 2.12.0 |
-| WordPress core | 7.0.2 | 7.0.2 |
-| Disk used | 116 MB | 93 MB |
+| WordPress core | 7.0.2 (no update pending) | 7.0.2 |
+| Disk used | 108 MB | 93 MB |
+| Database | Stable | **Intermittently down — see above** |
 | Password protection | **Disabled** | **Enabled** (HTTP Basic Auth at Nginx) |
-| Backups | Daily + manual baselines | Daily only, no manual baselines |
+| Backups | Daily + manual baselines | Daily only, **no manual baseline** |
 | Role | Production; holds all infrastructure and security work | Holds the Developer's site build |
 
 **One SSH key pair per person, both environments** — `id_ed25519_ctle_sendres_kinsta`. Kinsta permits one SSH user per environment; additional MyKinsta members authorise their own keys against that same user. Kinsta "additional users" are SFTP-only and are **not** a WP-CLI recovery path.
@@ -46,16 +68,16 @@ Both were provisioned at account setup and were present at first MyKinsta login.
 
 | Setting | Value |
 |---|---|
-| `siteurl` / `home` | `https://ctle.dom.edu` |
+| `siteurl` / `home` | `https://ctle.dom.edu` — **hostname does not resolve** |
 | `blog_public` | `0` — search engines discouraged (**launch gate: must flip to 1**) |
 | Active theme | `twentytwentyfive` 1.5 |
 | `show_on_front` | `posts` (no static front page set) |
 | `users_can_register` | `0` |
 | `default_role` | `subscriber` |
 | `admin_email` | `ctle@dom.edu` |
-| Privacy policy page | ID 3 (draft) |
-| `DISABLE_WP_CRON` | `1` — Kinsta system cron calls `wp-cron.php` every 15 min |
-| Timezone | *not set* |
+| Privacy policy page | ID 3 (draft), registered as `wp_page_for_privacy_policy` |
+| `DISABLE_WP_CRON` | `1` — Kinsta system cron calls `wp-cron.php` |
+| Timezone | ***not set*** — so all timestamps, including those in the admin alert emails, render as UTC rather than Central. Worth fixing before launch. |
 
 ### Plugins
 
@@ -64,9 +86,11 @@ Both were provisioned at account setup and were present at first MyKinsta login.
 | WPS Hide Login | 1.9.18 | Active |
 | WP Activity Log (`wp-security-audit-log`) | 5.6.5 | Active |
 | Query Monitor | 4.0.7 | Active |
-| WP Mail SMTP | 4.9.0 | Active — **unconfigured, and will not be used** (see Mail below) |
+| OpenID Connect Generic (`daggerhart-openid-connect-generic`) | 3.11.3 | **Inactive — deliberately.** Installed 2026-08-05 for Job 4. Activation waits for credentials *and* for a moment when MyKinsta auto-login can be confirmed immediately afterward, since it is the only interactive path into wp-admin. |
 | Relevanssi | 4.27.2 | Inactive — staged for the search build |
 | wpForo | 3.1.4 | Inactive — staged for forums |
+
+**WP Mail SMTP was deleted 2026-08-04.** Its Microsoft 365 mailer is Pro-only *and* delegated-only, so it could never send as a sign-in-blocked shared mailbox. Its two tables survived the uninstall and remain (see Database tables).
 
 Themes present: `twentytwentyfive` (active), `twentytwentyfour`, `twentytwentythree`. Deleted 2026-07-29: Akismet, Hello Dolly, LTI Tool, ceLTIc LTI Library.
 
@@ -76,8 +100,9 @@ Source of truth is `mu-plugins/` in this repo. Deployed to `wp-content/mu-plugin
 
 | File | Version | Size on Live | Purpose |
 |---|---|---|---|
-| `ctle-admin-alerts.php` | 1.0.0 | 5394 B | Emails on any Administrator login or role change. Recipients: `sendres@dom.edu`, `pdriver@dom.edu`. **Cannot deliver until mail is configured.** |
+| `ctle-admin-alerts.php` | 1.0.0 | 5394 B | Emails on any Administrator login or role change. Recipients: `sendres@dom.edu`, `pdriver@dom.edu`. **Delivery verified 2026-08-05.** |
 | `ctle-hardening.php` | 1.1.0 | 3983 B | XML-RPC off, `X-Pingback` removed, **password authentication removed entirely** |
+| `ctle-mail.php` | 1.0.0 | 13479 B | **Takes over `wp_mail()` via `pre_wp_mail`** and posts to Microsoft Graph `sendMail` as `ctle-noreply@dom.edu`. Deployed 2026-08-04, delivering since 2026-08-05. |
 | `kinsta-mu-plugins` | 3.6.1 | — | Vendor-supplied, do not modify |
 
 ### Users
@@ -95,11 +120,13 @@ Bare install: 1 post (`Hello world!`), 2 pages (`Sample Page`, `Privacy Policy` 
 
 ### Database tables
 
-Core WordPress, plus: `wp_actionscheduler_*` (4), `wp_wpmailsmtp_*` (2), `wp_wsal_*` (2). `wp_options` is 2.1 MB.
+Core WordPress, plus `wp_actionscheduler_*` (4), `wp_wsal_*` (2), and `wp_wpmailsmtp_*` (2) — the last **orphaned**, left behind when the plugin was deleted. Dropping them is a pre-launch cleanup item, not urgent. `wp_options` is 2.1 MB.
 
 ---
 
 ## Staging — the Developer's build
+
+> Captured 2026-08-06 while MariaDB was down, so the database-derived figures below were re-taken on a subsequent successful connection. Filesystem figures are from the failed run and are unaffected.
 
 ### WordPress
 
@@ -109,21 +136,17 @@ Core WordPress, plus: `wp_actionscheduler_*` (4), `wp_wpmailsmtp_*` (2), `wp_wsa
 | `blog_public` | `0` |
 | Active theme | **`educational-university` 0.3.5** (update available) |
 | `show_on_front` | `page` → front page ID 18, posts page ID 26 |
-| `DISABLE_WP_CRON` | *not set* |
+| `DISABLE_WP_CRON` | *not set* — WP-Cron runs on page loads here |
 
 ### Plugins
 
-| Plugin | Version | Status |
-|---|---|---|
-| `ansar-import` | 2.1.2 | Active — theme demo-content importer |
-| Akismet | 5.7 | Inactive — deleted on Live, still present here |
-| Hello Dolly | 1.7.2 | Inactive — deleted on Live, still present here |
+Only `ansar-import` 2.1.2 is active — the theme's demo-content importer. Akismet and Hello Dolly remain installed but inactive; both were deleted on Live.
 
 Themes: `educational-university` (active), `newsgoal`, `newsup`, and the three core themes. **None of Live's security or infrastructure plugins exist here.**
 
 ### Must-use plugins
 
-Both present, but `ctle-hardening.php` is **4338 B** against Live's 3983 B and the repo's 3975 B. Same declared version, different build — **Staging carries a divergent copy.** Live matches the repo.
+`ctle-admin-alerts.php` (5394 B) and `ctle-hardening.php` (**4338 B**) are present. Live's hardening file is 3983 B and the repo's is 3975 B — same declared version, different build, so **Staging carries a divergent copy**. Live matches the repo. **`ctle-mail.php` is not deployed here**, which is correct: mail belongs to production.
 
 ### Users
 
@@ -144,9 +167,11 @@ Both present, but `ctle-hardening.php` is **4338 B** against Live's 3983 B and t
 | sendres | 3 | 5 |
 | anorris | — | 2 |
 
+One `wp_navigation` row carries `post_author = 0`, which the remap in `PLAN.md` handles explicitly.
+
 ### Content — the work to preserve
 
-11 pages, 27 navigation menu items, 12 attachments, 13 MB of uploads across 60 files, 3 global-styles records. Built 2026-07-21.
+73 `wp_posts` rows in total: 10 published pages plus 1 draft, 27 navigation menu items, 12 attachments, 15 revisions, 3 global-styles records and 1 navigation record. 13 MB of uploads across 60 files. Built 2026-07-21.
 
 | ID | Page |
 |---|---|
@@ -181,6 +206,8 @@ Plus the inherited `Sample Page` (2) and `Privacy Policy` (3) — same IDs as Li
 | `sis_user_id` | stamped | absent |
 | Custom tables | 8 | 0 |
 | Password protection | disabled | enabled |
+| Mail transport | `ctle-mail.php`, working | none |
+| Database stability | stable | **flapping** |
 
 **No Kinsta push is safe in either direction.** See `PLAN.md` for the export/import method used instead, and `kinsta_onboarding.md` §24 for why the push mechanism itself is the hazard.
 
@@ -190,10 +217,9 @@ Plus the inherited `Sample Page` (2) and `Privacy Policy` (3) — same IDs as Li
 
 ### Domains, TLS, routing
 
-- Primary domain `ctle.dom.edu`. DNS by DU IT under ticket 26363781: A record → `162.159.135.42`, plus `www` CNAME.
-- `http://ctle.dom.edu`, `http://www.ctle.dom.edu`, `https://www.ctle.dom.edu`, `http://ductle.kinsta.cloud` all redirect to `https://ctle.dom.edu/`.
-- `https://ductle.kinsta.cloud` serves 200 without redirecting — **accepted gap**, Kinsta `noindex`es it and it is the DNS fallback route. Post-launch removal.
-- TLS by Google Trust Services via Kinsta's Cloudflare layer. **Expires 2026-08-31** — inside the launch window. Auto-renews; verify 2026-08-24.
+- **`ctle.dom.edu` does not resolve.** NXDOMAIN, authoritative, verified 2026-08-06. See the warning at the top of this document. Everything in this subsection that depends on that name is therefore currently theoretical.
+- `https://ductle.kinsta.cloud` serves 200 and is the only working route to Live. It was previously an accepted gap slated for post-launch removal; until DNS is restored it is **the production entrance**, so do not disable it.
+- TLS was issued by Google Trust Services through Kinsta's Cloudflare layer, recorded as expiring **2026-08-31**. Renewal validation requires the hostname to point at Kinsta, so **the 2026-08-24 renewal check is moot until DNS is restored** — and if DNS returns late, a fresh certificate will be needed rather than a renewal.
 - No CAA records on `dom.edu`, so issuance is unconstrained.
 - HTTP/2 active.
 
@@ -209,7 +235,7 @@ Kinsta CDN enabled; Cloudflare Polish in **Lossless** mode (replaces a server-si
 
 ### Backups
 
-Kinsta daily automatic, 14-day retention, plus point-in-time restore. Manual baselines on Live: `pre-cleanup-2026-07-29`, `pre-build-2026-07-28`. **Staging has no manual baseline.** A CTLE-operated 30-day off-site backup remains a requirement, deferred post-launch.
+Kinsta daily automatic, 14-day retention, plus point-in-time restore. Manual baselines on Live: `pre-cleanup-2026-07-29`, `pre-build-2026-07-28`. **Staging has no manual baseline**, which is now a live risk given its database instability — a defensive SQL dump sits on the Staging container but is not a substitute. A CTLE-operated 30-day off-site backup remains a requirement, deferred post-launch.
 
 ---
 
@@ -222,6 +248,7 @@ Kinsta daily automatic, 14-day retention, plus point-in-time restore. Manual bas
 | Second factor | MyKinsta 2FA. Codes for the Company Owner go to `ctle@dom.edu`, **making that mailbox's access list a security control** |
 | Login URL | Obfuscated via WPS Hide Login; rotated 2026-07-29 after exposure. Path is **not recorded in this repo**. Treat as a speed bump, not a control. |
 | Brute-force | Kinsta's automatic IP ban watches `/wp-login.php` **only** — it does not follow a custom login path. Measured: `POST /wp-login.php` → 403 at the edge; `POST` to the custom path → 200, processed. This is why password authentication was removed rather than rate-limited. |
+| Graph mail scope | The mail app can send as `ctle-noreply@dom.edu` **and no other mailbox** — verified live 2026-08-05, not merely configured. Re-run that check if the app registration changes. |
 | XML-RPC | Disabled at both Nginx (403) and application layers |
 | Open registration | Off |
 | Audit logging | WP Activity Log (free tier — logs only; its email notifications are Premium, hence `ctle-admin-alerts.php`) |
@@ -249,9 +276,9 @@ Only Steven currently holds an SSH key. **Two-person recovery is not yet satisfi
 
 | Integration | State |
 |---|---|
-| **Entra SSO** | Mailbox and Entra work delivered by DU IT. Configuration pending a joint IT + LT working session. Option 1: DU IT refreshes an Entra group from the SIS faculty list; the app is gated on that group; WordPress JIT-provisions on first sign-in. Entra ID P1 confirmed. **Built on Live only** — the config is hostname-bound. |
-| **Mail** | `ctle-noreply@dom.edu` shared mailbox created. Requires a **separate** Entra app registration with Graph `Mail.Send` **application** permission, admin-consented and scoped to that one mailbox via application access policy. **WP Mail SMTP cannot do this** — its Microsoft 365 mailer is Pro-only *and* delegated-only, and a sign-in-blocked shared mailbox cannot complete a delegated flow. Transport will be a custom mu-plugin using client credentials. |
-| **Canvas** | LTI dropped. Faculty launch from the existing CTLE global-nav button retargeted to the SSO-initiation URL, with visibility gated on `declared_user_type=teacher` read from `/api/v1/users/self/logins`. Script built at `canvas/ctle-global-nav.js`, `enabled: false`, not yet uploaded. |
+| **Mail** | ✅ **Working since 2026-08-05.** `ctle-mail.php` routes every `wp_mail()` through Microsoft Graph `sendMail` as `ctle-noreply@dom.edu`, using a dedicated Entra app registration with the **application** `Mail.Send` permission, admin-consented and constrained by an Exchange `RestrictAccess` policy scoped to `CTLE-NoReplyGroup`. Credentials live in `wp-config.php` constants. **Client secret expires 2028-08-02.** |
+| **Entra SSO** | Plugin installed and inactive. Handed to Aidan 2026-08-05. Blocked on three answers — whether the allowlist security group exists, what Aidan already built, and what Entra's `employeeId` actually contains — and now also on DNS, since the redirect URI names a hostname that does not resolve. Entra ID P1 confirmed. **Built on Live only**, the config being hostname-bound. |
+| **Canvas** | LTI dropped. Faculty launch from the existing CTLE global-nav button retargeted to the SSO-initiation URL, with visibility gated on `declared_user_type=teacher` read from `/api/v1/users/self/logins`. Script built at `canvas/ctle-global-nav.js`, `enabled: false`, not yet uploaded. Pete owns adding `declared_user_type` to the nightly Jenzabar→Canvas import, after SSO works. |
 | **Events calendar** | Not started. Events Calendar Pro licence unpurchased. |
 
 ---
@@ -274,6 +301,7 @@ Two plaintext passwords were removed from `kinsta_onboarding.md` before its firs
 
 | Version | Date | Author | Notes |
 |---|---|---|---|
+| 1.1.0 | 2026-08-06 | sendres | Recaptured from both environments. **Two new findings dominate:** `ctle.dom.edu` returns authoritative NXDOMAIN, contradicting the previous record of DNS delivered under ticket 26363781; and Staging's MariaDB has been observed down twice, on an environment holding the only copy of the site build with no manual backup. Otherwise: mail now working through `ctle-mail.php`, WP Mail SMTP deleted with two tables orphaned, OpenID Connect Generic installed inactive, and the Graph send scope verified as a live control. |
 | 1.0.0 | 2026-08-03 | sendres | Initial as-built, captured directly from both environments via `scripts/audit-env.sh`. Replaces the scattered "verified state" prose in `HANDOFF.md` and the checkbox state in `kinsta_onboarding.md`. Confirmed by capture rather than inference: `topsecretuser` present on Staging; user IDs misaligned across environments; `ctle-hardening.php` divergent on Staging; PHP already 8.4 on both; **no custom database tables on Staging**, which is what makes a content-level transfer viable instead of a Kinsta push. |
 
 *Maintained in the [du-ctle-wordpress](https://github.com/rootalley/du-ctle-wordpress/) repository.*

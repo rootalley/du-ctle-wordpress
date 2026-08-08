@@ -55,11 +55,17 @@ The Entra registration is **separate from the SSO one** and needs the Graph
 by an application access policy to that single mailbox. Without the policy the app can
 send as any mailbox in the tenant.
 
-Until the credentials land, every send fails fast with `ctle_mail_unconfigured` rather
-than falling back to PHP `mail()`. That is deliberate: a fallback would produce mail that
-looks sent, arrives from the wrong domain, and lands in spam.
+**Status: working since 2026-08-05.** The Exchange `RestrictAccess` policy scoping the app to
+that one mailbox took **over 24 hours** to propagate after DU IT created it — during which every
+send returned `403 [RAOP] Access to OData is disabled`, indistinguishable from a
+misconfiguration. If you ever rebuild this, wait a full day before concluding the policy is
+wrong.
 
-Test once the constants are in place:
+Without credentials, every send fails fast with `ctle_mail_unconfigured` rather than falling
+back to PHP `mail()`. That is deliberate: a fallback would produce mail that looks sent,
+arrives from the wrong domain, and lands in spam.
+
+Test:
 
 ```bash
 wp eval 'var_dump( wp_mail( "sendres@dom.edu", "CTLE mail test", "body" ) );'
@@ -69,15 +75,32 @@ wp eval 'var_dump( wp_mail( "sendres@dom.edu", "CTLE mail test", "body" ) );'
 PHP error log, prefixed `ctle-mail:`. Failures also fire `wp_mail_failed`, so anything
 listening for that hook still sees them.
 
-**The client secret expires.** Diary the date the day it is issued. When it lapses every
-send fails at the token step, and the only signal is the error log — because the thing
-that would email you about it is this plugin.
+**The client secret expires 2028-08-02.** A renewal reminder sits in `PLAN.md` for 2028-07-02.
+When it lapses every send fails at the token step, and the only signal is the error log —
+because the thing that would email you about it is this plugin.
+
+### Verifying the scope is a live control
+
+The app must be able to send as `ctle-noreply@dom.edu` and **nothing else**. Configured is not
+the same as enforced, so check it rather than assume — re-run this whenever the app
+registration changes:
+
+```bash
+wp eval 'add_filter("ctle_mail_from", function(){ return "sendres@dom.edu"; });
+         var_dump( wp_mail( "sendres@dom.edu", "should be denied", "x" ) );'
+```
+
+`bool(false)` with `403` in the error log is the **correct** result. `bool(true)` means the
+restriction is gone and the app can send as any mailbox in the tenant — treat that as a
+security incident.
 
 ## Notes
 
 - **Recipients:** edit `ctle_alert_recipients()` in `ctle-admin-alerts.php` with the real
   CTLE admin addresses. Left empty, it falls back to the site Administration Email (§4).
-- **WP Mail SMTP is to be deleted.** Its Microsoft 365 mailer is Pro-only *and*
-  delegated-only, so it cannot send as a sign-in-blocked shared mailbox. `ctle-mail.php`
-  takes over `wp_mail()` through `pre_wp_mail` regardless, so leaving it installed only
-  adds an unused attack surface and two orphan database tables.
+- **WP Mail SMTP was deleted 2026-08-04.** Its Microsoft 365 mailer is Pro-only *and*
+  delegated-only, so it could never send as a sign-in-blocked shared mailbox. Its two tables
+  (`wp_wpmailsmtp_debug_events`, `wp_wpmailsmtp_tasks_meta`) survived the uninstall and are
+  left for the pre-launch cleanup.
+- **The site timezone is unset**, so `ctle-admin-alerts.php` renders its timestamps in UTC
+  rather than Central. Fix in Settings → General before launch.
