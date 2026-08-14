@@ -6,54 +6,60 @@ For what the site *currently is*, see `docs/AS_BUILT.md`. Don't read it to find 
 
 ---
 
-# → RIGHT NOW: two blockers found on 2026-08-06. Both need a ticket.
+# → RIGHT NOW: waiting on Aidan for one field. Then sign in and test.
 
-**1. `ctle.dom.edu` does not exist in DNS.** Authoritative NXDOMAIN from `ns1.dom.edu`. Live is reachable only at `ductle.kinsta.cloud`. This blocks SSO testing and launch. **File a DNS ticket with DU IT.**
+**Everything on our side of Job 4 is built, activated and verified.** The only thing missing is a redirect URI on the Entra app registration. The first sign-in attempt on 2026-08-14 returned:
 
-**2. Take a Kinsta manual backup of Staging.** Its database has gone down twice, it holds the only copy of Amanda's build, and it has never had a manual backup. A defensive SQL dump is on the container, but that is not a backup.
+```
+AADSTS500113: No reply address is registered for the application.
+```
 
-⏱ **20 minutes for both.** Details in *Blockers* below.
+**Asked for and sent 2026-08-14** — `docs/outbound/2026-08-14_aidan-sso-discovery-and-go.md`. That error also confirms the client ID is valid and the request well-formed; a wrong client ID gives `AADSTS700016`.
 
-> **Also unconfirmed:** whether the email to Aidan actually went out before you travelled (`docs/outbound/2026-08-05_aidan-mail-resolved-sso-next.md`). Check sent items — if it didn't, that's the third thing to do, and Job 4 hasn't started.
->
-> And tell Persis the Administrator-login alert she received on 08-05 was a test.
+**When he replies, the next action is a sign-in test — 15 minutes.** Private window → your custom login path (`wp option get whl_page`) → the OpenID Connect button. Then:
+
+```bash
+cd public
+wp user list --fields=ID,user_login,user_email,roles --format=csv
+wp user meta get 3 openid-connect-generic-subject-identity
+wp user meta get 3 sis_user_id
+```
+
+Expect two users still, ID 3 gaining a subject-identity value, `sis_user_id` unchanged at `904238`. **A third user means email matching failed — stop there** and read the plugin log before anyone else signs in.
+
+> **Second thing owed, and it gates part of the testing:** the CTLE note at `docs/outbound/2026-08-14_ctle-merge-cancelled.md` is still unsent. **Amanda cannot be tested until she has a Live account**, and that note is what asks her for it.
+
+> **Also still open, from before travel:** tell Persis the Administrator-login alert she received on 08-05 was a test.
 
 ---
 
-## ⚠ Blockers — found by the 2026-08-06 archive check
-
-### B1. `ctle.dom.edu` has no DNS record — DU IT owns this
-
-Verified against DU's own nameserver, so this is not caching or propagation:
+## ✅ B1 — CLOSED 2026-08-14. `ctle.dom.edu` resolves.
 
 ```
-dig @ns1.dom.edu ctle.dom.edu A     → status: NXDOMAIN, flags: aa
+dig +short ctle.dom.edu        → 162.159.135.42
+dig +short www.ctle.dom.edu    → ctle.dom.edu. → 162.159.135.42
+curl -I https://ctle.dom.edu/  → HTTP/2 200
+TLS: CN=ctle.dom.edu, Google Trust Services WE1, expires 2026-08-31
 ```
 
-`AS_BUILT.md` previously recorded DNS as **delivered** by DU IT under ticket 26363781, with an A record to `162.159.135.42` and a `www` CNAME. It isn't there now. Either it was never created or it has been removed; the `dom.edu` zone serial was last bumped 2026072900.
+This is the A record and `www` CNAME that ticket 26363781 originally recorded, so DU IT's delivery stands. **No DNS ticket is needed.**
 
-**What it breaks:**
+**What actually happened on 08-06 is unresolved, and worth one paragraph because it changes how to test this.** The NXDOMAIN was taken from `ns1.dom.edu` with the authoritative-answer flag. As of today `ns1.dom.edu` does not resolve at all — the `dom.edu` NS set is `dc1`, `dc2`, `dc3`, `az-dc1`, `dc2012r2-2` and `prioryserv`, none of which answer from off-campus. So either the record was absent on 08-06 and has since been restored, or `ns1.dom.edu` was a decommissioned server still answering for a zone it no longer held. **Both are consistent with the evidence and it is not worth chasing.** The lesson to keep: *query the NS set the zone actually publishes, not a nameserver hostname you remember.*
 
-- **SSO cannot be tested.** The redirect URI given to Aidan is `https://ctle.dom.edu/wp-admin/admin-ajax.php?...`. Aidan can register it, but no browser can reach it. Job 4 is blocked at the testing step regardless of what he delivers.
-- **Launch is blocked.** Job 6 assumes a stranger can reach `https://ctle.dom.edu`.
-- **The TLS renewal reminder is moot.** Validation needs the hostname pointing at Kinsta. If DNS returns late, expect a fresh certificate rather than a renewal.
-- **Do not disable `ductle.kinsta.cloud`.** It was slated for post-launch removal; until DNS is restored it is the only entrance to production.
+**Consequences of DNS being back:**
 
-**Ask for:** A record `ctle.dom.edu` → `162.159.135.42`, plus the `www` CNAME, quoting the original ticket 26363781 and asking what happened to it.
+- Job 4 can be tested end to end. The redirect URI Aidan registered is reachable.
+- Job 6's launch precondition is met.
+- **The 2026-08-24 TLS renewal check is live again and is no longer moot.** The certificate expires 08-31. Put it in a calendar.
+- `ductle.kinsta.cloud` can go back to being a post-launch cleanup item rather than the production entrance.
 
-### B2. Staging's database keeps going down
+## ✅ B2 — CLOSED 2026-08-14 by Amanda. Staging holds nothing worth saving.
 
-MariaDB was unreachable on 2026-08-04 and again during the 2026-08-06 capture — `Can't connect to local server through socket '/run/mysqld/mysqld.sock'`, ten consecutive failures. It restarts itself and service returns. Container memory was not exhausted, so this is not a simple OOM.
+**Amanda confirms she only did basic testing on Staging — it was never the site build.** The 11 pages captured there are the `educational-university` theme's demo content, imported by `ansar-import`; the 13 MB of uploads are that demo's images.
 
-**Why it matters more than it looks:** Staging holds the only copy of the site build, it has never had a manual backup, and Job 2 reads everything from it. A database that drops mid-export can produce a truncated dump that imports into Live without complaint.
+So the database instability threatened nothing. **No Kinsta manual backup of Staging is needed, no Kinsta support ticket, and the defensive dump on the container is now just a curiosity.** If Staging's MariaDB keeps flapping after it is reset from Live, report it then — a fault on an environment with nothing in it is not worth anyone's time this month.
 
-**Done so far:** a defensive dump was taken while the database was up and verified complete — 12 tables, all content, trailer present, at `~/staging-safety-2026-08-08-0202.sql` on the Staging container. That guards against corruption, not against losing the container.
-
-**Still to do:**
-
-1. **Kinsta manual backup of Staging**, labelled `pre-merge`. MyKinsta only — cannot be done over SSH.
-2. **Open a Kinsta support ticket** with the socket error and both dates. Ask why MariaDB is restarting.
-3. **Before the merge**, re-verify the export rather than trusting it: row counts against the live database, and `tail -1` of the dump for the completion trailer.
+**The much larger consequence: Job 2 is no longer a merge.** See below.
 
 ---
 
@@ -62,38 +68,40 @@ MariaDB was unreachable on 2026-08-04 and again during the 2026-08-06 capture �
 | # | Job | Needs | Time | State |
 |---|---|---|---|---|
 | 1 | Communications | — | — | ✅ Done 2026-08-04 |
-| 2 | Merge Staging into Live | Amanda + a window | 2–3 hrs | ⏸ Waiting on them · **B2 risk** |
+| 2 | Stand Live up as the build environment | Amanda | 40 min | ⏸ Waiting on her · **was a 3-hour merge, now isn't** |
 | 3 | Mail | — | — | ✅ Done 2026-08-05 |
-| 4 | SSO | Aidan, then Pete | 3 hrs | ⏸ With Aidan · **blocked by B1** |
+| 4 | SSO | Aidan — redirect URI | testing only | **→ ACTIVE.** Our side done; one field outstanding |
 | 5 | Content and features | Amanda + Persis | weeks | Not started |
-| 6 | Pre-launch | everyone | 1 day | Not started · **blocked by B1** |
+| 6 | Pre-launch | everyone | 1 day | Not started |
 
 ---
 
 ## Deliberately deferred — do not re-raise
 
-Decided 2026-08-04. Both are real and neither is forgotten; the call is to **deliver the platform first**, then volunteer help.
+Decided 2026-08-04.
 
-- **Theme accessibility (WCAG 2.1 AA) and DU brand review.** Nobody has assessed `educational-university` 0.3.5. Genuine schedule risk, and it belongs to content rather than platform.
 - **Launch date.** Not restated since IT delivered.
+- **DU brand review.** Belongs to content.
 
-Raise both once Jobs 2, 3 and 4 are closed. Not before.
+**Theme accessibility has come off this list** — not because the deferral was wrong, but because its cost changed. It was deferred on the grounds that changing theme meant discarding Amanda's build. There is no build to discard. See Job 2c.
 
 ---
 
 ## Job 1 — Communications ✅
 
-**Done 2026-08-04.** CTLE email sent to Persis and Amanda (`docs/outbound/2026-08-04_ctle.md`): the push warning, the merge proposal with its sequence, and the SSO access-model question. DU IT is now handled through **two tickets** — one for the mailbox, one for SSO — not email. Older outbound drafts deleted; they described a communication model no longer in use.
+**Done 2026-08-04.** CTLE email sent to Persis and Amanda (`docs/outbound/2026-08-04_ctle.md`). DU IT handled through tickets, except the Aidan thread which has run as email.
+
+**Owed now:** a short note to Persis and Amanda saying the merge is cancelled and Live is the build environment — the merge sequence was committed to in writing on 08-04, so its withdrawal should be too. Drafted at `docs/outbound/2026-08-14_ctle-merge-cancelled.md`.
 
 ---
 
-## Job 2 — Merge Staging into Live
+## Job 2 — Stand Live up as the build environment
 
-**Waiting on:** Amanda creating her Live profile, and a maintenance window from CTLE. Both were asked for on 2026-08-04.
+**This was "merge Staging into Live", a 2–3 hour operation with a real blast radius. Amanda's answer deleted it.** Nothing is being transferred. No export, no import, no author remapping, no search-replace, no truncated-dump risk. All of that machinery is gone; if you need to see what it was, it is in git history at version 1.6.0.
 
-The sequence below is what was **committed to in writing**. Don't reorder it.
+What remains is small.
 
-### 2a. Amanda creates her Live profile — her action
+### 2a. Amanda creates her Live profile — her action, 10 min
 
 MyKinsta → Live → *Create admin and log in*. Then find and stamp her:
 
@@ -103,214 +111,222 @@ wp user list --fields=ID,user_login,user_email --format=csv
 wp user meta update <her-ID> sis_user_id <her-employeeId>
 ```
 
-**Write her Live user ID down. Step 2e needs it.** While you have her, get her SSH public key — two-person recovery still isn't satisfied.
+> **The stamp is now belt-and-braces, not the mechanism.** SSO matches on email, not on `sis_user_id` — see Job 4. Stamp it anyway: Canvas and the SIS work in Job 5 want the Jenzabar ID on the account, and it costs one command.
 
-### 2b. Lock down Live — 20 min
+While you have her, get her SSH public key — two-person recovery still isn't satisfied.
 
-MyKinsta → Live → Tools → Password Protection → Enable. Record in the CTLE vault, **not this repo**. Confirm it challenges from a logged-out browser, then SecureTransfer the credentials to both of them alongside the custom login path.
+### 2b. Leave Live's password protection OFF until SSO is tested — a decision, not a task
 
-> Basic Auth sits in front of WordPress, so it also sits in front of the Entra redirect. Browser sign-in carries cached credentials and works; back-channel checks get a 401. Job 4 tests this.
+Version 1.6.0 had Basic Auth going on early, and Job 4 testing around it. **Reverse that.** Basic Auth sits in front of the Entra redirect, and there is no reason to debug a 401 that we chose to create.
 
-### 2c. Back up both — 5 min
+Live is currently reachable at `https://ctle.dom.edu` with `blog_public=0` and nothing on it but `Hello world!` and a `Sample Page`. That is an acceptable exposure for a few days. **Turn Basic Auth on at the start of Job 5**, when there is real content to keep private, and SecureTransfer the credentials to Amanda and Persis then.
 
-MyKinsta → Backups → Manual, **both environments**, labelled `pre-merge`. Staging has never had one.
+### 2c. The theme decision — Amanda's, and it just got cheap
 
-> **Do this one early, not at merge time.** Staging's database has gone down twice (B2). The container holds the only copy of the build.
+Live runs `twentytwentyfive`. Whatever Amanda builds on needs installing there.
 
-### 2d. Pull from Staging — 25 min
+**Ask her before she starts, once:** she picked `educational-university` 0.3.5, nobody has assessed it for WCAG 2.1 AA, and the reason we deferred that question was that re-theming meant throwing away her build. It doesn't any more — she has an empty site either way. **If she is going to move, now is the only cheap moment.** If she wants to stay with it, that is a fine answer and the accessibility work goes back to being a Job 6 audit item.
 
-```bash
-KEY=~/.ssh/id_ed25519_ctle_sendres_kinsta
-IP=163.192.209.112
+Don't push. Ask once, take the answer, record it here.
 
-ssh -i $KEY -p 50378 ductle@$IP 'cd public && wp db export /tmp/ctle-content.sql \
-  --tables=wp_posts,wp_postmeta,wp_terms,wp_termmeta,wp_term_taxonomy,wp_term_relationships'
-scp -i $KEY -P 50378 ductle@$IP:/tmp/ctle-content.sql /tmp/
+### 2d. Reset Staging from Live — later, optional, 15 min
 
-ssh -i $KEY -p 50378 ductle@$IP \
-  'cd public && wp option get theme_mods_educational-university --format=json' > /tmp/theme-mods.json
+Once Live has the build, Kinsta push **Live → Staging** gives a true mirror. That direction is Kinsta's supported one and is now safe, because Staging holds nothing.
 
-rsync -avz -e "ssh -i $KEY -p 50378" ductle@$IP:~/public/wp-content/uploads/ /tmp/ctle-uploads/
-rsync -avz -e "ssh -i $KEY -p 50378" \
-  ductle@$IP:~/public/wp-content/themes/educational-university/ /tmp/ctle-theme/
-```
+> **The reverse is still forbidden.** Staging → Live would overwrite production's security configuration, and Kinsta carries environment settings unconditionally even on a files-only push.
 
-> **Verify the export before you trust it (B2).** A database that drops mid-dump produces a file that imports without complaint:
->
-> ```bash
-> tail -1 /tmp/ctle-content.sql | grep -q 'Dump completed' && echo OK || echo TRUNCATED
-> grep -c 'INSERT INTO `wp_posts`' /tmp/ctle-content.sql    # must be ≥ 1
-> ```
-
-### 2e. Push to Live and remap — 30 min
-
-> **The import replaces `wp_posts` wholesale, so Live's draft Privacy Policy page does not survive it.** Staging has no equivalent. Recreate it after the merge — Job 6 assumes one exists to publish. Live's other page is `Sample Page`, which is expendable.
-
-```bash
-rsync -avz -e "ssh -i $KEY -p 26769" /tmp/ctle-uploads/ ductle@$IP:~/public/wp-content/uploads/
-rsync -avz -e "ssh -i $KEY -p 26769" \
-  /tmp/ctle-theme/ ductle@$IP:~/public/wp-content/themes/educational-university/
-scp -i $KEY -P 26769 /tmp/ctle-content.sql /tmp/theme-mods.json ductle@$IP:/tmp/
-
-ssh -i $KEY -p 26769 ductle@$IP
-cd public
-wp db export /tmp/live-pre-merge-$(date +%F).sql     # local undo, on top of Kinsta's
-wp db import /tmp/ctle-content.sql
-```
-
-Staging and Live user IDs differ. Offset first so no mapping collides mid-flight.
-
-**Verified against both environments 2026-08-04.** Staging: `1` topsecretuser, `2` Amanda, `3` Persis, `5` Steven. Live: `2` Persis, `3` Steven. The three mappings below are correct as written.
-
-```bash
-wp db query "UPDATE wp_posts SET post_author = post_author + 1000;"
-wp db query "UPDATE wp_posts SET post_author = 2 WHERE post_author = 1003;"   # pdriver
-wp db query "UPDATE wp_posts SET post_author = 3 WHERE post_author = 1005;"   # sendres
-wp db query "UPDATE wp_posts SET post_author = <AMANDA_LIVE_ID> WHERE post_author = 1002;"
-wp db query "UPDATE wp_posts SET post_author = 3 WHERE post_author >= 1000;"  # topsecretuser and the orphan
-wp db query "SELECT post_author, COUNT(*) FROM wp_posts GROUP BY post_author;"
-```
-
-> **The catch-all is `>= 1000`, not `> 1000`.** One `wp_navigation` row on Staging has `post_author = 0`, which the offset turns into exactly `1000`. A `>` comparison leaves it stranded there and the merge finishes with an author ID pointing at no user.
-
-Last query must show only IDs 2, 3 and Amanda's. Anything ≥1000 means a step was skipped.
-
-### 2f. Fix URLs and settings — 15 min
-
-```bash
-wp search-replace 'https://stg-ductle-staging.kinsta.cloud' 'https://ctle.dom.edu' \
-  --all-tables-with-prefix --precise --skip-columns=guid --report-changed-only
-
-wp theme activate educational-university
-wp option update show_on_front page
-wp option update page_on_front 18
-wp option update page_for_posts 26
-wp option update theme_mods_educational-university "$(cat /tmp/theme-mods.json)" --format=json
-```
-
-### 2g. Verify — 15 min
-
-```bash
-wp post list --post_type=page --fields=ID,post_title --format=csv   # expect 11
-wp plugin list --status=must-use --format=csv                      # both ours present
-wp user list --fields=ID,user_login --format=csv                   # no topsecretuser
-wp option get blog_public                                          # 0
-wp eval 'var_dump(has_filter("authenticate","wp_authenticate_username_password"));'  # false
-```
-
-Then in a browser, past Basic Auth: front page renders, menu works, images load, MyKinsta auto-login still works.
-
-**Done when:** all five checks pass and Live looks like Staging did.
-
-**If it goes wrong:** `wp db import /tmp/live-pre-merge-<date>.sql`, or restore the Kinsta manual backup.
-
-### 2h. Hand Live to Amanda — 5 min
-
-Confirm Live is now the build environment and Staging is frozen.
+Not urgent. Nobody needs Staging until there is something to test against.
 
 ---
 
 ## Job 3 — Mail ✅
 
-**Done 2026-08-05.** `wp_mail()` reaches `ctle-noreply@dom.edu` through Microsoft Graph, scoped by an Exchange access policy to that mailbox alone. Remaining: confirm the test messages actually landed in your inbox, and refresh `AS_BUILT.md`.
+**Done 2026-08-05.** `wp_mail()` reaches `ctle-noreply@dom.edu` through Microsoft Graph, scoped by an Exchange access policy to that mailbox alone — verified as a live restriction, sending as `sendres@dom.edu` is refused with `403 [RAOP]`. **Re-run that check if the app registration is ever modified.**
 
-**IT ticket covers:** separate app registration; Graph `Mail.Send` **application** permission; admin consent; scoped to `ctle-noreply@dom.edu` via application access policy.
+**It was propagation the whole time.** IT's `RestrictAccess` policy was correct when built on 08-04; it took **over 24 hours** to take effect against a documented "up to 30 minutes". While inert, a granted mailbox and a denied one failed identically — which read as the policy not being consulted and sent DU IT down two dead ends. *A discriminating test means nothing until propagation is known to be complete.*
 
-1. ✅ **`mu-plugins/ctle-mail.php` written** 2026-08-04. Client-credentials token cached in a transient, refreshed once on a 401; `pre_wp_mail` posting to `/v1.0/users/ctle-noreply@dom.edu/sendMail`. Unconfigured, it fails fast and logs rather than falling back to PHP `mail()`.
-2. ✅ **`mu-plugins/README.md` updated** — third file, the `wp-config.php` constants, and the test command.
-3. ✅ **Deployed to Live** 2026-08-04. `wp plugin list --status=must-use` shows three CTLE files; `pre_wp_mail` confirmed hooked.
-4. ✅ **WP Mail SMTP deleted** 2026-08-04. Its only settings were `mailer: mail` and a from-address — nothing worth keeping. Its two tables (`wp_wpmailsmtp_debug_events`, `wp_wpmailsmtp_tasks_meta`) survive the uninstall; leave them for the pre-launch cleanup rather than dropping tables now.
-5. ✅ **Constants in `wp-config.php`** 2026-08-04. Token issues cleanly — decoded claims show `roles: Mail.Send`, `idtyp: app`. **The app registration and consent are correct; nothing more is needed there.**
-6. ✅ **Mail delivers. 2026-08-05.** `wp_mail()` returns `true`; Graph accepts with HTTP 202. Plain text and HTML-with-headers both verified.
+**Client secret expires 2028-08-02.** Its lapse is silent: mail stops, and the only trace is `ctle-mail:` in the PHP error log — nothing emails you, because the thing that would is this plugin.
 
-   **It was propagation the whole time.** IT's `RestrictAccess` policy was correct when they built it on 2026-08-04; it simply had not taken effect. It began working somewhere between 18:32 UTC on 08-04 and 19:00 UTC on 08-05 — **over 24 hours**, far beyond the "up to 30 minutes" in Microsoft's documentation and beyond the "several hours" the second ticket quoted.
+Remaining: **re-run `scripts/audit-env.sh` and refresh `AS_BUILT.md`** after Job 4 lands, so one capture covers both.
 
-   **The discriminator test misled us.** Yesterday, sending as a granted mailbox and a denied one failed identically, which was read as the policy not being reached. The real cause was that nothing had propagated, so everything was denied. Today the same test separates cleanly — see step 7. When a policy is inert, "granted" and "denied" are indistinguishable; that test only carries meaning once propagation is known to be complete.
-
-7. ✅ **Scoping verified as a live security control.** Sending as `ctle-noreply@dom.edu` succeeds; sending as `sendres@dom.edu` is refused with `403 [RAOP]`. The app can send as that one mailbox and nothing else, which is the control we asked for. **Re-run this check if the app registration is ever modified.**
-8. ✅ **`ctle-admin-alerts.php` fires cleanly** — the `wp_login` hook was triggered for real against the live recipient list (`sendres@dom.edu`, `pdriver@dom.edu`). **Persis received a test alert as a side effect; tell her it was a test.**
-9. ✅ **Client secret expiry: 2028-08-02.** Recorded under *Not yours* below with a renewal reminder a month ahead. When it lapses, every send fails at the token step and the only signal is the error log — nothing emails you, because the thing that would is this plugin.
-10. **Re-run `scripts/audit-env.sh` and update `AS_BUILT.md`** — the plugin list and the mail row are both stale.
-
-> **Don't let IT "fix" this by widening the app's access.** A `RestrictAccess` policy scoped to the one mailbox is the control we asked for. Unrestricted app-only mailbox access would let a leaked secret send as anyone at DU.
-
-**Done when:** an Administrator login produces an email.
+> **Don't let IT "fix" anything here by widening the app's access.** Unrestricted app-only mailbox access would let a leaked secret send as anyone at DU.
 
 ---
 
-## Job 4 — SSO
+## Job 4 — SSO ← **you are here**
 
-**Waiting on:** Aidan, and on DNS.
+**Aidan delivered on 2026-08-14.** Tenant ID, client ID, client secret and secret expiry arrived by SecureTransfer. All three of the questions that were blocking this job are answered.
 
-> **Blocked by B1 at the testing step.** The redirect URI names `ctle.dom.edu`, which does not resolve. Aidan can build everything correctly and no sign-in will work until DNS exists. Tell him early so he doesn't debug a working configuration.
+### What Aidan answered
 
-**Email status unconfirmed** — `docs/outbound/2026-08-05_aidan-mail-resolved-sso-next.md` was final and ready when travel started, but never confirmed sent. Check sent items first.
-
-### Who does what in IT
-
-| Person | Owns |
+| Question | Answer |
 |---|---|
-| **Aidan** | Entra admin. Did the mail app registration; **owns the SSO registration, the group and the claims**. Primary contact for this job. |
-| **Pete** | Runs the SIS (Jenzabar) and builds the Canvas SIS import files. Some SSO involvement, less than Aidan. **His piece — `declared_user_type` in the nightly import — comes after SSO works.** |
-| **Ellen** | IT project-manager role, and adjunct faculty. Not currently in the loop on either piece. |
+| Does the allowlist group exist? | **Yes — `CTLE WordPress`**, containing Persis, Amanda, Ellen and Steven. |
+| Is this a separate registration from mail? | **Yes.** He describes it as an additional app registration. |
+| What is Entra's `employeeId` populated with? | **The J1 (Jenzabar) value**, for accounts provisioned through a normal onboarding request. |
+| Is Ellen's `employeeId` populated? | **Yes.** |
 
-### Settled with Pete, 2026-08-05
+**The `employeeId` answer is the good news and it is worth registering properly.** The custom claims policy was the step most likely to stall this job, and it didn't. It also confirms the assumption behind `sis_user_id`: the value stamped on Steven's and Persis's accounts is the same value Entra holds.
 
-All three asks confirmed doable: a CTLE allowlist security group populated from `DOMFaculty`; OIDC sign-in to WordPress; `DOMFaculty` also driving `declared_user_type` for Canvas. **Pete leaned SAML from familiarity but agreed OIDC works — decision stands at OIDC**, since the installed plugin is OIDC-only and SAML would mean a different plugin and an unbudgeted licence. Pete found earlier SSO work already started by Aidan, so he handed the SSO piece to Aidan and asked to be picked up again for the Canvas file afterwards.
+**His caveat, recorded because it will matter later:** accounts created manually — NAPs, student workers (`sw_`) — may have `employeeId` empty. Not relevant to the four test users, all normally provisioned. It becomes relevant at launch if any `DOMFaculty` member was onboarded by hand.
 
-### Three answers needed from Aidan before this can move
+### His open question, and the answer to send back
 
-1. **Does the allowlist security group exist?** He checks, and creates it if not. Must be a security group — `DOMFaculty` is a mailing list and can't gate app assignment. Flat membership; nested groups unsupported.
-2. **What did he already build?** Unknown. Must be a **separate registration from the mail one**.
-3. **What does Entra's `employeeId` actually contain?** Believed to be the Jenzabar ID. Unconfirmed.
+He asks where the OIDC discovery document is configured in Entra. **It isn't, and there is nothing for him to do.**
 
-**IT's side, in Entra:**
+The document is published automatically for every tenant. The URL he quoted is correct:
 
-1. App registration, single tenant, platform **Web** (confidential client, client secret)
-2. Redirect URI: `https://ctle.dom.edu/wp-admin/admin-ajax.php?action=openid-connect-authorize`
-3. Gate on the allowlist group — *Assignment required* = Yes
-4. Claims: `email`, `given_name`, `family_name`, `employeeId` in the ID token
-5. Hand back tenant ID, client ID, client secret via SecureTransfer, plus the secret's expiry
+```
+https://login.microsoftonline.com/<tenant-id>/v2.0/.well-known/openid-configuration
+```
 
-> **`employeeId` is where this will stall.** It is *not* in the portal's standard optional-claims list — emitting it needs a **custom claims policy** on the app's service principal. Microsoft's own docs use `employeeId` as the worked example, so it's a known path, not an exotic one.
+It is a value *we* consume, not one he supplies. And this plugin does not read a discovery document at all — it takes discrete endpoint URLs, so we read them out of the document by hand. Reply drafted at `docs/outbound/2026-08-14_aidan-sso-discovery-and-go.md`.
+
+### ⚠ The identity model in this plan was wrong up to version 1.6.0
+
+Every version of this plan until now said: *identity key `employeeId` → the `sis_user_id` meta already stamped on Steven's and Persis's accounts.* **OpenID Connect Generic cannot do that.** Read from the plugin source on Live, 2026-08-14:
+
+- `get_subject_identity()` returns `$id_token_claim['sub']` and nothing else. **Hardcoded**, not a setting — `includes/openid-connect-generic-client-wrapper.php:796`.
+- Users are found by matching that `sub` against the plugin's own user meta key `openid-connect-generic-subject-identity` — `get_user_by_identity()`, same file.
+- The **Identity Key** setting only chooses which claim becomes the WordPress *username* on a newly created account. It plays no part in matching.
+- The only fallback is **Link Existing Users**, which matches `email_exists($email)` — or `username_exists($username)` if *Identify with Username* is on — at `:589`.
+
+There is no configuration in which an arbitrary claim is matched against an arbitrary user meta key. **Configured as previously written, Aidan's `employeeId` claim would have been emitted perfectly, matched nothing, and silently created duplicate accounts for Steven and Persis — the precise failure the plan was written to prevent.**
+
+**So: match on email.** Both existing accounts carry their real `dom.edu` addresses, and after a first successful sign-in the plugin stamps `openid-connect-generic-subject-identity` with `sub`, so every later sign-in matches on that instead. Email only has to be right once.
+
+`employeeId` keeps its value as the SIS key for Canvas work in Job 5, and as confirmation the claims policy fired. It is no longer load-bearing for authentication.
+
+### ⚠ Leave the userinfo endpoint blank
+
+At `:543` the plugin decides where user claims come from:
+
+```php
+if ( ! empty( $this->settings->endpoint_userinfo ) && isset( $token_response['access_token'] ) ) {
+	$user_claim = $client->get_user_claim( $token_response );
+} else {
+	$user_claim = $id_token_claim;
+}
+```
+
+Graph's `/oidc/userinfo` returns a fixed, small set of standard claims and **will never include `employeeId`**. Set that endpoint and the claim vanishes before WordPress sees it.
+
+**Leave `OIDC_ENDPOINT_USERINFO_URL` unset.** Claims then come from the ID token, where Aidan put them.
+
+**The cost of that choice, which Aidan needs to know about:** with no userinfo endpoint there is no second request to fill in missing values, so the ID token must carry everything account creation needs — `email`, `given_name`, `family_name` and `preferred_username`. If `email` is missing, sign-in fails outright. That is the right failure: loud, at the first test, rather than a silent duplicate.
+
+### ✅ Configured and activated 2026-08-14 — what was actually done
+
+All of the following is **done and verified on Live**; it is recorded rather than pending.
+
+- Constants written into `wp-config.php` above the "That's all" line, backed up first and `php -l` clean. Client ID is a valid UUID; secret is 40 characters; **`OIDC_ENDPOINT_USERINFO_URL` is absent, which is correct.**
+- All five endpoints confirmed against the tenant's live discovery document, tenant `e363050e-fa18-48f7-aefc-7db1230b452a` — the same tenant the mail app uses.
+- **Plugin activated.** WordPress bootstraps, `home` returns 200, `wp-admin` 302, and MyKinsta auto-login was confirmed working afterwards **in a fresh private session, not just a reloaded tab** — the reloaded tab only proves an existing cookie, which is not the thing at risk.
+- Non-constant settings written: `identity_key` and `nickname_key` `preferred_username`, `email_format` `{email}`, **`displayname_format` `{given_name} {family_name}`** (the default is empty), `identify_with_username` **false** — which is what makes matching fall back to email.
+- **Redirect URI verified identical** to the value being asked of Aidan, computed from `admin_url()`.
+- **Issuer and JWKS verification are both active.** `issuer` reaches the settings object through a constant-mapping table rather than the defaults array, and the validator enforces the `iss` match.
+
+> **One stray backtick cost twenty minutes.** A `set -e` guard failed silently, and a subsequent hand-edit left a backtick at the start of a `define(` line — PHP then reported "unexpected end of file, expecting `` ` ``" at the *last* line of the file, pointing 17 lines away from the fault. **When PHP reports an unterminated-string error at EOF, the real fault is the first unbalanced quote or backtick, not the reported line.**
+
+### Configure — reference, already done
+
+Secrets go in `wp-config.php`, above the "That's all" line. **Never in this repo, never in the database.**
+
+```php
+define( 'OIDC_CLIENT_ID',            '<client-id>' );
+define( 'OIDC_CLIENT_SECRET',        '<client-secret>' );
+define( 'OIDC_ISSUER',               'https://login.microsoftonline.com/<tenant-id>/v2.0' );
+define( 'OIDC_ENDPOINT_LOGIN_URL',   'https://login.microsoftonline.com/<tenant-id>/oauth2/v2.0/authorize' );
+define( 'OIDC_ENDPOINT_TOKEN_URL',   'https://login.microsoftonline.com/<tenant-id>/oauth2/v2.0/token' );
+define( 'OIDC_ENDPOINT_LOGOUT_URL',  'https://login.microsoftonline.com/<tenant-id>/oauth2/v2.0/logout' );
+define( 'OIDC_ENDPOINT_JWKS_URL',    'https://login.microsoftonline.com/<tenant-id>/discovery/v2.0/keys' );
+define( 'OIDC_CLIENT_SCOPE',         'openid email profile' );
+define( 'OIDC_LINK_EXISTING_USERS',  1 );
+define( 'OIDC_CREATE_IF_DOES_NOT_EXIST', 1 );
+define( 'OIDC_ENABLE_LOGGING',       1 );
+```
+
+Confirm every URL against the discovery document rather than trusting the shapes above.
+
+**`OIDC_ENDPOINT_USERINFO_URL` is deliberately absent.** If you find it defined, remove it.
+
+**`OIDC_ENDPOINT_JWKS_URL` and `OIDC_ISSUER` are not optional.** 3.11.0 was a security release that added JWT signature verification against the tenant's JWKS, specifically to stop token forgery. Without them the plugin warns and the protection is off.
+
+**`OIDC_ENABLE_LOGGING` on for the test round, off before launch** — the log holds decoded claims.
+
+Then in Settings → OpenID Connect Client, which holds what has no constant:
+
+| Setting | Value | Why |
+|---|---|---|
+| Identity Key | `preferred_username` | The UPN, and only ever the new-account username |
+| Nickname Key | `preferred_username` | |
+| Display Name Format | `{given_name} {family_name}` | Default is empty, which yields ugly accounts |
+| Link Existing Users | **on** | This is the whole matching strategy |
+| Identify with User Name | **off** | Leaving it off means match on email, which is what we want |
+| Create user if none exists | **on** | JIT provisioning for faculty |
+| Enforce Privacy | off | Job 6 decision, not this one |
+
+### Activate — 15 min, and don't do it distracted
+
+> **Password authentication is removed site-wide.** MyKinsta auto-login is the only interactive way into wp-admin. Activating an auth plugin is the one action that can plausibly break it.
 >
-> If Aidan can't emit it, the fallback is matching on `upn` or `oid` — but that means re-stamping the `sis_user_id` meta on Steven's and Persis's accounts. **Decide before credentials are issued, not after.**
+> **Have a second browser already logged in via MyKinsta auto-login before you activate.** If wp-admin becomes unreachable, `wp plugin deactivate daggerhart-openid-connect-generic` over SSH is the undo, and `ctle-hardening.php` moved aside is the recovery behind that — see `AS_BUILT.md`.
 
-**Our side, in WordPress:**
+```bash
+cd public
+wp plugin activate daggerhart-openid-connect-generic
+wp plugin list --status=active --format=csv
+```
 
-1. ✅ **OpenID Connect Generic 3.11.3 installed on Live 2026-08-05 — deliberately left inactive.** Actively maintained (last release 2026-02), PHP 7.4+, 200k+ installs.
-2. **Activate only when you can immediately test MyKinsta auto-login.** With password authentication removed, auto-login is the *only* interactive way into wp-admin. An unconfigured auth plugin has no upside until credentials exist, and a locked admin has a real downside. One command, then confirm you can still get in.
-3. Endpoints from the tenant's OIDC discovery document
-4. Client ID and secret in `wp-config.php` constants
-5. **Confirm JWT signature verification against the tenant JWKS is enabled.** 3.11.0 was a security release adding it, to stop token forgery. Don't leave it off.
-6. Identity key: `employeeId` → the `sis_user_id` meta already stamped on your and Persis's accounts
-7. *Create user if none exists*, role Subscriber
-8. Profile sync on every login (display name, email)
+Then immediately confirm MyKinsta auto-login still works. **Don't proceed to testing until you have.**
 
-> **Version gap to watch:** Live runs WordPress 7.0.2; the plugin declares "tested up to 6.9.0". Not a known break, but if activation misbehaves, that gap is the first thing to suspect.
->
-> **Also check on activation:** WPS Hide Login is active. The redirect URI targets `admin-ajax.php`, which it does not intercept, so the sign-in flow should be unaffected — but any plugin redirect that lands on `wp-login.php` will 404. Verify the full round trip, not just the callback.
+> **Two known snags on activation.** Live runs WordPress 7.0.2 and the plugin declares "tested up to 6.9.0" — not a known break, but suspect it first if activation misbehaves. And WPS Hide Login is active: the redirect URI targets `admin-ajax.php`, which it doesn't intercept, so the round trip should be unaffected — but any plugin redirect landing on `wp-login.php` will 404. **Verify the whole round trip, not just the callback.**
 
-### Group membership: Ellen first, `DOMFaculty` at launch
+### Test — Ellen, then you, then Persis, then Amanda
 
-Agreed with Pete 2026-08-05. The group starts with **Ellen** as its only member — she is both IT and adjunct faculty, so she can verify against a real faculty identity — and switches to `DOMFaculty`-populated membership at launch.
+Aidan's group has four members. **Confirm they are the four we asked for before testing** — Ellen, Steven, Persis, Amanda. He said "four users" without naming them.
 
-**Steven, Persis and Amanda must be added during the build phase too.** Ellen alone cannot test what matters. She has no existing WordPress account, so her sign-in is a JIT provision — that exercises *provisioning*, not *matching*. The duplicate-account failure can only surface for Steven and Persis, the two with accounts already stamped with `sis_user_id`. Testing with Ellen alone defers that risk to launch day.
+| Order | Person | What it proves |
+|---|---|---|
+| 1 | **You** | **Matching.** Must land on user ID 3, not a new account. |
+| 2 | **Persis** | Matching again, ID 2. |
+| 3 | **Ellen** | JIT provisioning — no existing account, so this is the easy case. Her `employeeId` is confirmed populated. |
+| 4 | **Amanda** | Matching — **gated on 2a**, since she has no Live account yet. |
 
-**Test in this order:** Ellen → you → Persis → Amanda. Each of the last three must land on their **existing** account. A duplicate means `employeeId` didn't match — stop before anyone else signs in.
+> **Order changed 2026-08-14.** Earlier versions put Ellen first, on the reasoning that she proves the flow with a real faculty identity. That held when she was to be the group's only member and Steven was travelling. Now all four are in the group and the reasoning inverts: **take the first failure yourself.** Your account is the one where the logs are readable, a duplicate costs one `wp user delete`, and if matching works for you it works for Persis and Amanda for the same reason. A failure on Ellen's account costs an external favour and some credibility with IT.
 
-**Who is faculty, confirmed 2026-08-05:** Persis and Amanda both hold faculty appointments alongside their CTLE Director and developer roles, so a `DOMFaculty`-mirrored group keeps them. Ellen Alamilla is adjunct faculty. **Steven is not** — Director of Learning Technologies sits in the Provost's Office.
+**A duplicate account at step 1 means email matching failed. Stop there** rather than let anyone else sign in and compound it.
 
-> **At launch, the membership swap drops Steven out of the group.** Admin access survives through MyKinsta auto-login, so this is not a lockout — but SSO sign-in stops working, which means debugging faculty sign-in problems without being able to reproduce them. **Decide deliberately:** keep him as a permanent manual addition to the group, or accept auto-login as the only path. Drifting into the second by accident is the failure mode.
+After the first successful sign-in, before trusting anything:
 
-Open questions:
+```bash
+wp user list --fields=ID,user_login,user_email --format=csv        # no new rows for known people
+wp user meta get 3 openid-connect-generic-subject-identity          # populated after your sign-in
+wp user meta get 3 sis_user_id                                      # still 904238
+```
 
-- **Is Ellen's `employeeId` populated?** Adjunct records can differ from full-time in the SIS. If hers is empty, her account provisions with no `sis_user_id` and nothing complains at the time.
-- **Who maintains the group after launch?** Membership is a CTLE decision expected to mirror `DOMFaculty`. If the list is hand-maintained rather than synced, faculty hired later silently cannot sign in. **Persis's question, not IT's.**
+**Then check `employeeId` actually arrived** — with logging on, read the decoded claim out of the plugin's log. If it is present, stamp it forward and Job 5's Canvas work has its key. If it is absent, sign-in still works and only the SIS linkage needs revisiting; tell Aidan, don't panic.
 
-> **The launch-day membership swap is a cutover, not a checkbox.** Make the change a couple of days before launch and confirm a real `DOMFaculty` member can sign in. Exchange policy propagation on Job 3 took over 24 hours; assume nothing about how fast group and assignment changes take effect.
+### ✅ Group membership confirmed 2026-08-14
 
-Then LT: real SSO URL into `canvas/ctle-global-nav.js`, `enabled: true`, beta-test against a teacher and a student, add `declared_user_type` to the nightly SIS `users.csv`.
+`CTLE WordPress` contains **Persis, Amanda, Ellen and Steven** — exactly the four asked for. **Ellen's `employeeId` is populated**, so the adjunct-record worry is closed and she is a valid test subject.
+
+### Open questions
+
+- **Who maintains the group after launch?** Expected to mirror `DOMFaculty`. If it is hand-maintained rather than synced, faculty hired later silently cannot sign in. **Persis's question, not IT's.**
+- **Does CTLE accept the account-linking deviation?** `REQUIREMENTS.md` §5 specifies matching on `sis_user_id` and explicitly *"not by email"*; the plugin cannot do that, and what was built matches on email then `sub`. Recorded as a deviation note in that document rather than an amendment, since the spec is stakeholder-reviewed. **Raise with Persis once SSO is proven working** — evidence first, then the decision.
+
+### The launch-day membership swap is a cutover, not a checkbox
+
+The group starts as those four and switches to `DOMFaculty`-populated membership at launch. **Make that change a couple of days before launch and confirm a real `DOMFaculty` member can sign in.** Exchange policy propagation on Job 3 took over 24 hours; assume nothing about group and assignment changes.
+
+**Steven drops out of the group at that swap.** Persis, Amanda and Ellen all hold faculty appointments and survive it; Director of Learning Technologies sits in the Provost's Office and does not. Admin access survives through MyKinsta auto-login, so this is not a lockout — but SSO sign-in stops working, which means debugging faculty sign-in problems without being able to reproduce them.
+
+**Decide deliberately: a permanent manual addition to the group, or accept auto-login as the only path. Drifting into the second by accident is the failure mode.** Recommendation is the manual addition; it costs Aidan one click and buys the ability to reproduce a faculty report.
+
+### Then hand back to LT and Pete
+
+Real SSO URL into `canvas/ctle-global-nav.js`, `enabled: true`, beta-test against a teacher and a student, then Pete adds `declared_user_type` to the nightly SIS `users.csv`.
 
 **Done when:** Amanda signs in from Canvas and lands logged into Live on her existing account.
 
@@ -320,24 +336,23 @@ Then LT: real SSO URL into `canvas/ctle-global-nav.js`, `enabled: true`, beta-te
 
 Amanda and Persis lead. Yours is the plumbing.
 
-1. **Course catalog** — custom post type recommended over static pages
-2. **Events calendar** — needs the Events Calendar Pro licence decision and a budget line
-3. **Search** — activate Relevanssi, index, tune
-4. **Forums** — activate wpForo; anonymous visitors must see no forum content. Needs the confidentiality language proposed in the 08-04 email, which Persis owns
-5. **Real home page** — replacing the imported demo front page
+1. **Turn Live's password protection on** — the deferred half of 2b, due the moment real content exists
+2. **Course catalog** — custom post type recommended over static pages
+3. **Events calendar** — needs the Events Calendar Pro licence decision and a budget line
+4. **Search** — activate Relevanssi, index, tune
+5. **Forums** — activate wpForo; anonymous visitors must see no forum content. Needs the confidentiality language Persis owns
 
 ---
 
 ## Job 6 — Pre-launch
 
-0. **DNS must exist first (B1).** Everything below assumes `https://ctle.dom.edu` resolves.
-1. **WCAG 2.1 AA audit** and **DU brand review** — deferred above; raise once Jobs 2–4 close
-2. **Delete the sample content** — `Hello world!`, `Sample Page`, the default comment
-3. **Update the theme** — 0.3.5 has an update pending
-3b. **Set the site timezone** — currently unset, so every timestamp including the admin alert emails renders as UTC rather than Central
-4. **Recreate the privacy policy page** — the merge replaces `wp_posts`, so Live's draft does not survive it
-5. **Flip the switches:** `blog_public=1`, remove Live password protection, publish the privacy policy, upload the Canvas button to production
-6. **Drop the two orphan WP Mail SMTP tables** — `wp_wpmailsmtp_debug_events`, `wp_wpmailsmtp_tasks_meta`, left behind by the uninstall
+1. **WCAG 2.1 AA audit** — scope depends on Amanda's answer in 2c
+2. **DU brand review**
+3. **Delete the sample content** — `Hello world!`, `Sample Page`, the default comment
+4. **Set the site timezone** — currently unset, so every timestamp including the admin alert emails renders as UTC rather than Central
+5. **Publish the privacy policy** — the draft at page ID 3 survives, since nothing is being imported over it
+6. **Flip the switches:** `blog_public=1`, remove password protection, turn `OIDC_ENABLE_LOGGING` off, upload the Canvas button
+7. **Drop the two orphan WP Mail SMTP tables** — `wp_wpmailsmtp_debug_events`, `wp_wpmailsmtp_tasks_meta`
 
 **Done when:** a logged-out stranger reaches `https://ctle.dom.edu` and sees a finished site.
 
@@ -345,16 +360,14 @@ Amanda and Persis lead. Yours is the plumbing.
 
 ## Not yours
 
-Nothing here needs you this week.
-
-- **Amanda** — Live profile, merge window, SSH key, then content build on Live
-- **Persis** — who may sign in (DOMFaculty proposed) **and who maintains that list after launch**, Events Calendar licence, catalog structure, confidentiality language, forum categories, admin training
-- **DU IT** — the two tickets
+- **Amanda** — Live profile, SSH key, the theme answer, then the content build on Live
+- **Persis** — who may sign in **and who maintains that list after launch**, Events Calendar licence, catalog structure, confidentiality language, forum categories, admin training
+- **Aidan** — **the redirect URI, which is the only thing blocking SSO**; then confirm the four group members, check Ellen's `employeeId`, and hold the group membership swap until the launch cutover
+- **Pete** — `declared_user_type` in the nightly Canvas import, after SSO works
 - **Post-launch** — off-site 30-day backup, HSTS, disabling `ductle.kinsta.cloud`
-- **DU IT** — also the DNS record for `ctle.dom.edu` (B1), which their own ticket 26363781 recorded as delivered
-- **Kinsta support** — why Staging's MariaDB keeps restarting (B2)
-- **2026-08-24** — verify TLS auto-renewed; certificates expire 08-31. **Moot until DNS returns**, since validation needs the hostname pointing at Kinsta; if DNS comes back late, expect a fresh certificate rather than a renewal
-- **2028-07-02** — ask IT to reissue the Graph mail client secret. **It expires 2028-08-02** and its lapse is silent: mail simply stops, and the only trace is `ctle-mail:` in the PHP error log. Put this in a calendar, not only here
+- **2026-08-24** — **verify TLS auto-renewed; the certificate expires 08-31.** No longer moot: DNS resolves, so validation can complete. Put it in a calendar
+- **2028-07-02** — ask IT to reissue the Graph mail client secret, expiring **2028-08-02**. Its lapse is silent
+- **`<SSO secret expiry>`** — diary a reminder a month before the SSO client secret expires, on the same reasoning. Fill the date in from SecureTransfer
 
 ---
 
@@ -362,7 +375,10 @@ Nothing here needs you this week.
 
 | Version | Date | Notes |
 |---|---|---|
-| 1.6.0 | 2026-08-06 | **Archive integrity check.** Recaptured both environments and reconciled every live document. Two blockers found and recorded as B1 and B2: `ctle.dom.edu` returns authoritative NXDOMAIN despite `AS_BUILT` recording DNS as delivered under ticket 26363781, and Staging's MariaDB has gone down twice on the environment holding the only copy of the build. Took a verified defensive dump of Staging. Added export verification to Job 2, a DNS precondition to Jobs 4 and 6, and the unset site timezone to pre-launch. |
+| 1.7.2 | 2026-08-14 | **End of day.** Reply to Aidan **sent**, asking for the redirect URI. He confirmed the group holds exactly the four intended people and that **Ellen's `employeeId` is populated**, closing both remaining IT questions. Cross-document audit found a real conflict: `REQUIREMENTS.md` §5 specifies account linking by `sis_user_id` and explicitly *"not by email"*, which the plugin cannot do. Recorded there as a dated deviation note rather than an amendment, since the spec is stakeholder-reviewed, and added to the open questions for Persis once SSO is proven. Test order adjusted — Ellen moves ahead of Amanda, whose test is gated on her Live account. The CTLE note remains unsent and is what asks Amanda for that account. |
+| 1.7.1 | 2026-08-14 | **SSO configured, activated and verified on Live.** Constants written, plugin activated, auto-login re-confirmed in a fresh private session rather than a reloaded tab, non-constant settings written, redirect URI verified identical to the registered value, issuer and JWKS verification confirmed active. First sign-in returned `AADSTS500113` — no reply address on the registration — which also proves the client ID valid and the request well-formed. **One field from Aidan is all that remains.** Test order inverted to put Steven first: with all four now in the group, taking the first failure on the account whose logs are readable beats spending an external favour on it. |
+| 1.7.0 | 2026-08-14 | **Both blockers closed and Job 2 mostly deleted.** B1: `ctle.dom.edu` resolves, serves 200 and holds a valid certificate — the 08-06 NXDOMAIN came from `ns1.dom.edu`, a name that no longer resolves at all, so it was either restored or never really absent; unresolvable and not worth chasing. B2: Amanda confirms Staging was only ever basic testing, so the database instability threatened nothing — no backup, no Kinsta ticket, and the merge is cancelled outright. Job 2 drops from a 3-hour transfer to Amanda creating a profile. **Job 4's identity model corrected against the plugin source:** matching is on `sub` then email, never on an arbitrary claim against `sis_user_id`, so the previous configuration would have silently duplicated the two stamped accounts. Recorded that setting the userinfo endpoint would strip `employeeId` from the claims. Aidan delivered credentials and answered all three blocking questions; `employeeId` carries the J1 value as hoped. Basic Auth deferred to Job 5 so it isn't in front of SSO testing, and theme accessibility un-deferred because a rebuild no longer costs a build. |
+| 1.6.0 | 2026-08-06 | **Archive integrity check.** Recaptured both environments and reconciled every live document. Two blockers found and recorded as B1 and B2: `ctle.dom.edu` returned authoritative NXDOMAIN despite `AS_BUILT` recording DNS as delivered under ticket 26363781, and Staging's MariaDB had gone down twice on the environment then believed to hold the only copy of the build. Took a verified defensive dump of Staging. Added export verification to Job 2, a DNS precondition to Jobs 4 and 6, and the unset site timezone to pre-launch. |
 | 1.5.1 | 2026-08-05 | Group membership plan recorded: Ellen alone during build, `DOMFaculty` at launch. Added the requirement that Steven, Persis and Amanda join during build too — Ellen has no existing WordPress account, so her sign-in tests provisioning rather than matching, and the duplicate-account risk would otherwise go untested until launch day. Flagged Ellen's adjunct record as a possible `employeeId` gap, the one-time-vs-ongoing question on Pete's population, and the launch swap as a cutover to rehearse early. |
 | 1.5.0 | 2026-08-05 | Job 4 handed to **Aidan** after the session with Pete. Recorded who owns what in IT — Aidan for Entra, Pete for the SIS and Canvas import, Ellen as project manager. OIDC confirmed over SAML. Three unknowns block progress: whether the allowlist group exists, what Aidan already built, and what Entra's `employeeId` contains. Flagged that `employeeId` needs a custom claims policy rather than a portal checkbox, and that the fallback costs a re-stamp of existing accounts. |
 | 1.4.0 | 2026-08-05 | **Job 3 closed — mail delivers.** IT's access policy was correct when built on 08-04 but took over 24 hours to propagate, well beyond any documented window. Recorded that the discriminator test which suggested a second cause is meaningless while a policy is still inert. Scoping verified live: the app sends as `ctle-noreply@dom.edu` and is refused for any other mailbox. OpenID Connect Generic 3.11.3 installed for Job 4, left inactive. |

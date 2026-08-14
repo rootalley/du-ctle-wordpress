@@ -2,7 +2,9 @@
 
 **What this is:** the recorded state of the CTLE WordPress infrastructure — what *is*, not what to do. For what to do, see `PLAN.md`.
 
-**Last verified:** 2026-08-06 by direct capture · **Maintainer:** Steven Endres
+**Last full capture:** 2026-08-06 · **Partially re-verified:** 2026-08-14 (DNS, TLS, Live options, themes, plugins, users, OIDC plugin source) · **Maintainer:** Steven Endres
+
+> ⚠ **A full recapture is owed.** The 08-14 update was targeted, not a `scripts/audit-env.sh` run. Re-run the script against both environments once Job 4 lands and regenerate this file from it.
 
 > **Regenerate this.** Everything below came from `scripts/audit-env.sh`, run against both environments:
 >
@@ -17,23 +19,23 @@
 
 ---
 
-## ⚠️ Two conditions that override everything below
+## ✅ Both 2026-08-06 warnings are withdrawn
 
-**1. `ctle.dom.edu` does not exist in DNS.** Verified 2026-08-06 against DU's authoritative nameserver: `dig @ns1.dom.edu ctle.dom.edu` returns **NXDOMAIN with the authoritative-answer flag**. Not a caching artefact, not propagation. The name is absent from the zone.
-
-WordPress still has `siteurl` and `home` set to `https://ctle.dom.edu`, so the configuration is right and the hostname behind it is missing. **Live is reachable only at `https://ductle.kinsta.cloud`**, which currently returns 200. This blocks SSO testing (the redirect URI points at a hostname nobody can resolve) and blocks launch.
-
-A previous version of this document recorded DNS as delivered by DU IT under ticket 26363781, with an A record to `162.159.135.42` and a `www` CNAME. **That is no longer true.** The record was either never created or has since been removed; the `dom.edu` zone serial was last bumped 2026072900.
-
-**2. Staging's database is unstable.** MariaDB has been observed down on 2026-08-04 and again on 2026-08-06, during which every query failed with `Can't connect to local server through socket '/run/mysqld/mysqld.sock'`. The process restarts on its own and service returns. Container memory is not exhausted, so this is not a simple OOM.
-
-This matters because **Staging holds the only copy of the site build and has never had a manual backup.** A defensive dump was taken while the database was up and verified complete — 12 tables, all content, dump trailer present:
+**1. `ctle.dom.edu` resolves and serves.** Re-verified 2026-08-14:
 
 ```
-~/staging-safety-2026-08-08-0202.sql   (140 KB, on the Staging container)
+dig +short ctle.dom.edu        → 162.159.135.42
+dig +short www.ctle.dom.edu    → ctle.dom.edu. → 162.159.135.42
+curl -I https://ctle.dom.edu/  → HTTP/2 200
 ```
 
-That guards against database corruption, not against loss of the container. **A Kinsta manual backup of Staging is still the first thing to do**, and it cannot be done over SSH.
+This is exactly the A record and `www` CNAME that DU IT's ticket 26363781 recorded, so the original delivery stands and no DNS ticket is needed.
+
+**What the 08-06 NXDOMAIN was remains unresolved.** It came from `ns1.dom.edu` carrying the authoritative-answer flag. As of 2026-08-14 `ns1.dom.edu` does not resolve at all — the `dom.edu` NS set is `dc1`, `dc2`, `dc3`, `az-dc1`, `dc2012r2-2` and `prioryserv`, none of which answer from off-campus. So either the record was genuinely absent and has since been restored, or `ns1.dom.edu` was a decommissioned server still answering for a zone it no longer held. Both fit the evidence. **The durable lesson is procedural: query the NS set the zone actually publishes, not a nameserver hostname you remember.**
+
+**2. Staging's database instability no longer threatens anything.** MariaDB was observed down on 2026-08-04 and 2026-08-06 with `Can't connect to local server through socket '/run/mysqld/mysqld.sock'`, restarting on its own each time. That was recorded as urgent on the belief that Staging held the only copy of the site build.
+
+**It did not.** Amanda Norris confirmed on 2026-08-14 that she used Staging only for basic testing and never developed the site there. What is on it is `educational-university` demo content imported by `ansar-import`. **No manual backup is needed, no Kinsta support ticket is warranted, and the defensive dump at `~/staging-safety-2026-08-08-0202.sql` is now only a curiosity.**
 
 ---
 
@@ -44,19 +46,19 @@ Both were provisioned at account setup and were present at first MyKinsta login.
 | | Live | Staging |
 |---|---|---|
 | Host | `pjl-ductle-live-prod.incus` | `knh-ductle-staging-staging.incus` |
-| Configured URL | `https://ctle.dom.edu` — **DNS absent** | `https://stg-ductle-staging.kinsta.cloud` |
-| Actually reachable at | `https://ductle.kinsta.cloud` → 200 | its Kinsta hostname → 401 (Basic Auth) |
+| Configured URL | `https://ctle.dom.edu` | `https://stg-ductle-staging.kinsta.cloud` |
+| Actually reachable at | `https://ctle.dom.edu` → 200, and `https://ductle.kinsta.cloud` → 200 | its Kinsta hostname → 401 (Basic Auth) |
 | SSH port | 26769 | 50378 |
 | SSH user / IP | `ductle@163.192.209.112` | same |
 | Webroot | `/www/ductle_136/public` | same |
 | PHP (web + CLI) | 8.4.23 | 8.4.23 |
 | WP-CLI | 2.12.0 | 2.12.0 |
-| WordPress core | 7.0.2 (no update pending) | 7.0.2 |
+| WordPress core | **7.0.4** — was 7.0.2 on 08-06, so core auto-updates are running | 7.0.2 as of 08-06, not re-checked |
 | Disk used | 108 MB | 93 MB |
-| Database | Stable | **Intermittently down — see above** |
-| Password protection | **Disabled** | **Enabled** (HTTP Basic Auth at Nginx) |
-| Backups | Daily + manual baselines | Daily only, **no manual baseline** |
-| Role | Production; holds all infrastructure and security work | Holds the Developer's site build |
+| Database | Stable | Intermittently down — see above, now harmless |
+| Password protection | **Disabled** — deliberately, until SSO is tested | **Enabled** (HTTP Basic Auth at Nginx) |
+| Backups | Daily + manual baselines | Daily only, no manual baseline — **no longer a risk** |
+| Role | Production, **and the build environment**; holds all infrastructure and security work | **Disposable.** Theme demo content only |
 
 **One SSH key pair per person, both environments** — `id_ed25519_ctle_sendres_kinsta`. Kinsta permits one SSH user per environment; additional MyKinsta members authorise their own keys against that same user. Kinsta "additional users" are SFTP-only and are **not** a WP-CLI recovery path.
 
@@ -68,7 +70,7 @@ Both were provisioned at account setup and were present at first MyKinsta login.
 
 | Setting | Value |
 |---|---|
-| `siteurl` / `home` | `https://ctle.dom.edu` — **hostname does not resolve** |
+| `siteurl` / `home` | `https://ctle.dom.edu` — resolving and serving since at least 2026-08-14 |
 | `blog_public` | `0` — search engines discouraged (**launch gate: must flip to 1**) |
 | Active theme | `twentytwentyfive` 1.5 |
 | `show_on_front` | `posts` (no static front page set) |
@@ -86,7 +88,7 @@ Both were provisioned at account setup and were present at first MyKinsta login.
 | WPS Hide Login | 1.9.18 | Active |
 | WP Activity Log (`wp-security-audit-log`) | 5.6.5 | Active |
 | Query Monitor | 4.0.7 | Active |
-| OpenID Connect Generic (`daggerhart-openid-connect-generic`) | 3.11.3 | **Inactive — deliberately.** Installed 2026-08-05 for Job 4. Activation waits for credentials *and* for a moment when MyKinsta auto-login can be confirmed immediately afterward, since it is the only interactive path into wp-admin. |
+| OpenID Connect Generic (`daggerhart-openid-connect-generic`) | 3.11.3 | **Active since 2026-08-14.** Configured against tenant `e363050e-…-7db1230b452a` via `OIDC_*` constants in `wp-config.php`. **No userinfo endpoint set**, deliberately, so claims come from the ID token where `employeeId` lives. JWKS and issuer verification both active. MyKinsta auto-login re-confirmed in a fresh private session after activation. Sign-in not yet working: the Entra registration has no redirect URI (`AADSTS500113`). |
 | Relevanssi | 4.27.2 | Inactive — staged for the search build |
 | wpForo | 3.1.4 | Inactive — staged for forums |
 
@@ -112,7 +114,11 @@ Source of truth is `mu-plugins/` in this repo. Deployed to `wp-content/mu-plugin
 | 2 | `pdriveru8gf` | pdriver@dom.edu | Administrator | 542588 |
 | 3 | `sendresiq78` | sendres@dom.edu | Administrator | 904238 |
 
-Both are MyKinsta auto-login accounts with **no password**. `sis_user_id` is stamped so SSO resolves to the existing account rather than creating a duplicate. **Amanda (`anorris@dom.edu`) has no account on Live** — she must auto-login once and be stamped before her first SSO sign-in.
+Both are MyKinsta auto-login accounts with **no password**.
+
+> **`sis_user_id` is not what SSO matches on.** It was stamped on the belief that OpenID Connect Generic could match an `employeeId` claim against it. Reading the plugin source on 2026-08-14 disproved that: identity is `id_token.sub` against the plugin's own `openid-connect-generic-subject-identity` meta, with an optional fallback to `email_exists()`. See `PLAN.md` Job 4. The stamps are retained because Job 5's Canvas and SIS work wants the Jenzabar ID on the account — they are simply not load-bearing for authentication.
+
+**Amanda (`anorris@dom.edu`) has no account on Live.** She must auto-login once before her first SSO sign-in, so that email matching has something to match.
 
 ### Content
 
@@ -169,9 +175,11 @@ Themes: `educational-university` (active), `newsgoal`, `newsup`, and the three c
 
 One `wp_navigation` row carries `post_author = 0`, which the remap in `PLAN.md` handles explicitly.
 
-### Content — the work to preserve
+### Content — theme demo material, not a site build
 
-73 `wp_posts` rows in total: 10 published pages plus 1 draft, 27 navigation menu items, 12 attachments, 15 revisions, 3 global-styles records and 1 navigation record. 13 MB of uploads across 60 files. Built 2026-07-21.
+> **Superseded 2026-08-14.** This section was headed "the work to preserve" and drove a 3-hour merge plan. **Amanda confirms she only did basic testing here and never developed the site on Staging.** The pages below are `educational-university`'s demo content, imported by `ansar-import`; the uploads are that demo's images. Nothing here is being transferred to Live. The inventory is retained only so that a future reader recognises this content for what it is if they find it.
+
+73 `wp_posts` rows in total: 10 published pages plus 1 draft, 27 navigation menu items, 12 attachments, 15 revisions, 3 global-styles records and 1 navigation record. 13 MB of uploads across 60 files. Imported 2026-07-21.
 
 | ID | Page |
 |---|---|
@@ -207,9 +215,11 @@ Plus the inherited `Sample Page` (2) and `Privacy Policy` (3) — same IDs as Li
 | Custom tables | 8 | 0 |
 | Password protection | disabled | enabled |
 | Mail transport | `ctle-mail.php`, working | none |
-| Database stability | stable | **flapping** |
+| Database stability | stable | flapping, and now inconsequential |
 
-**No Kinsta push is safe in either direction.** See `PLAN.md` for the export/import method used instead, and `kinsta_onboarding.md` §24 for why the push mechanism itself is the hazard.
+**Staging → Live is still forbidden.** It would overwrite production's security configuration, and Kinsta carries environment settings — redirects, PHP, Nginx — *unconditionally*, even on a files-only push. "Push files only" is not the safeguard it appears to be. See `kinsta_onboarding.md` §24.
+
+**Live → Staging is now safe**, because Staging holds nothing worth keeping. That is Kinsta's supported direction, and it is how Staging should be re-established as a mirror once Live has a real build.
 
 ---
 
@@ -217,9 +227,9 @@ Plus the inherited `Sample Page` (2) and `Privacy Policy` (3) — same IDs as Li
 
 ### Domains, TLS, routing
 
-- **`ctle.dom.edu` does not resolve.** NXDOMAIN, authoritative, verified 2026-08-06. See the warning at the top of this document. Everything in this subsection that depends on that name is therefore currently theoretical.
-- `https://ductle.kinsta.cloud` serves 200 and is the only working route to Live. It was previously an accepted gap slated for post-launch removal; until DNS is restored it is **the production entrance**, so do not disable it.
-- TLS was issued by Google Trust Services through Kinsta's Cloudflare layer, recorded as expiring **2026-08-31**. Renewal validation requires the hostname to point at Kinsta, so **the 2026-08-24 renewal check is moot until DNS is restored** — and if DNS returns late, a fresh certificate will be needed rather than a renewal.
+- **`ctle.dom.edu` → `162.159.135.42`**, with `www.ctle.dom.edu` as a CNAME to it. Verified 2026-08-14; serves HTTP/2 200.
+- `https://ductle.kinsta.cloud` also serves 200. With DNS working it reverts to what it always was — an accepted gap slated for post-launch removal, not the production entrance.
+- TLS issued by Google Trust Services through Kinsta's Cloudflare layer: `CN=ctle.dom.edu`, issuer `WE1`, valid `2026-06-02` → **`2026-08-31`**. **The 2026-08-24 renewal check is live and no longer moot** — DNS resolves, so validation can complete.
 - No CAA records on `dom.edu`, so issuance is unconstrained.
 - HTTP/2 active.
 
@@ -277,7 +287,7 @@ Only Steven currently holds an SSH key. **Two-person recovery is not yet satisfi
 | Integration | State |
 |---|---|
 | **Mail** | ✅ **Working since 2026-08-05.** `ctle-mail.php` routes every `wp_mail()` through Microsoft Graph `sendMail` as `ctle-noreply@dom.edu`, using a dedicated Entra app registration with the **application** `Mail.Send` permission, admin-consented and constrained by an Exchange `RestrictAccess` policy scoped to `CTLE-NoReplyGroup`. Credentials live in `wp-config.php` constants. **Client secret expires 2028-08-02.** |
-| **Entra SSO** | Plugin installed and inactive. Handed to Aidan 2026-08-05. Blocked on three answers — whether the allowlist security group exists, what Aidan already built, and what Entra's `employeeId` actually contains — and now also on DNS, since the redirect URI names a hostname that does not resolve. Entra ID P1 confirmed. **Built on Live only**, the config being hostname-bound. |
+| **Entra SSO** | Plugin installed, **still inactive**; configuration is the active job. **Aidan delivered 2026-08-14** — tenant ID, client ID, client secret and expiry by SecureTransfer. The allowlist security group **`CTLE WordPress`** holds **Persis, Amanda, Ellen and Steven**; the registration is separate from the mail one; Entra's `employeeId` carries the **J1 (Jenzabar)** value for normally-onboarded accounts, **including Ellen's**. Manually created accounts — NAPs, `sw_` student workers — may have it empty, which will matter at launch if any `DOMFaculty` member was onboarded by hand. Entra ID P1 confirmed. **Built on Live only**, the config being hostname-bound. Matching is on **email**, not `employeeId` — see the note under *Live → Users*. **Outstanding: the registration has no redirect URI** (`AADSTS500113`), requested 2026-08-14. |
 | **Canvas** | LTI dropped. Faculty launch from the existing CTLE global-nav button retargeted to the SSO-initiation URL, with visibility gated on `declared_user_type=teacher` read from `/api/v1/users/self/logins`. Script built at `canvas/ctle-global-nav.js`, `enabled: false`, not yet uploaded. Pete owns adding `declared_user_type` to the nightly Jenzabar→Canvas import, after SSO works. |
 | **Events calendar** | Not started. Events Calendar Pro licence unpurchased. |
 
@@ -291,7 +301,7 @@ Only Steven currently holds an SSH key. **Two-person recovery is not yet satisfi
 | Custom login path | DU SecureTransfer, individually. **Never in this repo.** |
 | Staging Basic Auth | DU SecureTransfer, individually. Regenerated 2026-07-29. |
 | SSH private key | `~/.ssh/id_ed25519_ctle_sendres_kinsta`, Steven's machine only |
-| Entra client secrets | CTLE vault, and `wp-config.php` constants — **not** the database |
+| Entra client secrets | CTLE vault, and `wp-config.php` constants — **not** the database. Two now: the mail app (expires 2028-08-02) and the SSO app (expiry supplied 2026-08-14, diarise a month ahead) |
 
 Two plaintext passwords were removed from `kinsta_onboarding.md` before its first commit; git history confirms neither was ever committed.
 
@@ -301,6 +311,7 @@ Two plaintext passwords were removed from `kinsta_onboarding.md` before its firs
 
 | Version | Date | Author | Notes |
 |---|---|---|---|
+| 1.2.0 | 2026-08-14 | sendres | **Both 08-06 warnings withdrawn.** `ctle.dom.edu` resolves to `162.159.135.42` with the `www` CNAME, serves 200 and holds a valid certificate to 08-31 — the record ticket 26363781 described is in place. The 08-06 NXDOMAIN came from `ns1.dom.edu`, which no longer resolves at all, so whether the record was ever truly absent cannot be determined; recorded as such rather than guessed. Amanda confirmed Staging was only basic testing, never the site build, so its database instability threatens nothing and its content is theme demo material — Live is now both production and the build environment, and Live → Staging pushes become safe. **Corrected the identity model:** reading OpenID Connect Generic 3.11.3's source on Live shows matching is `id_token.sub` against the plugin's own meta with an email fallback, never an arbitrary claim against `sis_user_id`; the stamps are retained for SIS purposes only. Aidan delivered SSO credentials and confirmed `employeeId` carries the J1 value. Targeted re-verification, not a full capture. |
 | 1.1.0 | 2026-08-06 | sendres | Recaptured from both environments. **Two new findings dominate:** `ctle.dom.edu` returns authoritative NXDOMAIN, contradicting the previous record of DNS delivered under ticket 26363781; and Staging's MariaDB has been observed down twice, on an environment holding the only copy of the site build with no manual backup. Otherwise: mail now working through `ctle-mail.php`, WP Mail SMTP deleted with two tables orphaned, OpenID Connect Generic installed inactive, and the Graph send scope verified as a live control. |
 | 1.0.0 | 2026-08-03 | sendres | Initial as-built, captured directly from both environments via `scripts/audit-env.sh`. Replaces the scattered "verified state" prose in `HANDOFF.md` and the checkbox state in `kinsta_onboarding.md`. Confirmed by capture rather than inference: `topsecretuser` present on Staging; user IDs misaligned across environments; `ctle-hardening.php` divergent on Staging; PHP already 8.4 on both; **no custom database tables on Staging**, which is what makes a content-level transfer viable instead of a Kinsta push. |
 
