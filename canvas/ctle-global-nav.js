@@ -30,10 +30,16 @@
 		// Flip to true in Canvas beta for testing, and in production only at launch.
 		enabled: false,
 
-		// The CTLE SSO-initiation URL. PLACEHOLDER — replace once DU IT delivers the
-		// Entra app registration and the WordPress SSO plugin is configured. Until
-		// then `enabled` must stay false: this URL is the whole point of the retarget.
-		ssoUrl: 'https://ctle.dom.edu/',
+		// The CTLE SSO-initiation URL. With the OIDC plugin in `auto` login mode,
+		// hitting wp-login.php builds a fresh authorization request server-side and
+		// redirects to Entra, so the user never sees a WordPress login form.
+		//
+		// Point at wp-login.php and nothing else. Two things make it the only safe
+		// target: the host never caches it (measured no-store / cache BYPASS, where an
+		// ordinary page slug is cached for hours), and the authorization URL carries a
+		// single-use `state` nonce valid for 180 seconds. A hardcoded authorize URL, or
+		// any cacheable path, hands one long-dead nonce to every user forever.
+		ssoUrl: 'https://ctle.dom.edu/wp-login.php',
 
 		// How the existing global-nav item is located. The first match wins:
 		//   1. an element carrying [data-ctle-nav]

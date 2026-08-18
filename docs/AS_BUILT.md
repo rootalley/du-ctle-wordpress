@@ -60,14 +60,24 @@ Both were provisioned at account setup and were present at first MyKinsta login.
 | Backups | Daily + manual baselines | Daily only, no manual baseline — **no longer a risk** |
 | Role | Production, **and the build environment**; holds all infrastructure and security work | **Disposable.** Theme demo content only |
 
-> ### ⚠ The custom login path is edge-cached, and SSO fails while it is
+> ### The login journey — no WordPress login form is ever shown
 >
-> Measured 2026-08-18: the WPS Hide Login slug is served with `cache-control: s-maxage=86400` and
-> `x-kinsta-cache: HIT`, because Kinsta excludes `/wp-login.php` and `/wp-admin/` from caching but
-> not an arbitrary slug. The OpenID button's one-time `state` — transient TTL 180 seconds — is
-> frozen into the cached HTML, so every sign-in returns `ERROR (invalid-state)`. Appending
-> `?nocache=<random>` gives `x-kinsta-cache: BYPASS` and works. **Unfixed; the decision is
-> `PLAN.md` `4a`.**
+> `OIDC_LOGIN_TYPE` is `auto`, so `/wp-login.php` builds a fresh authorization request server-side
+> and redirects to Entra. Verified 2026-08-18: consecutive requests return `302` to
+> `login.microsoftonline.com` with **different `state` values** and `x-kinsta-cache: BYPASS`.
+> Both journeys route through it — a deep link into a restricted area via `auth_redirect()`, and
+> the Canvas global-navigation button, which targets `https://ctle.dom.edu/wp-login.php`.
+>
+> **WPS Hide Login was removed on 2026-08-18 and must not be reinstalled.** Its custom slug was
+> outside Kinsta's cache exclusions, so the edge cached the login page at `s-maxage=86400` and
+> froze the one-time `state` (TTL 180 s) into it — every sign-in returned `invalid-state`. The same
+> blind spot had already cost Kinsta's edge brute-force ban, which watches `/wp-login.php` alone.
+> Recorded as a dated deviation in `REQUIREMENTS.md` §5.
+>
+> **Never store a copied authorization URL anywhere.** It embeds a single-use 180-second nonce;
+> linking to it from Canvas, a bookmark or documentation fails for every user, permanently.
+>
+> **Outstanding cleanup:** the orphaned `whl_page` option still holds `turbulent-fansite`.
 >
 > ### MyKinsta auto-login matches on email
 >
@@ -101,7 +111,7 @@ Both were provisioned at account setup and were present at first MyKinsta login.
 
 | Plugin | Version | Status |
 |---|---|---|
-| WPS Hide Login | 1.9.18 | Active |
+| ~~WPS Hide Login~~ | ~~1.9.18~~ | **Deleted 2026-08-18.** It forfeited Kinsta's edge brute-force ban and broke SSO by putting the login page outside the host's cache exclusions. Do not reinstall — see the login-journey note above. |
 | WP Activity Log (`wp-security-audit-log`) | 5.6.5 | Active |
 | Query Monitor | 4.0.7 | Active |
 | OpenID Connect Generic (`daggerhart-openid-connect-generic`) | 3.11.3 | **Active since 2026-08-14. Sign-in proven working 2026-08-18.** Configured against tenant `e363050e-…-7db1230b452a` via `OIDC_*` constants in `wp-config.php`. **No userinfo endpoint set**, deliberately. JWKS and issuer verification both active. MyKinsta auto-login re-confirmed in a fresh private session after activation. **Client ID and secret corrected 2026-08-18** — they had held the mail app's values. Tenant admin consent granted 2026-08-18; first successful sign-in matched user ID 3 on email and stamped `openid-connect-generic-subject-identity`. **`employeeId` did not arrive in the ID token** — see `PLAN.md` `4b`. **`OIDC_ENABLE_LOGGING` is still on** and the log holds decoded claims; Job 6 turns it off. |
@@ -274,7 +284,7 @@ Kinsta daily automatic, 14-day retention, plus point-in-time restore. Manual bas
 | Password authentication | **Removed site-wide** via `ctle-hardening.php` — core username/password, email/password, and application-password authenticators unhooked; application passwords hidden; password reset disabled |
 | Administrator access | MyKinsta WP Admin auto-login only. No privileged account has a password. |
 | Second factor | MyKinsta 2FA. Codes for the Company Owner go to `ctle@dom.edu`, **making that mailbox's access list a security control** |
-| Login URL | Obfuscated via WPS Hide Login; rotated 2026-07-29 after exposure. Path is **not recorded in this repo**. Treat as a speed bump, not a control. |
+| Login URL | **`/wp-login.php`, no longer obfuscated** — WPS Hide Login deleted 2026-08-18. It is not a form: `OIDC_LOGIN_TYPE=auto` redirects it straight to Entra, and `ctle-hardening.php` has removed password authentication site-wide, so there is nothing behind it to guess at. Restoring the default path also restores Kinsta's edge brute-force ban, which watches that path alone. Deviation recorded in `REQUIREMENTS.md` §5. |
 | Brute-force | Kinsta's automatic IP ban watches `/wp-login.php` **only** — it does not follow a custom login path. Measured: `POST /wp-login.php` → 403 at the edge; `POST` to the custom path → 200, processed. This is why password authentication was removed rather than rate-limited. |
 | Graph mail scope | The mail app can send as `ctle-noreply@dom.edu` **and no other mailbox** — verified live 2026-08-05, not merely configured. Re-run that check if the app registration changes. |
 | XML-RPC | Disabled at both Nginx (403) and application layers |
