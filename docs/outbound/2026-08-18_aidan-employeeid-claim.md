@@ -1,6 +1,6 @@
-# DRAFT — to Aidan: SSO works; `employeeId` missing from the ID token
+# SENT 2026-08-18 — to Aidan: SSO works; `employeeId` missing from the ID token
 
-**Status:** draft, not sent.
+**Status:** **sent 2026-08-18.** Awaiting reply.
 **To:** Aidan Acosta (DU IT, Entra admin).
 **Context:** he granted admin consent on 2026-08-18 and sign-in was proven working the same day —
 Steven's account matched on email, no duplicate created. The one thing missing is the `employeeId`

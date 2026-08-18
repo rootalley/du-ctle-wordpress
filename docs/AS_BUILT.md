@@ -15,7 +15,7 @@
 >
 > Raw output lands in `docs/audit/`, which is **gitignored** — it contains staff email addresses. Re-run after any significant change and update this file from it. Do not hand-edit values here without re-capturing; a document that drifts from the machine is worse than none.
 
-**No secrets in this file.** No passwords, no client secrets, no custom login path. Those live in the CTLE vault and DU SecureTransfer.
+**No secrets in this file.** No passwords, no client secrets. Those live in the CTLE vault and DU SecureTransfer. (There is no custom login path to protect as of 2026-08-18.)
 
 ---
 
@@ -77,7 +77,8 @@ Both were provisioned at account setup and were present at first MyKinsta login.
 > **Never store a copied authorization URL anywhere.** It embeds a single-use 180-second nonce;
 > linking to it from Canvas, a bookmark or documentation fails for every user, permanently.
 >
-> **Outstanding cleanup:** the orphaned `whl_page` option still holds `turbulent-fansite`.
+> **DU IT signed off this model on 2026-08-18** without the obfuscated login path, agreeing it adds
+> nothing once users are directed to Entra. The orphaned `whl_page` option has been deleted.
 >
 > ### MyKinsta auto-login matches on email
 >
@@ -285,7 +286,7 @@ Kinsta daily automatic, 14-day retention, plus point-in-time restore. Manual bas
 | Administrator access | MyKinsta WP Admin auto-login only. No privileged account has a password. |
 | Second factor | MyKinsta 2FA. Codes for the Company Owner go to `ctle@dom.edu`, **making that mailbox's access list a security control** |
 | Login URL | **`/wp-login.php`, no longer obfuscated** — WPS Hide Login deleted 2026-08-18. It is not a form: `OIDC_LOGIN_TYPE=auto` redirects it straight to Entra, and `ctle-hardening.php` has removed password authentication site-wide, so there is nothing behind it to guess at. Restoring the default path also restores Kinsta's edge brute-force ban, which watches that path alone. Deviation recorded in `REQUIREMENTS.md` §5. |
-| Brute-force | Kinsta's automatic IP ban watches `/wp-login.php` **only** — it does not follow a custom login path. Measured: `POST /wp-login.php` → 403 at the edge; `POST` to the custom path → 200, processed. This is why password authentication was removed rather than rate-limited. |
+| Brute-force | Kinsta's automatic IP ban watches `/wp-login.php` **only** — it does not follow a custom login path. Measured: `POST /wp-login.php` → 403 at the edge; `POST` to the custom path → 200, processed. This is why password authentication was removed rather than rate-limited, and **why the custom path was abandoned on 2026-08-18** — the ban applies again now. |
 | Graph mail scope | The mail app can send as `ctle-noreply@dom.edu` **and no other mailbox** — verified live 2026-08-05, not merely configured. Re-run that check if the app registration changes. |
 | XML-RPC | Disabled at both Nginx (403) and application layers |
 | Open registration | Off |
@@ -327,7 +328,7 @@ Only Steven currently holds an SSH key. **Two-person recovery is not yet satisfi
 | Credential | Where it lives |
 |---|---|
 | MyKinsta Company Owner | Persis's own; self-recoverable via reset to `ctle@dom.edu` |
-| Custom login path | DU SecureTransfer, individually. **Never in this repo.** |
+| ~~Custom login path~~ | **No longer exists.** Removed 2026-08-18; `/wp-login.php` is the login URL and is not a secret. |
 | Staging Basic Auth | DU SecureTransfer, individually. Regenerated 2026-07-29. |
 | SSH private key | `~/.ssh/id_ed25519_ctle_sendres_kinsta`, Steven's machine only |
 | Entra client secrets | CTLE vault, and `wp-config.php` constants — **not** the database. Two now: the mail app (expires 2028-08-02) and the SSO app (expiry supplied 2026-08-14, diarise a month ahead) |

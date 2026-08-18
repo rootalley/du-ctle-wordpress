@@ -51,26 +51,41 @@ without them.
 
 ---
 
-# → RIGHT NOW: SSO is done, bar one claim from Aidan.
+# → NEXT SESSION: re-run the environment audit. Nothing else is unblocked.
 
-**Sign-in works end to end, and the caching defect that broke it is fixed at the root.** 2026-08-18: Aidan granted admin consent, Steven signed in and matched his existing account, and WPS Hide Login was removed in favour of `auto` login mode.
+**Start here:**
+
+```bash
+scripts/audit-env.sh          # then regenerate docs/AS_BUILT.md from the capture
+```
+
+**Why it is the first thing.** `AS_BUILT.md` was last generated from a full capture on **2026-08-06** and has been hand-patched since. **Both environments changed materially on 08-18** — Live gained a user, lost its sample content and two tables, had a plugin deleted and its login journey rewritten; Staging's user table was altered by the auto-login test. The precondition that kept deferring this — working SSO — is now met. **A document is evidence of what someone believed, not of what is true**, and this one is four patches deep.
+
+**Everything else is waiting on someone else, and nothing is blocked on Steven.**
+
+## Where Job 4 got to — 2026-08-18
+
+**SSO works end to end.** Aidan granted admin consent, Steven signed in and matched his existing account, and the caching defect that broke the first two attempts was fixed at the root by removing WPS Hide Login.
 
 | Check | Result |
 |---|---|
-| User count after sign-in | **2 at the time** — no duplicate created |
+| Sign-in | Matched user ID 3 on email — **no duplicate created** |
 | ID 3 `openid-connect-generic-subject-identity` | `9Gs6NfLULHe_GOLpPUHeeYl2-mB422IB0jnJGrA-0Es` |
 | ID 3 `sis_user_id` | `904238` — unchanged |
-| `/wp-login.php` | `302` → `login.microsoftonline.com`, **fresh `state` per request**, `x-kinsta-cache: BYPASS` |
-| WordPress login form | **Never shown to anyone** |
+| `/wp-login.php` | `302` → Entra, **fresh `state` per request**, `x-kinsta-cache: BYPASS` |
+| WordPress login form | **Never shown to anyone**, in either journey |
+| Live plugins | OpenID Connect Generic, Query Monitor, WP Activity Log — WPS Hide Login gone |
+| Live users | `pdriveru8gf` (2), `sendresiq78` (3), `anorris` (4) |
 
-## What is left
+## Open, in order
 
-1. **`4b` — ask Aidan why `employeeId` is absent from the ID token.** Drafted at `docs/outbound/2026-08-18_aidan-employeeid-claim.md`. DU IT, not covered by the hold. **The only open item on SSO**, and it blocks Job 5's Canvas linkage rather than authentication. **`4c` waits behind it** so Ellen's sign-in is run once, not twice.
-2. **Re-run `scripts/audit-env.sh` and regenerate `docs/AS_BUILT.md`.** Overdue since 08-06 and its precondition — working SSO — is now met. Both environments changed today.
-3. **Two small cleanups:** delete the orphaned `whl_page` option, and re-state the DU IT security sign-off request without the obfuscated login URL (`REQUIREMENTS.md` §5 deviation, 2026-08-18).
-4. **`4c` — Ellen's test**, the one path still unproven: provisioning an account that does not yet exist. Steven's call.
+1. **`4b` — `employeeId` is absent from the ID token. Asked of Aidan, sent 2026-08-18** (`docs/outbound/2026-08-18_aidan-employeeid-claim.md`). **Awaiting his reply.** Authentication is unaffected; this is Job 5's Canvas SIS key. **When he replies, verify the claim arrived rather than trusting a successful sign-in** — the command is in that file's sender notes.
+2. **`4c` — Ellen's test, sequenced behind `4b`** so it runs once and checks provisioning *and* the SIS key together. Steven's call to make.
+3. **Job 5 — gated on the face-to-face**, whose one required output is the `CTLE WordPress` group list and who maintains it after launch.
 
-**Persis's and Amanda's tests stay behind the face-to-face** and now cost nothing to defer — Steven's sign-in proved the identical `email_exists()` path against an identical pre-existing account.
+**Persis's and Amanda's sign-in tests stay behind the face-to-face** and cost nothing to defer — Steven's sign-in proved the identical `email_exists()` path against an identical pre-existing account.
+
+**Closed on 2026-08-18 and needing nothing further:** Job 2 in full; the login-caching defect; the `whl_page` orphan; and the DU IT security sign-off, which **they granted without the obfuscated login path** — they agree it adds nothing once users are directed to Entra.
 
 ## ✅ B1 — CLOSED 2026-08-14. `ctle.dom.edu` resolves.
 
@@ -519,11 +534,10 @@ behind that slug to guess against.
 **Recorded as a dated deviation in `REQUIREMENTS.md` §5**, since item (2) of *Administrator access
 protection* is a stakeholder-approved requirement. **Two follow-ups from it:**
 
-- **Delete the orphaned `whl_page` option** — it still holds `turbulent-fansite` in the database.
-  Harmless and no longer confidential, but it reads as live configuration.
-- **Re-state the DU IT security sign-off request without item (2).** The model to sign off is
-  MyKinsta 2FA + audit-log alerting + Entra-enforced MFA + no password-authenticated account.
-  DU IT, by ticket, **not** covered by the communications hold.
+- ✅ **Orphaned `whl_page` option deleted** 2026-08-18. Live carries no trace of the plugin.
+- ✅ **DU IT signed off the protection model without item (2)**, 2026-08-18 — they agree the
+  obfuscation adds nothing once users are directed to Entra. The model they accepted is MyKinsta
+  2FA + audit-log alerting + Entra-enforced MFA + no password-authenticated account.
 
 > **The durable lesson:** *a host's protections and its caching policy are both keyed to the URLs
 > it knows about. Moving a well-known URL forfeits both, and the caching loss stays invisible until
@@ -650,6 +664,7 @@ Then the build work:
 
 | Version | Date | Notes |
 |---|---|---|
+| 1.10.1 | 2026-08-18 | **End of day.** The `employeeId` request to Aidan is **sent**; `4b` now waits on his reply and `4c` waits behind it. **DU IT accepted the removal of the obfuscated login path** the same day it was raised — they agree it adds nothing once users are directed to Entra — which closes the `REQUIREMENTS.md` §5 deviation and obtains the security sign-off that item was part of. The orphaned `whl_page` option deleted. **Next session starts with `scripts/audit-env.sh` and a regenerated `AS_BUILT.md`**: it was last captured on 08-06 and both environments changed materially today, so it is four hand-patches deep on a document that is meant to be generated. |
 | 1.10.0 | 2026-08-18 | **SSO is finished bar one claim, and Job 2 is closed.** `4a` fixed at the root: WPS Hide Login removed and `OIDC_LOGIN_TYPE` set to `auto`, so `/wp-login.php` mints a fresh authorization request server-side and redirects straight to Entra — verified as distinct `state` values on consecutive requests with `x-kinsta-cache: BYPASS`, and **no WordPress login form is shown to any user** in either journey. Recorded the trap that a hand-copied authorize URL cannot be used as the Canvas target, because it embeds a single-use 180-second nonce; `canvas/ctle-global-nav.js` now points at `/wp-login.php` with that reasoning inline. Recorded that **auto-redirecting from the obfuscated slug would not have worked either** — Kinsta caches 302s on that path, so the nonce would have frozen in a `Location` header with nothing on screen to diagnose. Logged as a dated deviation in `REQUIREMENTS.md` §5 against *Administrator access protection* item (2), with two follow-ups: delete the orphaned `whl_page` option, and re-state the DU IT sign-off request without the obfuscated URL. `4c` unblocked. Remaining on Job 4: **`employeeId` absent from the ID token**, which costs Job 5's Canvas linkage and nothing else. |
 | 1.9.0 | 2026-08-18 | **SSO signs in and matches correctly — Job 4's core question is answered.** Aidan granted admin consent; Steven signed in at 21:33:07 UTC, landed on user ID 3 with no duplicate created, `openid-connect-generic-subject-identity` stamped and `sis_user_id` intact at `904238`. **Found the defect that made it fail twice first:** WPS Hide Login's custom slug is not in Kinsta's cache exclusions, so the edge cached the login page for 24 hours and served one frozen 180-second `state` to every visitor — measured as identical `state` values across independent requests with `x-kinsta-cache: HIT`. Recorded as `4a` with a decision attached, because **this is the same plugin failing the same way twice**: it already forfeited Kinsta's brute-force protection for the identical reason. **`employeeId` is absent from the ID token** — everything authentication needs is present, so this costs only Job 5's Canvas linkage; recorded as `4b`. **Established by test that Kinsta auto-login matches on email**, not on username or an internal mapping: Steven's Staging account was deleted and recreated by hand, and auto-login adopted it rather than minting a duplicate. That makes pre-created accounts safe for both provisioning paths and puts `REQUIREMENTS.md` §5's multi-path reconciliation on evidence. `2a`, `2b` and `2c` all completed — alerts hold deployed and verified, Amanda created at ID 4, timezone set, sample content and orphan mail tables removed. |
 | 1.8.0 | 2026-08-18 | **Communications hold on Persis and Amanda, and a replan around it.** Political rather than technical, so both drafted notes are marked `HELD` — including the one explaining the 08-05 alert, which now belongs in the face-to-face. **Found that the hold has a machine-side leak:** `ctle-admin-alerts.php` emails Persis on every Administrator login and role change, so a single SSO test would have breached it silently. Closed with `ctle-alerts-hold.php`, which narrows recipients through the plugin's own filter rather than unhooking anything, and is recorded as a debt to delete at handover. **Job 2 stops waiting on Amanda:** we create her Live account ourselves, which was never actually hers to do and which also closes the duplicate-account risk her first sign-in carried. Pulled timezone, sample content and the orphan mail tables forward from Job 6 — none needed anyone's permission. Password protection now goes on at handover with credentials passed in person. Job 5 gated on the conversation, whose one required output is **the SSO group list and who maintains it**. Recorded that Steven's own sign-in exercises the same `email_exists()` path as Persis's and Amanda's, so deferring their tests confirms rather than discovers. |

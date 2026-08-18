@@ -23,7 +23,7 @@ Everything else in this file is for a new Claude session picking up cold.
 > **The one thing needed from CTLE** is the `CTLE WordPress` SSO group list and who maintains it
 > after launch. Everything else can be finished without them.
 
-**Last archive check:** 2026-08-06 — both environments recaptured. Re-verified in part on **2026-08-14** (blockers closed, SSO configured) and **2026-08-18** (credentials corrected, sign-in proven, Job 2 completed). **A full `scripts/audit-env.sh` recapture is now overdue and its precondition is met** — SSO signs in, so run it and regenerate `AS_BUILT.md` from the capture. Both environments changed today: Live gained a user and lost its sample content and two tables; Staging's user table was altered by the auto-login test.
+**Last archive check:** 2026-08-06. Hand-patched on **08-14** and again on **08-18**, twice. **⚠ Re-running `scripts/audit-env.sh` and regenerating `AS_BUILT.md` is the first job of the next session** — see the top of `PLAN.md`. Both environments changed materially on 08-18: Live gained a user, lost its sample content and two tables, had WPS Hide Login deleted and its login journey rewritten; Staging's user table was altered by the auto-login test.
 
 ---
 
@@ -40,7 +40,7 @@ ADHD mode is always-on via `~/.claude/.i-have-adhd-always`, so it needs no invok
 
 ## Where things stand — 2026-08-18
 
-**Done:** communications (Job 1), **mail (Job 3)**, **Job 2 in full**, and **SSO now signs in and matches correctly (Job 4's core)**.
+**Done:** communications (Job 1), **mail (Job 3)**, **Job 2 in full**, and **SSO — sign-in, matching and the Canvas entry point all working (Job 4, bar one claim)**.
 
 **SSO works.** Aidan granted admin consent on 08-18. Steven signed in at 21:33:07 UTC, landed on his existing account (ID 3), no duplicate was created, `openid-connect-generic-subject-identity` was stamped and `sis_user_id` is untouched at `904238`. Email matching does what it was designed to do.
 
@@ -54,9 +54,9 @@ ADHD mode is always-on via `~/.claude/.i-have-adhd-always`, so it needs no invok
 
 **Two things are owed to CTLE and both remain `HELD`** — the merge-cancelled note and the explanation that the 08-05 Administrator alert was a test. Both belong to the face-to-face. Keep them current; don't send them.
 
-**Two small follow-ups from the WPS Hide Login removal:** delete the orphaned `whl_page` option, still holding the old slug in the database, and **re-state the DU IT security sign-off request without the obfuscated login URL** — it was named in `REQUIREMENTS.md` §*IT Responsibilities* as part of the agreed protection model. DU IT, by ticket, not covered by the hold.
+**DU IT signed off the protection model without the obfuscated login path**, the same day it was raised — they agree it adds nothing once users are directed to Entra. That closes the `REQUIREMENTS.md` §5 deviation and obtains the sign-off the item was part of. The orphaned `whl_page` option is deleted; Live carries no trace of the plugin.
 
-**Waiting on other people:** Aidan for the `employeeId` claim — not blocking. Amanda for an SSH key and a theme answer, Persis for the group list and the account-linking deviation, both after the conversation. **Nothing external blocks progress.**
+**Waiting on other people, and nothing is blocked on Steven:** Aidan for the `employeeId` claim — **asked 2026-08-18, awaiting reply**, and not blocking authentication. Amanda for an SSH key and a theme answer, Persis for the group list and the account-linking deviation, both after the face-to-face. **Ellen's sign-in is sequenced behind Aidan's reply** so it runs once and checks provisioning and the SIS key together.
 
 **Diary: 2026-08-24** — verify TLS auto-renewed. The certificate expires 08-31.
 
@@ -79,7 +79,7 @@ Dominican University's Center for Teaching and Learning Excellence is building a
 | **Pete** | DU IT — runs Jenzabar and the Canvas SIS import | `declared_user_type` in the nightly import, **after SSO works** |
 | **Ellen Alamilla** | IT project-manager role, **adjunct faculty** | Nothing yet — **the one remaining SSO test**, since hers is the only account that would be provisioned rather than matched. Wait for `4a` |
 
-**How each audience is reached.** DU IT via **tickets**, not email — though the Aidan thread has run as email. CTLE via email to Persis and Amanda together. The record of what was sent lives in `docs/outbound/`. Credentials never travel by either route: login path, Basic Auth pairs, and client secrets go individually via DU SecureTransfer.
+**How each audience is reached.** DU IT via **tickets**, not email — though the Aidan thread has run as email. CTLE via email to Persis and Amanda together. The record of what was sent lives in `docs/outbound/`. Credentials never travel by either route: Basic Auth pairs and client secrets go individually via DU SecureTransfer. **The custom login path is no longer among them** — there isn't one as of 2026-08-18.
 
 **Steven is not faculty.** When the SSO allowlist group swaps to mirror `DOMFaculty` at launch, he drops out of it. Admin access survives through MyKinsta auto-login, so it is not a lockout — but his SSO sign-in stops working. That is a decision to make deliberately, recorded in Job 4.
 
@@ -150,7 +150,7 @@ This is why OpenID Connect Generic was held inactive until 2026-08-14, and activ
 
 **Kinsta serves stale HTML after settings changes.** Diagnose with a `?v=random` cache-buster; check `x-kinsta-cache` and `ki-cf-cache-status` separately.
 
-**Never commit credentials.** Not the login path, not Basic Auth pairs, not client secrets. Vault or SecureTransfer only.
+**Never commit credentials.** Not Basic Auth pairs, not client secrets. Vault or SecureTransfer only. (The custom login path used to be on this list; it was removed from the site on 2026-08-18, so `/wp-login.php` is public and not a secret.)
 
 ---
 
