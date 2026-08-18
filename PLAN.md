@@ -19,26 +19,30 @@ condition is now met and it still does not go** — it is marked `HELD`. The sec
 the explanation that the 08-05 Administrator alert was a test, which was never drafted and now
 belongs in the conversation.
 
-**Only that one file is held.** `docs/outbound/2026-08-18_aidan-admin-consent.md` goes to DU IT
-and **should be sent today** — it is what unblocks Job 4.
+**Only that one file is held.** `docs/outbound/2026-08-18_aidan-admin-consent.md` went to DU IT and
+**Aidan granted consent the same day**, which unblocked Job 4. A second DU IT note is now owed —
+`4b`, the missing `employeeId` claim.
 
 **Aidan Acosta and Pete are not covered by this hold.** They are DU IT, reached by ticket, and
 the SSO work with Aidan continues normally. Ellen Alamilla is a judgement call — she sits in IT
 but is also an adjunct, so treat any approach to her as Steven's to make, not a session's.
 
-**The hold has a machine-side leak, and it is closed by `2a`.** `ctle-admin-alerts.php` emails
-**Persis** on every Administrator login and every role change. A single SSO sign-in test would
-breach the hold without anyone writing a word. **Do `2a` before signing in or creating accounts.**
+**The hold had a machine-side leak, and `2a` closed it on 2026-08-18.** `ctle-admin-alerts.php`
+emails **Persis** on every Administrator login and every role change, so the SSO sign-in test and
+Amanda's account creation would both have breached the hold without anyone writing a word.
+`ctle-alerts-hold.php` is deployed and verified: `ctle_alert_recipients()` returns
+`sendres@dom.edu` alone. **Both events have since happened cleanly.** The file is a debt — Job 6
+deletes it.
 
 **What the hold costs, and the answer to each:**
 
 | Was blocked on | Now |
 |---|---|
-| Amanda creating her Live profile | **We create it for her** — `2b`. She was never needed for it. |
+| Amanda creating her Live profile | ✅ **Done 2026-08-18** — created for her at ID 4 by `2b`. |
 | Amanda's SSH key, for two-person recovery | Accepted risk for the duration — `2f`. Not new; it has been outstanding since July. |
 | The theme answer | Genuinely hers. Live stays on `twentytwentyfive` and nothing is lost by waiting — `2e`. |
 | Password-protection credentials | Handed over in person at the same conversation — `2d`. Better than SecureTransfer anyway. |
-| Persis testing her sign-in | Deferred. Steven's own test proves the same matching path. |
+| Persis testing her sign-in | Deferred, and now cheaper — Steven's 08-18 sign-in **proved** the same matching path on the same kind of account. |
 
 **The one thing that must come out of the face-to-face:** *the list of people who go in the
 `CTLE WordPress` SSO group*, and **who maintains it after launch**. That is the only CTLE input
@@ -47,45 +51,28 @@ without them.
 
 ---
 
-# → RIGHT NOW: do Job 2. SSO waits on Aidan.
+# → RIGHT NOW: SSO works. Job 4's core is proven.
 
-**Job 2 is 45 minutes of configuration that needs nobody**, and `2a` is a precondition for the SSO test anyway. Do it while the consent request is outstanding. Start at `2a`.
+**Steven signed in successfully on 2026-08-18 at 21:33:07 UTC and matched his existing account.** Aidan's admin consent landed, the flow reached the SSO app, and email matching did exactly what it was designed to do.
 
-**Job 4 below is blocked on Aidan's admin consent** — that request is drafted and ready at `docs/outbound/2026-08-18_aidan-admin-consent.md` and **should go today**; the hold does not cover DU IT.
+| Check | Result |
+|---|---|
+| User count after sign-in | **2** — no duplicate account created |
+| ID 3 `openid-connect-generic-subject-identity` | `9Gs6NfLULHe_GOLpPUHeeYl2-mB422IB0jnJGrA-0Es` — stamped |
+| ID 3 `sis_user_id` | `904238` — unchanged |
+| Display name | `Steven Endres` — `{given_name} {family_name}` applied |
+| Plugin log | `Existing user updated: sendresiq78 (3)` then `login-success` |
 
-## Job 4's state, for when consent lands
+**Three things came out of that test, and two of them need a decision.** They are `4a`, `4b` and `4c` below.
 
-**The 08-14 `AADSTS500113` was our error, not Entra's.** `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` in `wp-config.php` both held the **mail** app's credentials (`ddf…`) rather than the SSO app's (`7b8…`). Aidan found it on 2026-08-17 by reading the tenant sign-in logs — having already confirmed that the redirect URI and the `email` claim were present on the SSO registration all along. **Nothing was ever wrong on Entra's side.**
+## What is left, in order
 
-**Corrected 2026-08-18** using `wp config set`, which rewrites the existing `define()` in place and so avoids the hand-edit fault that cost twenty minutes on 08-14. Verified:
+1. **`4a` — the login page is edge-cached, which breaks SSO for everyone.** A decision: remove WPS Hide Login, or add a Kinsta cache exclusion. **Nothing else should be tested until this is settled** — the workaround is a query string nobody will remember to type.
+2. **`4b` — `employeeId` never arrived in the ID token.** A note to Aidan. Sign-in is unaffected; Job 5's Canvas linkage is what needs it.
+3. **`2c` remainder** — sample content and the orphan mail tables. Five minutes, needs nobody.
+4. **`4c` — Ellen's test**, once `4a` is fixed. Steven's call to make.
 
-```bash
-wp eval 'echo substr(OIDC_CLIENT_ID,0,3), PHP_EOL;'                                      # → 7b8
-wp eval 'echo (OIDC_CLIENT_ID === CTLE_MAIL_CLIENT_ID ? "STILL MAIL" : "ok"), PHP_EOL;'  # → ok
-```
-
-**The sign-in now reaches the right app and the redirect URI matches.** It stops at a tenant consent prompt — *"Need admin approval: CTLE WordPress Redirect needs permission to access resources in your organization that only an admin can grant."* We request only `openid email profile`, which are ordinarily user-consentable, so this is the tenant's user-consent policy rather than anything about this registration.
-
-**Asked of Aidan 2026-08-18** — `docs/outbound/2026-08-18_aidan-admin-consent.md`. That note also asks whether *Assignment required* is on and, if so, whether the `CTLE WordPress` group is assigned **to the app** — which is a separate thing from the group existing with the right members. Asking now pre-empts `AADSTS50105` becoming a third round trip on a thread already four days old.
-
-**When consent lands, the next action is a sign-in test — 15 minutes.** Private window → your custom login path (`wp option get whl_page`) → the OpenID Connect button. Then:
-
-```bash
-cd public
-wp user list --fields=ID,user_login,user_email,roles --format=csv
-wp user meta get 3 openid-connect-generic-subject-identity
-wp user meta get 3 sis_user_id
-```
-
-Expect two users still, ID 3 gaining a subject-identity value, `sis_user_id` unchanged at `904238`. **A third user means email matching failed — stop there** and read the plugin log before anyone else signs in.
-
-> **Before that test, do `2a`.** Your sign-in fires `ctle-admin-alerts.php`, which emails Persis. Deploying the recipient hold takes five minutes and is the difference between a clean test and breaching the communications hold with a security alert.
-
-> **Amanda's account is no longer a gate.** `2b` creates it for her, which also removes the duplicate-account risk her first sign-in would otherwise carry.
-
-> **Both outbound notes are `HELD`**, including the one that explains the 08-05 alert to Persis. That explanation now belongs in the face-to-face.
-
----
+**Persis's and Amanda's tests stay deferred behind the face-to-face,** and that now costs even less than it did: Steven's sign-in exercised the identical `email_exists()` path on an identical pre-existing account.
 
 ## ✅ B1 — CLOSED 2026-08-14. `ctle.dom.edu` resolves.
 
@@ -122,9 +109,9 @@ So the database instability threatened nothing. **No Kinsta manual backup of Sta
 | # | Job | Needs | Time | State |
 |---|---|---|---|---|
 | 1 | Communications | — | — | ✅ Done 2026-08-04 |
-| 2 | Complete Live's configuration | — | 45 min | **→ DO THIS.** No CTLE input needed · **was waiting on Amanda, now isn't** |
+| 2 | Complete Live's configuration | — | 5 min left | **Nearly done.** `2a` and `2b` complete, timezone set; sample content and orphan tables remain |
 | 3 | Mail | — | — | ✅ Done 2026-08-05 |
-| 4 | SSO | Aidan — admin consent | testing only | ⏸ Blocked. Our side done; consent outstanding |
+| 4 | SSO | — | 30 min | **→ DO THIS.** Sign-in **proven working 2026-08-18**; a caching defect and a missing claim remain |
 | 5 | Content and features | Amanda + Persis | weeks | ⏸ Gated on the face-to-face |
 | 6 | Pre-launch | everyone | 1 day | Not started |
 
@@ -151,13 +138,13 @@ Decided 2026-08-04.
 
 ---
 
-## Job 2 — Complete Live's configuration ← **do this while SSO waits**
+## Job 2 — Complete Live's configuration ← **`2a` and `2b` done; `2c` part-done**
 
 **This was "merge Staging into Live", a 2–3 hour operation with a real blast radius. Amanda's answer deleted it**, and the communications hold has now removed what little was left that needed her. Nothing is transferred; nothing waits on CTLE. If you want to see what the merge was, it is in git history at version 1.6.0.
 
 **Total: about 45 minutes, all of it yours.**
 
-### 2a. Deploy the alerts recipient hold — 5 min, and do it first
+### 2a. Deploy the alerts recipient hold — ✅ **DONE 2026-08-18**
 
 `ctle-admin-alerts.php` emails **Persis** on every Administrator login and every role change. Your SSO test is an Administrator login. Creating Amanda's account is a role change. **Either one breaches the communications hold**, and it arrives as an unexplained security alert — the second she'd have had.
 
@@ -179,9 +166,11 @@ wp eval 'print_r( ctle_alert_recipients() );'
 
 **One address only.** If Persis's is still there the file did not load — check the path before you sign in anywhere.
 
+**Verified 2026-08-18.** Five must-use plugins present; `ctle_alert_recipients()` returns `sendres@dom.edu` alone. The SSO sign-in test and Amanda's account creation both ran behind it.
+
 > **This file is a debt, not a feature.** Delete it at handover. Left in place it quietly removes the Director from a security control she is meant to hold, and the alerts keep arriving for whoever is left on the list, so nothing looks wrong. It is listed again in Job 6.
 
-### 2b. Create Amanda's Live account yourself — 5 min
+### 2b. Create Amanda's Live account yourself — ✅ **DONE 2026-08-18**
 
 She was only ever needed for this because nobody had thought to do it another way. SSO matches on email, so what matters is that an account carrying `anorris@dom.edu` exists **before** her first sign-in. Who created it is irrelevant.
 
@@ -197,7 +186,21 @@ Her `sis_user_id` cannot be stamped yet; it needs her `employeeId`, which we wou
 
 > **This closes a real risk, not just a scheduling one.** Had she signed in through SSO with no Live account, the plugin would have created a fresh one — a second Amanda, with the first appearing only on Staging. Matching on email only works if there is something to match.
 
-### 2c. Finish the configuration that needs nobody — 20 min
+**Created 2026-08-18 as `anorris`, user ID 4.** Live now holds three users: `pdriveru8gf` (2), `sendresiq78` (3), `anorris` (4).
+
+> ### ✅ Kinsta auto-login matches on email — established by test, 2026-08-18
+>
+> **The question this answered:** MyKinsta mints a *fresh random* username per environment — Persis is `pdriveru8gf` on Live and `pdriverdebl` on Staging, created one minute apart — so it plainly does not match people by username. If it matched on an internal MyKinsta-user → WP-user-ID mapping instead of on email, then a hand-created `anorris` would be invisible to it, and Amanda's first auto-login on Live would mint a *second* account. That is the precise duplicate this step exists to prevent, just moved one step later.
+>
+> **It could not be answered by reading the container.** Kinsta's provisioning is server-side: there is no `wp_insert_user` anywhere in `kinsta-mu-plugins`, and no Kinsta-owned user meta on any account.
+>
+> **So it was tested on Staging, which is disposable.** Steven's Staging account (`sendres19xb`, ID 5) was deleted and recreated by hand as `sendres` (ID 7) with the same address, reproducing Amanda's exact situation — an account with a matching email and no prior Kinsta mapping. MyKinsta auto-login then **landed on `sendres`, ID 7, and created nothing.**
+>
+> **Consequence, and it reaches further than Amanda.** A pre-created account carrying the right email absorbs *both* provisioning paths — MyKinsta auto-login and SSO. That is what `REQUIREMENTS.md` §5 asks for in its multi-path admin reconciliation, and it now rests on evidence rather than assumption. It also means pre-creating accounts for Ellen or any later admin is safe.
+>
+> **Staging's user table changed as a side effect:** ID 5 is gone, ID 7 is Steven. Staging is disposable and due to be reset from Live anyway — see `2g`.
+
+### 2c. Finish the configuration that needs nobody — ✅ **DONE 2026-08-18**
 
 Pulled forward out of Job 6. None of it touches content anyone has authored, and all of it is easier now than during a launch checklist.
 
@@ -214,6 +217,10 @@ wp post list --post_type=post,page --format=csv --fields=ID,post_title,post_stat
 wp db query "DROP TABLE IF EXISTS wp_wpmailsmtp_debug_events, wp_wpmailsmtp_tasks_meta;"
 wp db tables --format=count
 ```
+
+**Done 2026-08-18.** Timezone `America/Chicago`; "Hello world!", "Sample Page" and the default comment deleted; both orphan `wp_wpmailsmtp_*` tables dropped. Live now holds one post row — the Privacy Policy draft at ID 3 — and zero comments.
+
+> **`wp comment delete 1 --force` reported "Failed deleting comment 1" and that was correct behaviour, not an error.** Force-deleting post 1 takes its comments with it, so by the time the comment command ran there was nothing left to delete. Verify with `wp comment count` rather than trusting the warning.
 
 **The timezone matters more than it looks.** It is unset, so every timestamp on the site renders as UTC — including the ones inside the admin alert emails, which is precisely where you will be reading times while debugging sign-ins.
 
@@ -269,7 +276,7 @@ Remaining: **re-run `scripts/audit-env.sh` and refresh `AS_BUILT.md`** after Job
 
 ---
 
-## Job 4 — SSO ⏸ blocked on Aidan's admin consent
+## Job 4 — SSO ✅ sign-in proven 2026-08-18; two follow-ups open
 
 **Aidan delivered on 2026-08-14.** Tenant ID, client ID, client secret and secret expiry arrived by SecureTransfer. All three of the questions that were blocking this job are answered.
 
@@ -458,6 +465,102 @@ The group starts as those four and switches to `DOMFaculty`-populated membership
 
 **Decide deliberately: a permanent manual addition to the group, or accept auto-login as the only path. Drifting into the second by accident is the failure mode.** Recommendation is the manual addition; it costs Aidan one click and buys the ability to reproduce a faculty report.
 
+### 4a. ⚠ Kinsta edge-caches the login page, which breaks SSO for everyone — **decision needed**
+
+**Symptom.** `ERROR (invalid-state): Invalid state.` on the callback, every time, including from a
+freshly opened private window.
+
+**Cause.** WPS Hide Login moves the login form to a custom slug. Kinsta's cache excludes
+`/wp-login.php` and `/wp-admin/`; an arbitrary slug is just a public page, so the edge cached it
+under the ordinary policy — **`s-maxage=86400`, twenty-four hours.**
+
+The OpenID Connect button's `href` carries a one-time `state` value whose transient lives **180
+seconds** (`openid-connect-generic-client.php:128`, default, unset here). So the edge froze one
+`state` into the HTML and served that same dead value to every visitor for a day.
+
+**Measured 2026-08-18** — two independent requests to the login path:
+
+```
+x-kinsta-cache: HIT      age: 1440      cache-control: public, max-age=0, s-maxage=86400
+state=3d3d5f6cb12f34e44cecdc7235ad38f9      ← identical in both responses
+```
+
+That state was minted at 20:46:21 and died at 20:49:21. Appending `?nocache=<random>` returns
+`x-kinsta-cache: BYPASS` and two different states on two requests. **That is the whole defect.**
+
+**The workaround that got the test done, and why it must not become the fix:** signing in via
+`https://ctle.dom.edu/<login-path>/?nocache=1` bypasses the edge. No faculty member will ever type
+that, and nothing on the site would reveal why sign-in is failing for them.
+
+**Two ways to fix it, and they are not equivalent:**
+
+| | **Remove WPS Hide Login** (recommended) | Keep it, add a Kinsta cache exclusion |
+|---|---|---|
+| This defect | Fixed — `/wp-login.php` is excluded by Kinsta already | Fixed |
+| Kinsta edge brute-force protection | **Restored** | Still absent |
+| Fragility | None | Silently breaks again if the login path changes |
+| Effort | One `wp plugin delete` | A MyKinsta rule, and remembering it exists |
+
+**This is the same plugin failing the same way twice.** It was already recorded as having
+*removed* protection rather than adding it — Kinsta's brute-force ban watches `/wp-login.php` and
+only that, measured directly: `POST /wp-login.php` → 403 at the edge, `POST` to the custom path →
+200, processed. Both failures share one cause: **the host protects the login URL it knows about,
+and this plugin moved the login somewhere it does not.**
+
+**What hiding the login URL is actually buying here is close to nothing.** `ctle-hardening.php`
+removed password authentication site-wide; there is no password form behind that slug to brute
+force. `REQUIREMENTS.md` §5 lists the obfuscated login URL as one of three administrator-access
+protections, so **removing it is a requirements change and needs a dated deviation note**, not a
+silent deletion — the same treatment the account-linking row got.
+
+**The durable lesson:** *a host's protections and its caching policy are both keyed to the URLs it
+knows about. Moving a well-known URL forfeits both, and the second loss is invisible until
+something time-sensitive is served from cache.*
+
+### 4b. `employeeId` did not arrive in the ID token — a note to Aidan
+
+**Read from the stored claim on user 3 after the successful sign-in**, so this is what Entra
+actually issued, not an inference:
+
+```
+aud iss iat nbf exp oid rh sub tid uti ver sid
+email               sendres@dom.edu
+preferred_username  sendres@dom.edu
+given_name          Steven
+family_name         Endres
+name                Endres, Steven
+
+employeeId          *** ABSENT ***
+```
+
+**Nothing is broken by this.** Everything account creation and matching need is present, which is
+exactly why the userinfo endpoint was deliberately left unset — claims come from the ID token, and
+the ID token carries `email`. Sign-in works.
+
+**What it costs is Job 5's Canvas SIS linkage.** `employeeId` was to be the key tying WordPress
+accounts to Canvas via `sis_user_id`. Aidan confirmed on 08-14 that Entra holds the J1 value and
+that Ellen's is populated — so the value exists on the directory objects; it is the **claims
+policy emitting it into this app's ID token** that is missing or not applied to this registration.
+
+**Also worth telling him:** the granted scope came back as `email profile openid User.Read` — he
+added `User.Read` when granting consent. Harmless, and we do not use it.
+
+> **Do not let this be "fixed" by setting a userinfo endpoint.** Graph's `/oidc/userinfo` returns a
+> fixed set of standard claims and will never include `employeeId`; setting it would *replace* the
+> ID token claims with a smaller set and lose ground rather than gain it.
+
+**`sis_user_id` on the two existing accounts is unaffected** — Steven's is still `904238`, stamped
+by hand. Amanda's ID 4 remains unstamped, as Job 6 records.
+
+### 4c. Ellen's test — after `4a`, and Steven's call
+
+Her sign-in is the one remaining thing that tests something Steven's did not: **JIT provisioning of
+an account that does not yet exist.** Everything else — email matching against a pre-existing
+account — is now proven.
+
+**Do not ask her until `4a` is fixed.** Sending someone a login link that fails four times out of
+five, for reasons invisible from their side, spends credibility for nothing.
+
 ### Then hand back to LT and Pete
 
 Real SSO URL into `canvas/ctle-global-nav.js`, `enabled: true`, beta-test against a teacher and a student, then Pete adds `declared_user_type` to the nightly SIS `users.csv`.
@@ -512,7 +615,7 @@ Then the build work:
 
 - **Amanda** — SSH key, the theme answer, then the content build on Live. **Her Live profile is no longer hers** — `2b` creates it, so she is off the critical path entirely
 - **Persis** — **the SSO group list and who maintains it after launch, which is the one blocking CTLE input**; then Events Calendar licence, catalog structure, confidentiality language, forum categories, admin training
-- **Aidan** — **admin consent for the SSO app, which is the only thing blocking SSO**, plus confirming whether *Assignment required* is on and the group assigned to the app; then hold the group membership swap until the launch cutover. Redirect URI, `email` claim, group membership and Ellen's `employeeId` are all **delivered and confirmed**
+- **Aidan** — **why `employeeId` is absent from the SSO app's ID token** (`4b`); then hold the group membership swap until the launch cutover. Admin consent, the redirect URI, the `email` claim, group membership and Ellen's `employeeId` are all **delivered and confirmed** — consent granted 2026-08-18 and sign-in proven the same day
 - **Pete** — `declared_user_type` in the nightly Canvas import, after SSO works
 - **Post-launch** — off-site 30-day backup, HSTS, disabling `ductle.kinsta.cloud`
 - **2026-08-24** — **verify TLS auto-renewed; the certificate expires 08-31.** No longer moot: DNS resolves, so validation can complete. Put it in a calendar
@@ -525,6 +628,7 @@ Then the build work:
 
 | Version | Date | Notes |
 |---|---|---|
+| 1.9.0 | 2026-08-18 | **SSO signs in and matches correctly — Job 4's core question is answered.** Aidan granted admin consent; Steven signed in at 21:33:07 UTC, landed on user ID 3 with no duplicate created, `openid-connect-generic-subject-identity` stamped and `sis_user_id` intact at `904238`. **Found the defect that made it fail twice first:** WPS Hide Login's custom slug is not in Kinsta's cache exclusions, so the edge cached the login page for 24 hours and served one frozen 180-second `state` to every visitor — measured as identical `state` values across independent requests with `x-kinsta-cache: HIT`. Recorded as `4a` with a decision attached, because **this is the same plugin failing the same way twice**: it already forfeited Kinsta's brute-force protection for the identical reason. **`employeeId` is absent from the ID token** — everything authentication needs is present, so this costs only Job 5's Canvas linkage; recorded as `4b`. **Established by test that Kinsta auto-login matches on email**, not on username or an internal mapping: Steven's Staging account was deleted and recreated by hand, and auto-login adopted it rather than minting a duplicate. That makes pre-created accounts safe for both provisioning paths and puts `REQUIREMENTS.md` §5's multi-path reconciliation on evidence. `2a`, `2b` and `2c` all completed — alerts hold deployed and verified, Amanda created at ID 4, timezone set, sample content and orphan mail tables removed. |
 | 1.8.0 | 2026-08-18 | **Communications hold on Persis and Amanda, and a replan around it.** Political rather than technical, so both drafted notes are marked `HELD` — including the one explaining the 08-05 alert, which now belongs in the face-to-face. **Found that the hold has a machine-side leak:** `ctle-admin-alerts.php` emails Persis on every Administrator login and role change, so a single SSO test would have breached it silently. Closed with `ctle-alerts-hold.php`, which narrows recipients through the plugin's own filter rather than unhooking anything, and is recorded as a debt to delete at handover. **Job 2 stops waiting on Amanda:** we create her Live account ourselves, which was never actually hers to do and which also closes the duplicate-account risk her first sign-in carried. Pulled timezone, sample content and the orphan mail tables forward from Job 6 — none needed anyone's permission. Password protection now goes on at handover with credentials passed in person. Job 5 gated on the conversation, whose one required output is **the SSO group list and who maintains it**. Recorded that Steven's own sign-in exercises the same `email_exists()` path as Persis's and Amanda's, so deferring their tests confirms rather than discovers. |
 | 1.7.3 | 2026-08-18 | **The redirect URI was never the blocker.** `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` held the mail app's credentials, not the SSO app's — Aidan found it in the tenant sign-in logs on 08-17 after confirming the redirect URI and `email` claim had been present on the SSO registration since 08-14. Corrected with `wp config set` and verified by comparison against the mail constants rather than by shape. **Sign-in now reaches the right app and the redirect URI matches**; it stops at a tenant admin-consent prompt for `openid email profile`, which are ordinarily user-consentable, so the cause is the tenant user-consent policy. Consent requested, together with a pre-emptive question about whether *Assignment required* is on and the group assigned to the app. Recorded the durable lesson — **a shape check is not an identity check** — and the corollary that `AADSTS700016` only indicates an ID belonging to no app at all, not one belonging to the wrong app in the same tenant. |
 | 1.7.2 | 2026-08-14 | **End of day.** Reply to Aidan **sent**, asking for the redirect URI. He confirmed the group holds exactly the four intended people and that **Ellen's `employeeId` is populated**, closing both remaining IT questions. Cross-document audit found a real conflict: `REQUIREMENTS.md` §5 specifies account linking by `sis_user_id` and explicitly *"not by email"*, which the plugin cannot do. Recorded there as a dated deviation note rather than an amendment, since the spec is stakeholder-reviewed, and added to the open questions for Persis once SSO is proven. Test order adjusted — Ellen moves ahead of Amanda, whose test is gated on her Live account. The CTLE note remains unsent and is what asks Amanda for that account. |

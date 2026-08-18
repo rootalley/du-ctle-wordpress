@@ -56,9 +56,25 @@ Both were provisioned at account setup and were present at first MyKinsta login.
 | WordPress core | **7.0.4** — was 7.0.2 on 08-06, so core auto-updates are running | 7.0.2 as of 08-06, not re-checked |
 | Disk used | 108 MB | 93 MB |
 | Database | Stable | Intermittently down — see above, now harmless |
-| Password protection | **Disabled** — deliberately, until SSO is tested | **Enabled** (HTTP Basic Auth at Nginx) |
+| Password protection | **Disabled** — deliberately; turns on at handover | **Enabled** (HTTP Basic Auth at Nginx). **It intercepts MyKinsta auto-login**: the 401 consumes the auto-login link and drops you on the front page, so click *Log in to WP Admin* a second time once the browser holds the credentials |
 | Backups | Daily + manual baselines | Daily only, no manual baseline — **no longer a risk** |
 | Role | Production, **and the build environment**; holds all infrastructure and security work | **Disposable.** Theme demo content only |
+
+> ### ⚠ The custom login path is edge-cached, and SSO fails while it is
+>
+> Measured 2026-08-18: the WPS Hide Login slug is served with `cache-control: s-maxage=86400` and
+> `x-kinsta-cache: HIT`, because Kinsta excludes `/wp-login.php` and `/wp-admin/` from caching but
+> not an arbitrary slug. The OpenID button's one-time `state` — transient TTL 180 seconds — is
+> frozen into the cached HTML, so every sign-in returns `ERROR (invalid-state)`. Appending
+> `?nocache=<random>` gives `x-kinsta-cache: BYPASS` and works. **Unfixed; the decision is
+> `PLAN.md` `4a`.**
+>
+> ### MyKinsta auto-login matches on email
+>
+> Established by test on Staging 2026-08-18: a hand-created account carrying the right address is
+> adopted rather than duplicated. MyKinsta mints a fresh random username per environment, so
+> usernames are not an identifier — the same person is `pdriveru8gf` on Live and `pdriverdebl` on
+> Staging. **Pre-creating an admin account is therefore safe and absorbs both provisioning paths.**
 
 **One SSH key pair per person, both environments** — `id_ed25519_ctle_sendres_kinsta`. Kinsta permits one SSH user per environment; additional MyKinsta members authorise their own keys against that same user. Kinsta "additional users" are SFTP-only and are **not** a WP-CLI recovery path.
 
@@ -88,7 +104,7 @@ Both were provisioned at account setup and were present at first MyKinsta login.
 | WPS Hide Login | 1.9.18 | Active |
 | WP Activity Log (`wp-security-audit-log`) | 5.6.5 | Active |
 | Query Monitor | 4.0.7 | Active |
-| OpenID Connect Generic (`daggerhart-openid-connect-generic`) | 3.11.3 | **Active since 2026-08-14.** Configured against tenant `e363050e-…-7db1230b452a` via `OIDC_*` constants in `wp-config.php`. **No userinfo endpoint set**, deliberately, so claims come from the ID token where `employeeId` lives. JWKS and issuer verification both active. MyKinsta auto-login re-confirmed in a fresh private session after activation. **Client ID and secret corrected 2026-08-18** — they had held the mail app's values. Sign-in reaches the SSO app and its redirect URI; blocked on tenant admin consent. |
+| OpenID Connect Generic (`daggerhart-openid-connect-generic`) | 3.11.3 | **Active since 2026-08-14. Sign-in proven working 2026-08-18.** Configured against tenant `e363050e-…-7db1230b452a` via `OIDC_*` constants in `wp-config.php`. **No userinfo endpoint set**, deliberately. JWKS and issuer verification both active. MyKinsta auto-login re-confirmed in a fresh private session after activation. **Client ID and secret corrected 2026-08-18** — they had held the mail app's values. Tenant admin consent granted 2026-08-18; first successful sign-in matched user ID 3 on email and stamped `openid-connect-generic-subject-identity`. **`employeeId` did not arrive in the ID token** — see `PLAN.md` `4b`. **`OIDC_ENABLE_LOGGING` is still on** and the log holds decoded claims; Job 6 turns it off. |
 | Relevanssi | 4.27.2 | Inactive — staged for the search build |
 | wpForo | 3.1.4 | Inactive — staged for forums |
 
