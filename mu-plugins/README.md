@@ -13,6 +13,7 @@ WP admin UI** — the right home for security controls that should never be swit
 | `ctle-admin-alerts.php` | Emails the CTLE admin list on any Administrator login and any role change. Replaces WP Activity Log Premium's paid notifications with free core hooks. | §5, §7 |
 | `ctle-hardening.php` | **v1.1.0** — disables XML-RPC, stops advertising the pingback endpoint, and **removes password authentication entirely** (username/password, email/password, and application-password authenticators; application passwords hidden; password reset off). | §6 |
 | `ctle-mail.php` | Routes every `wp_mail()` through Microsoft Graph `sendMail` as `ctle-noreply@dom.edu`, using an Entra app registration and the client-credentials flow. Replaces WP Mail SMTP. | §15 |
+| `ctle-alerts-hold.php` | ⏳ **Temporary — delete at handover.** Narrows `ctle-admin-alerts.php`'s recipient list to `sendres@dom.edu` while single sign-on is tested and accounts are pre-created. | — |
 
 > ⚠️ **`ctle-hardening.php` v1.1.0 changed the recovery procedure.** A WP-CLI password reset no longer grants a login while the file is in place — move it aside first:
 >
@@ -23,6 +24,22 @@ WP admin UI** — the right home for security controls that should never be swit
 > ```
 >
 > Full context in `docs/kinsta_onboarding.md` §6 and §7. Verify MyKinsta auto-login on Staging after any change to this file, since it is the only remaining interactive path into WP Admin.
+
+> ⏳ **`ctle-alerts-hold.php` is a debt with an expiry date.** `ctle-admin-alerts.php` emails the
+> CTLE Director on every Administrator login and role change; during SSO testing those alerts
+> would arrive before the conversation meant to introduce the work. The hold narrows the audience
+> through the plugin's own `ctle_alert_recipients` filter and **suppresses nothing**, so a real
+> security event still reaches someone.
+>
+> **Delete it at handover, and verify:**
+>
+> ```bash
+> rm ~/public/wp-content/mu-plugins/ctle-alerts-hold.php
+> cd public && wp eval 'print_r( ctle_alert_recipients() );'   # both addresses back
+> ```
+>
+> Left in place it removes the Director from a security control she is supposed to hold, and
+> nothing about the running site would show it — the alerts keep arriving for whoever is left.
 
 ## Deploy
 

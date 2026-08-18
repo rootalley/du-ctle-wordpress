@@ -1,6 +1,6 @@
 # DRAFT — to Persis and Amanda: the merge is off, Live is the build environment
 
-**Status:** draft, not sent.
+**Status:** ⛔ **HELD 2026-08-18 — do not send.**
 **To:** Persis Driver, Amanda Norris.
 **Why this exists:** the merge sequence was committed to in writing on 2026-08-04
 (`2026-08-04_ctle.md`), including a request for a maintenance window. Withdrawing it should be in
@@ -71,10 +71,33 @@ Steven
 
 ---
 
+## ⛔ Why this is held
+
+**Held 2026-08-18 for political reasons, not technical ones.** Steven is opening this with a
+face-to-face conversation, and this note arriving first would spend that conversation for him.
+
+**Its original send condition has been met and no longer governs.** The note said to send once
+Aidan replied; he has. **That does not release it.** The hold in `PLAN.md` overrides.
+
+**Keep this draft current rather than deleting it.** Everything in it still needs saying, and it
+becomes the written follow-up the same day the conversation happens — which is also when the
+merge withdrawal finally gets the written record that the 08-04 commitment deserves.
+
+**Three things in it have been overtaken and need editing before it goes:**
+
+1. **The request for Amanda to create her Live profile is void** — we create it ourselves. Replace
+   with a line telling her the account exists and she reaches it by signing in through SSO.
+2. **The password-protection paragraph changes.** Credentials are handed over in person at the
+   conversation, not sent afterwards.
+3. **The SSO paragraph is out of date** and should say where things actually stand by then.
+
+**The 08-05 alert explanation moves into the conversation**, where an apology works better than a
+postscript. If she has received any further alert by then, that is `ctle-alerts-hold.php` having
+failed and it needs checking before the meeting, not explaining after it.
+
 ## Notes for us, not for the email
 
-- **Send after the Aidan reply**, not before. If his registration turns out to be incomplete the
-  SSO paragraph needs softening.
+- ~~**Send after the Aidan reply**, not before.~~ **Superseded by the hold.**
 - The theme question is asked **once**, framed as genuinely open, and then dropped whatever the
   answer is. If she stays with `educational-university`, WCAG goes back to being a Job 6 audit
   item and doesn't get re-raised in the meantime.

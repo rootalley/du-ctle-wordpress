@@ -2,7 +2,7 @@
 
 **What this is:** the recorded state of the CTLE WordPress infrastructure — what *is*, not what to do. For what to do, see `PLAN.md`.
 
-**Last full capture:** 2026-08-06 · **Partially re-verified:** 2026-08-14 (DNS, TLS, Live options, themes, plugins, users, OIDC plugin source) · **Maintainer:** Steven Endres
+**Last full capture:** 2026-08-06 · **Partially re-verified:** 2026-08-18 (DNS, TLS, users, plugins, OIDC constants) and 2026-08-14 (Live options, themes, OIDC plugin source) · **Maintainer:** Steven Endres
 
 > ⚠ **A full recapture is owed.** The 08-14 update was targeted, not a `scripts/audit-env.sh` run. Re-run the script against both environments once Job 4 lands and regenerate this file from it.
 
@@ -88,7 +88,7 @@ Both were provisioned at account setup and were present at first MyKinsta login.
 | WPS Hide Login | 1.9.18 | Active |
 | WP Activity Log (`wp-security-audit-log`) | 5.6.5 | Active |
 | Query Monitor | 4.0.7 | Active |
-| OpenID Connect Generic (`daggerhart-openid-connect-generic`) | 3.11.3 | **Active since 2026-08-14.** Configured against tenant `e363050e-…-7db1230b452a` via `OIDC_*` constants in `wp-config.php`. **No userinfo endpoint set**, deliberately, so claims come from the ID token where `employeeId` lives. JWKS and issuer verification both active. MyKinsta auto-login re-confirmed in a fresh private session after activation. Sign-in not yet working: the Entra registration has no redirect URI (`AADSTS500113`). |
+| OpenID Connect Generic (`daggerhart-openid-connect-generic`) | 3.11.3 | **Active since 2026-08-14.** Configured against tenant `e363050e-…-7db1230b452a` via `OIDC_*` constants in `wp-config.php`. **No userinfo endpoint set**, deliberately, so claims come from the ID token where `employeeId` lives. JWKS and issuer verification both active. MyKinsta auto-login re-confirmed in a fresh private session after activation. **Client ID and secret corrected 2026-08-18** — they had held the mail app's values. Sign-in reaches the SSO app and its redirect URI; blocked on tenant admin consent. |
 | Relevanssi | 4.27.2 | Inactive — staged for the search build |
 | wpForo | 3.1.4 | Inactive — staged for forums |
 
@@ -107,6 +107,8 @@ Source of truth is `mu-plugins/` in this repo. Deployed to `wp-content/mu-plugin
 | `ctle-mail.php` | 1.0.0 | 13479 B | **Takes over `wp_mail()` via `pre_wp_mail`** and posts to Microsoft Graph `sendMail` as `ctle-noreply@dom.edu`. Deployed 2026-08-04, delivering since 2026-08-05. |
 | `kinsta-mu-plugins` | 3.6.1 | — | Vendor-supplied, do not modify |
 
+> ⏳ **`ctle-alerts-hold.php` exists in the repo but is NOT yet deployed** as of 2026-08-18. It narrows `ctle-admin-alerts.php`'s recipients to `sendres@dom.edu` for the duration of the communications hold. **It must be deployed before the next Administrator sign-in or account creation**, because both alert the CTLE Director — see `PLAN.md` `2a`. When it is deployed, this table gains a fourth row and the Security controls table below changes. **It is a debt to delete at handover.**
+
 ### Users
 
 | ID | Login | Email | Role | `sis_user_id` |
@@ -118,7 +120,7 @@ Both are MyKinsta auto-login accounts with **no password**.
 
 > **`sis_user_id` is not what SSO matches on.** It was stamped on the belief that OpenID Connect Generic could match an `employeeId` claim against it. Reading the plugin source on 2026-08-14 disproved that: identity is `id_token.sub` against the plugin's own `openid-connect-generic-subject-identity` meta, with an optional fallback to `email_exists()`. See `PLAN.md` Job 4. The stamps are retained because Job 5's Canvas and SIS work wants the Jenzabar ID on the account — they are simply not load-bearing for authentication.
 
-**Amanda (`anorris@dom.edu`) has no account on Live.** She must auto-login once before her first SSO sign-in, so that email matching has something to match.
+**Amanda (`anorris@dom.edu`) has no account on Live** as of 2026-08-18. An account carrying that address must exist before her first SSO sign-in or the plugin creates a duplicate. **This is no longer waiting on her:** `PLAN.md` `2b` creates it by WP-CLI, since who creates the account is irrelevant to email matching. Update this table once it exists.
 
 ### Content
 
@@ -262,6 +264,7 @@ Kinsta daily automatic, 14-day retention, plus point-in-time restore. Manual bas
 | XML-RPC | Disabled at both Nginx (403) and application layers |
 | Open registration | Off |
 | Audit logging | WP Activity Log (free tier — logs only; its email notifications are Premium, hence `ctle-admin-alerts.php`) |
+| Administrator alerts | `ctle-admin-alerts.php` emails **`sendres@dom.edu` and `pdriver@dom.edu`** on every Administrator login and role change. ⏳ **To be narrowed to `sendres@dom.edu` alone** for the duration of the communications hold, once `ctle-alerts-hold.php` is deployed. That narrowing is reversible, suppresses nothing, and **must be undone at handover** — the Director is meant to hold this control. |
 | Malware scanning | **Kinsta does not scan proactively.** Its service is reactive: free vendor-assisted cleanup after a confirmed compromise. Disclosed to DU IT. |
 
 ### Recovery
@@ -287,7 +290,7 @@ Only Steven currently holds an SSH key. **Two-person recovery is not yet satisfi
 | Integration | State |
 |---|---|
 | **Mail** | ✅ **Working since 2026-08-05.** `ctle-mail.php` routes every `wp_mail()` through Microsoft Graph `sendMail` as `ctle-noreply@dom.edu`, using a dedicated Entra app registration with the **application** `Mail.Send` permission, admin-consented and constrained by an Exchange `RestrictAccess` policy scoped to `CTLE-NoReplyGroup`. Credentials live in `wp-config.php` constants. **Client secret expires 2028-08-02.** |
-| **Entra SSO** | Plugin installed, **still inactive**; configuration is the active job. **Aidan delivered 2026-08-14** — tenant ID, client ID, client secret and expiry by SecureTransfer. The allowlist security group **`CTLE WordPress`** holds **Persis, Amanda, Ellen and Steven**; the registration is separate from the mail one; Entra's `employeeId` carries the **J1 (Jenzabar)** value for normally-onboarded accounts, **including Ellen's**. Manually created accounts — NAPs, `sw_` student workers — may have it empty, which will matter at launch if any `DOMFaculty` member was onboarded by hand. Entra ID P1 confirmed. **Built on Live only**, the config being hostname-bound. Matching is on **email**, not `employeeId` — see the note under *Live → Users*. **Outstanding: the registration has no redirect URI** (`AADSTS500113`), requested 2026-08-14. |
+| **Entra SSO** | Plugin **active since 2026-08-14**; configuration is the active job. Two app registrations exist in tenant `e363050e-…`: the **mail** app (`ddf…`) and the **SSO** app (`7b8…`, *CTLE WordPress Redirect*). **On 2026-08-14 the SSO constants were written with the mail app's client ID and secret**, which produced `AADSTS500113` and was misread as a missing redirect URI; Aidan diagnosed it from the tenant sign-in logs on 08-17 and it was **corrected 2026-08-18**. The redirect URI `https://ctle.dom.edu/wp-admin/admin-ajax.php?action=openid-connect-authorize` and the `email` claim have been present on the SSO registration since 08-14. Requested scope is `openid email profile` — no Graph or mailbox access. The allowlist group **`CTLE WordPress`** holds **Persis, Amanda, Ellen and Steven**; `employeeId` carries the **J1 (Jenzabar)** value for normally-onboarded accounts, including Ellen's. Manually created accounts — NAPs, `sw_` student workers — may have it empty, which will matter at launch if any `DOMFaculty` member was onboarded by hand. Entra ID P1 confirmed. **Built on Live only**, the config being hostname-bound. Matching is on **email**, not `employeeId` — see the note under *Live → Users*. **Outstanding: tenant admin consent for the app** (requested 2026-08-18), and confirmation of whether *Assignment required* is on with the group assigned to the app. |
 | **Canvas** | LTI dropped. Faculty launch from the existing CTLE global-nav button retargeted to the SSO-initiation URL, with visibility gated on `declared_user_type=teacher` read from `/api/v1/users/self/logins`. Script built at `canvas/ctle-global-nav.js`, `enabled: false`, not yet uploaded. Pete owns adding `declared_user_type` to the nightly Jenzabar→Canvas import, after SSO works. |
 | **Events calendar** | Not started. Events Calendar Pro licence unpurchased. |
 
@@ -311,6 +314,8 @@ Two plaintext passwords were removed from `kinsta_onboarding.md` before its firs
 
 | Version | Date | Author | Notes |
 |---|---|---|---|
+| 1.3.1 | 2026-08-18 | sendres | Recorded the **communications hold** and its two machine-side consequences: `ctle-admin-alerts.php` currently emails the CTLE Director on every Administrator login and role change, so it is now listed explicitly as a security control rather than left implicit in the mu-plugins table; and `ctle-alerts-hold.php` exists in the repo **undeployed**, flagged as a debt to delete at handover. Noted that Amanda's missing Live account is no longer a dependency on her. No environment state changed in this entry — it records intent and pending changes, not a capture. |
+| 1.3.0 | 2026-08-18 | sendres | **Corrected the SSO credentials.** `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` held the mail app's values rather than the SSO app's; the resulting `AADSTS500113` was misattributed to a missing redirect URI on Entra's side, and Aidan found the true cause in the tenant sign-in logs. The redirect URI and `email` claim had been in place since 08-14. Recorded both registrations by GUID prefix so the two can never again be confused by inspection, and the requested scope. Sign-in now reaches the SSO app; blocked on tenant admin consent. Re-verified live: two users only, four active plugins, DNS/TLS unchanged with the certificate expiring 08-31. Targeted re-verification, not a full capture — **`scripts/audit-env.sh` is still owed.** |
 | 1.2.0 | 2026-08-14 | sendres | **Both 08-06 warnings withdrawn.** `ctle.dom.edu` resolves to `162.159.135.42` with the `www` CNAME, serves 200 and holds a valid certificate to 08-31 — the record ticket 26363781 described is in place. The 08-06 NXDOMAIN came from `ns1.dom.edu`, which no longer resolves at all, so whether the record was ever truly absent cannot be determined; recorded as such rather than guessed. Amanda confirmed Staging was only basic testing, never the site build, so its database instability threatens nothing and its content is theme demo material — Live is now both production and the build environment, and Live → Staging pushes become safe. **Corrected the identity model:** reading OpenID Connect Generic 3.11.3's source on Live shows matching is `id_token.sub` against the plugin's own meta with an email fallback, never an arbitrary claim against `sis_user_id`; the stamps are retained for SIS purposes only. Aidan delivered SSO credentials and confirmed `employeeId` carries the J1 value. Targeted re-verification, not a full capture. |
 | 1.1.0 | 2026-08-06 | sendres | Recaptured from both environments. **Two new findings dominate:** `ctle.dom.edu` returns authoritative NXDOMAIN, contradicting the previous record of DNS delivered under ticket 26363781; and Staging's MariaDB has been observed down twice, on an environment holding the only copy of the site build with no manual backup. Otherwise: mail now working through `ctle-mail.php`, WP Mail SMTP deleted with two tables orphaned, OpenID Connect Generic installed inactive, and the Graph send scope verified as a live control. |
 | 1.0.0 | 2026-08-03 | sendres | Initial as-built, captured directly from both environments via `scripts/audit-env.sh`. Replaces the scattered "verified state" prose in `HANDOFF.md` and the checkbox state in `kinsta_onboarding.md`. Confirmed by capture rather than inference: `topsecretuser` present on Staging; user IDs misaligned across environments; `ctle-hardening.php` divergent on Staging; PHP already 8.4 on both; **no custom database tables on Staging**, which is what makes a content-level transfer viable instead of a Kinsta push. |
