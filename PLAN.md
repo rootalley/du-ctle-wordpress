@@ -65,7 +65,7 @@ without them.
 
 ## What is left
 
-1. **`4b` — ask Aidan why `employeeId` is absent from the ID token.** DU IT, not covered by the hold. **The only open item on SSO**, and it blocks Job 5's Canvas linkage rather than authentication.
+1. **`4b` — ask Aidan why `employeeId` is absent from the ID token.** Drafted at `docs/outbound/2026-08-18_aidan-employeeid-claim.md`. DU IT, not covered by the hold. **The only open item on SSO**, and it blocks Job 5's Canvas linkage rather than authentication. **`4c` waits behind it** so Ellen's sign-in is run once, not twice.
 2. **Re-run `scripts/audit-env.sh` and regenerate `docs/AS_BUILT.md`.** Overdue since 08-06 and its precondition — working SSO — is now met. Both environments changed today.
 3. **Two small cleanups:** delete the orphaned `whl_page` option, and re-state the DU IT security sign-off request without the obfuscated login URL (`REQUIREMENTS.md` §5 deviation, 2026-08-18).
 4. **`4c` — Ellen's test**, the one path still unproven: provisioning an account that does not yet exist. Steven's call.
@@ -566,16 +566,20 @@ with no access to our configuration.
 **`sis_user_id` on the two existing accounts is unaffected** — Steven's is still `904238`, stamped
 by hand. Amanda's ID 4 remains unstamped, as Job 6 records.
 
-### 4c. Ellen's test — unblocked, and Steven's call
+### 4c. Ellen's test — **after `4b`**, and Steven's call
 
 Her sign-in is the one remaining thing that tests something Steven's did not: **JIT provisioning of
 an account that does not yet exist.** Everything else — email matching against a pre-existing
 account — is proven.
 
-**`4a` is fixed, so the blocker is gone.** Send her `https://ctle.dom.edu/wp-login.php`; she should
-land in WordPress without seeing a login form. Watch for a **third** user appearing with her
-address, which is the expected outcome here rather than a failure — hers is the account that
-*should* be created.
+**Sequenced deliberately behind `4b`.** `4a` is fixed so nothing technical blocks her, but her
+sign-in is worth running **once**, not twice: wait until `employeeId` is arriving and stamping onto
+accounts correctly, then her test checks provisioning *and* the SIS key in a single pass.
+
+Send her `https://ctle.dom.edu/wp-login.php`; she should land in WordPress without seeing a login
+form. Watch for a **third** user appearing with her address — here that is the expected outcome
+rather than a failure, since hers is the account that *should* be created. Then check her
+`sis_user_id` was stamped from the claim.
 
 **She is a judgement call, not a session's to make:** IT-side, but also an adjunct.
 
